@@ -1,180 +1,108 @@
-# Evidence (measured) — v0.2
-Source: `eval/collect_evidence.py` → `eval/reports/evidence.json`.
-Support threshold: cells with `n < 22` marked **insufficient**.
-Tuning policy: train+dev only; adaptive round 1 spent; never tune on test or round 2.
+# Evidence (measured) — v0.3
 
-## 0. Corpus counts
-```json
-{
-  "by_split_label": {
-    "test": {
-      "attack": 241,
-      "benign": 204,
-      "hard_negative": 62
-    },
-    "adaptive-round-2": {
-      "attack": 22,
-      "benign": 1,
-      "hard_negative": 1
-    },
-    "val": {
-      "attack": 16
-    },
-    "dev": {
-      "attack": 99,
-      "benign": 100,
-      "hard_negative": 30
-    },
-    "train": {
-      "attack": 198,
-      "benign": 200,
-      "hard_negative": 60
-    }
-  },
-  "benign_total": 505,
-  "hard_negative_total": 153,
-  "attack_type_text_total": {
-    "instruction_override": 66,
-    "tool_abuse": 62,
-    "secret_extraction": 65,
-    "encoded_instruction": 64,
-    "credential_theft": 62,
-    "context_poisoning": 59,
-    "multi_step_jailbreak": 59,
-    "role_change": 60,
-    "indirect_injection": 57
-  }
-}
-```
+Source: `eval/collect_v3.py` → `eval/reports/evidence_v3.json`, plus `e2e_asr.json` / `utility_hn.json`.
+Support threshold: `n < 22` → **insufficient**. Never tuned on test / round 2 / sealed.
 
-## 1. Per-attack-type × format — TEST split
-| type \ format | api_response | email | html | markdown | source_code | text | user_message |
-|---|---|---|---|---|---|---|---|
-| instruction_override | — | — | 1.00 (n=2, CI=[0.34,1.00]) **insuff.** | — | — | 1.00 (n=30, CI=[0.89,1.00]) | — |
-| role_change | — | — | — | — | — | 1.00 (n=25, CI=[0.87,1.00]) | 1.00 (n=3, CI=[0.44,1.00]) **insuff.** |
-| secret_extraction | — | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | — | — | 1.00 (n=30, CI=[0.89,1.00]) | 1.00 (n=3, CI=[0.44,1.00]) **insuff.** |
-| tool_abuse | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | 1.00 (n=2, CI=[0.34,1.00]) **insuff.** | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | — | 1.00 (n=26, CI=[0.87,1.00]) | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** |
-| credential_theft | — | — | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | 1.00 (n=26, CI=[0.87,1.00]) | — |
-| context_poisoning | — | — | — | 1.00 (n=2, CI=[0.34,1.00]) **insuff.** | — | 1.00 (n=23, CI=[0.86,1.00]) | — |
-| multi_step_jailbreak | — | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | — | — | — | 1.00 (n=24, CI=[0.86,1.00]) | 1.00 (n=2, CI=[0.34,1.00]) **insuff.** |
-| encoded_instruction | — | — | — | — | — | 1.00 (n=28, CI=[0.88,1.00]) | — |
-| indirect_injection | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | 1.00 (n=3, CI=[0.44,1.00]) **insuff.** | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | 1.00 (n=1, CI=[0.21,1.00]) **insuff.** | 1.00 (n=22, CI=[0.85,1.00]) | — |
+## 1. Hard-negative test failures — breakdown (v0.2 baseline, n_fp=17)
 
-## 2. Per-attack-type × format — adaptive round 2
-| type \ format | text |
-|---|---|
-| instruction_override | 0.67 (n=3, CI=[0.21,0.94]) **insuff.** |
-| role_change | 0.50 (n=2, CI=[0.09,0.91]) **insuff.** |
-| secret_extraction | 1.00 (n=2, CI=[0.34,1.00]) **insuff.** |
-| tool_abuse | 1.00 (n=3, CI=[0.44,1.00]) **insuff.** |
-| credential_theft | 1.00 (n=3, CI=[0.44,1.00]) **insuff.** |
-| context_poisoning | 1.00 (n=3, CI=[0.44,1.00]) **insuff.** |
-| multi_step_jailbreak | 1.00 (n=2, CI=[0.34,1.00]) **insuff.** |
-| encoded_instruction | 1.00 (n=2, CI=[0.34,1.00]) **insuff.** |
-| indirect_injection | 1.00 (n=2, CI=[0.34,1.00]) **insuff.** |
+Reporting only. **Not** used to write exact-match exemptions.
 
-## 3. Benign and hard-negative FPR (test split)
-- Benign: FPR **0.000** (fp=0, n=204, CI=[0.0, 0.01848330651804066])
-- Hard-negative: FPR **0.274** (fp=17, n=62, CI=[0.17880918599092133, 0.39592775843327255])
-
-## 4. Latency by stage and by input size (ms)
-| stage | n | p50 | p95 | mean |
+| category | sanitize | quarantine | block | total |
 |---|---:|---:|---:|---:|
-| adapt | 400 | 0.382 | 0.556 | 0.394 |
-| classifier | 400 | 0.076 | 0.108 | 0.074 |
-| judge | 400 | 0.022 | 0.066 | 0.028 |
-| signatures | 400 | 1.256 | 1.927 | 1.322 |
-| total | 400 | 11.943 | 13.377 | 12.092 |
+| quotation_of_attacks | 2 | 0 | 10 | 12 |
+| legal_text | 0 | 0 | 5 | 5 |
+| security_article | 0 | 0 | 0 | 0 |
+| imperative_manual | 0 | 0 | 0 | 0 |
+| runbook | 0 | 0 | 0 | 0 |
+| code_comments | 0 | 0 | 0 | 0 |
+| other | 0 | 0 | 0 | 0 |
 
-| size bucket | n | p50 | p95 | mean |
-|---|---:|---:|---:|---:|
-| lt1kb | 400 | 11.943 | 13.377 | 12.092 |
+Decision totals: **block 15**, **sanitize 2**, quarantine 0.
 
-## 5. Judge status
-- **offline, not evaluated**
+### After discourse fix (v0.3, train+dev features) — test re-measure
 
-## 6. ASR and utility
-### Scripted agent (`ARIA_MODE=scripted`)
-- ASR(off) **0.875** (n_injection=32)
-- ASR(on) **0.000**
-- ASR reduction **1.0**
-- Utility **1.0** (on_ok=22, off_ok=22, n_benign=22)
+- Hard-negative FPR **0.000** (fp=0, n=62, CI=[0.0, 0.0583])
+- Benign FPR **0.000** (fp=0, n=204, CI=[0.0, 0.0185])
 
-### LLM agent
-- **not run**
+## 2. Test split — per-attack-type × text (Wilson 95% CI)
 
-## 7. Adaptive rounds
-### Round 1 (spent — first-run recorded at v0.1; tuning since allowed on train/dev)
-- Attack recall (re-measure): **1.000** (32/32)
-- Hard-negative FPR (re-measure): **0.000** (n=1)
+| type | n | recall | CI | supported |
+|---|---:|---:|---|---|
+| instruction_override | 30 | 1.00 | [0.886, 1.00] | yes |
+| role_change | 25 | 1.00 | [0.867, 1.00] | yes |
+| secret_extraction | 30 | 1.00 | [0.886, 1.00] | yes |
+| tool_abuse | 26 | 1.00 | [0.871, 1.00] | yes |
+| credential_theft | 26 | 1.00 | [0.871, 1.00] | yes |
+| context_poisoning | 23 | 1.00 | [0.857, 1.00] | yes |
+| multi_step_jailbreak | 24 | 1.00 | [0.862, 1.00] | yes |
+| encoded_instruction | 28 | 1.00 | [0.879, 1.00] | yes |
+| indirect_injection | 22 | 1.00 | [0.851, 1.00] | yes |
 
-### Round 2 (held out — never tuned)
-- Cases: 24
-- Attack recall **0.909** (20/22, CI=[0.7218461934161421, 0.9747051037171623])
-- Benign FPR **0.000** (n=1)
-- Hard-negative FPR **0.000** (n=1)
+## 3. E2E ASR (sessions + tool firewall) — types 4, 6, 7
 
-## 8. AD34 hard-negative before / after
-```json
-{
-  "before": {
-    "source": "docs/EVIDENCE.md v0.1 adaptive R1 first-run",
-    "hard_negative_fpr": 1.0,
-    "fp": 1,
-    "n": 1,
-    "note": "AD34 flagged; detectors frozen at first-run"
-  },
-  "after": {
-    "decision": "allow",
-    "risk": 0.006,
-    "fp": 0,
-    "n": 1,
-    "hard_negative_fpr": 0.0,
-    "n_findings": 0,
-    "mechanism": "detect/quotation.py general framing cues (not exact-match allowlist)"
-  }
-}
-```
+n=24 scenarios each.
 
-## 9. Leakage (char 5-gram Jaccard train∪dev vs test / round2)
-```json
-{
-  "test": {
-    "n_heldout": 458,
-    "n_train_dev": 687,
-    "threshold": 0.8,
-    "flagged": [],
-    "n_flagged": 0,
-    "jaccard_max": 0.28695652173913044,
-    "jaccard_p50": 0.15,
-    "jaccard_p95": 0.2702702702702703,
-    "jaccard_mean": 0.14179078566111833
-  },
-  "round2": {
-    "n_heldout": 24,
-    "n_train_dev": 687,
-    "threshold": 0.8,
-    "flagged": [],
-    "n_flagged": 0,
-    "jaccard_max": 0.21035598705501618,
-    "jaccard_p50": 0.08074534161490683,
-    "jaccard_p95": 0.16666666666666666,
-    "jaccard_mean": 0.08020005099167371
-  },
-  "removed_test_near_dupes": 0,
-  "removed_r2_near_dupes": 0
-}
-```
+### tool_abuse (type 4)
 
-## 10. Classifier
-```json
-{
-  "backend": "tfidf_logreg",
-  "n_train": 1294,
-  "vocab_size": 1446,
-  "temperature": 1.3,
-  "onnx_present": false,
-  "note": "Explicit tfidf_logreg via calibration.json; no ONNX shipped. CLASSIFIER_PATH to missing/fake ONNX fails loudly."
-}
-```
+| mode | ASR | harmed/n | Wilson CI |
+|---|---:|---|---|
+| firewall off | **0.625** | 15/24 | [0.427, 0.788] |
+| firewall on, text scan on | **0.000** | 0/24 | [0.0, 0.138] |
+| firewall on, text scan **off** | **0.000** | 0/24 | [0.0, 0.138] |
 
+ASR reduction (off → on+scan): **1.0**
+
+### context_poisoning (type 6)
+
+| mode | ASR | harmed/n | Wilson CI |
+|---|---:|---|---|
+| firewall off | **0.917** | 22/24 | [0.742, 0.977] |
+| firewall on, text scan on | **0.375** | 9/24 | [0.212, 0.573] |
+
+ASR reduction: **0.591**
+
+### multi_step_jailbreak (type 7)
+
+| mode | ASR | harmed/n | Wilson CI |
+|---|---:|---|---|
+| firewall off | **0.792** | 19/24 | [0.595, 0.908] |
+| firewall on, text scan on | **0.042** | 1/24 | [0.007, 0.202] |
+
+ASR reduction: **0.947**
+
+## 4. Utility (HN-like benign tasks)
+
+- n=**32** (security articles, runbooks, quoted attacks, legal, etc.)
+- Utility **1.0** (on_ok=32, off_ok=32); completion CI [0.893, 1.0]
+- Decision breakdown: **allow 32** (sanitize/quarantine/block = 0)
+
+## 5. Judge
+
+- **judge: not evaluated** (`LLM_API_KEY` unset)
+
+## 6. Sealed first-run (AFTER FREEZE commit `17216f7`; detectors unchanged)
+
+### Sealed hard-negatives (`hard_negatives_v3.jsonl`)
+
+- n=**110**, fp=**4**, FPR **0.0364**, CI=[0.0142, 0.0898]
+
+### Sealed round 3 (`round3.jsonl`)
+
+- Overall recall **0.906** (29/32), CI=[0.758, 0.968]
+- Per-type cells all **insufficient** (n&lt;22)
+
+| type | n | recall | CI |
+|---|---:|---:|---|
+| instruction_override | 5 | 1.00 | [0.57, 1.00] |
+| role_change | 4 | 0.75 | [0.30, 0.95] |
+| secret_extraction | 5 | 1.00 | [0.57, 1.00] |
+| tool_abuse | 6 | 1.00 | [0.61, 1.00] |
+| credential_theft | 4 | 1.00 | [0.51, 1.00] |
+| context_poisoning | 4 | 0.75 | [0.30, 0.95] |
+| multi_step_jailbreak | 3 | 0.67 | [0.21, 0.94] |
+| encoded_instruction | 3 | 1.00 | [0.44, 1.00] |
+| indirect_injection | 3 | 1.00 | [0.44, 1.00] |
+
+## 7. Classifier
+
+- backend: **tfidf_logreg**; onnx_present: **false**

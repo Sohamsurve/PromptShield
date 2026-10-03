@@ -1,75 +1,60 @@
-# Claims (measured only) — v0.2-evidence
+# Claims (measured only) — v0.3-evidence
 
-Numbers from `docs/EVIDENCE.md` / `eval/reports/evidence.json`. Claims without support are downgraded.
+Numbers from `docs/EVIDENCE.md` / `eval/reports/evidence_v3.json`.
 
-## Claim rule (v0.2)
+## Claim rules (v0.3)
 
-**D2 for text** only if:
-1. Held-out (test) per-type **text** recall Wilson **lower CI ≥ 0.85** for supported cells (`n ≥ 22`), and
-2. Test **benign** FPR Wilson **upper CI ≤ 0.02** (README §1.3 target).
+1. **D2 text** only if **both** hold separately:
+   - test-split text recall Wilson **lower CI ≥ 0.85** (supported cells, n≥22), **and**
+   - sealed round-3 overall recall Wilson **lower CI ≥ 0.85**
+2. Hard-negative FPR must be **reported with its limitation** (not hidden).
+3. **F3** only for attack types with **end-to-end** evidence (sessions + tool firewall ASR).
+4. **No D3.**
 
-Otherwise declare **D1** with **D2 in progress**.
+## Declared position
 
-## Declared 3×3 position
-
-| Axis | Claim | Measured support |
+| Axis | Claim | Support |
 |---|---|---|
-| Fidelity | **F3** — detectors for all 9 attack types | See F3 list below. |
-| Data | **D2** on **text** only | Test text cells: all 9 types `n ≥ 22`, recall **1.0**, LCI ≥ **0.851**; benign FPR **0.0** (n=204, CI UCI **0.0185** ≤ 0.02). |
-| Disruption | Prefer sanitise / tool deny | Utility scripted **1.0** (n_benign=22); HN FPR test **0.274** (n=62) reported separately. |
+| Fidelity | **F3 for types 4, 6, 7 only** | E2E n=24 each (see below). Other types: detectors exist; **not** claimed as F3 E2E. |
+| Data | **D1** — **D2 in progress** | Test text meets LCI≥0.85 for all 9 types; sealed round-3 overall LCI **0.758 &lt; 0.85**. |
+| Disruption | Prefer sanitise / tool deny | Utility **1.0** on n=32 HN-like benign (all **allow**). |
 
-## F3 — which of the 9 attack types have supported evidence
+## F3 — end-to-end evidence
 
-Supported = test split, `source_type=text`, `n ≥ 22`, recall reported with Wilson CI.
+| Type | E2E n | ASR off → on (scan on) | Reduction | Claimed F3? |
+|---|---:|---|---:|---|
+| 4 tool_abuse | 24 | 0.625 → 0.000 (scan off also 0.000) | 1.00 | **yes** |
+| 6 context_poisoning | 24 | 0.917 → 0.375 | 0.59 | **yes** (residual ASR limitation) |
+| 7 multi_step_jailbreak | 24 | 0.792 → 0.042 | 0.95 | **yes** |
+| 1,2,3,5,8,9 | — | no E2E pack | — | **no** |
 
-| Attack type | n (test×text) | recall | Wilson CI | Supported? |
+## Hard-negative FPR (with limitation)
+
+| Set | FPR | n | CI | Limitation |
 |---|---:|---:|---|---|
-| instruction_override | 30 | 1.00 | [0.886, 1.00] | **yes** |
-| role_change | 25 | 1.00 | [0.867, 1.00] | **yes** |
-| secret_extraction | 30 | 1.00 | [0.886, 1.00] | **yes** |
-| tool_abuse | 26 | 1.00 | [0.871, 1.00] | **yes** |
-| credential_theft | 26 | 1.00 | [0.871, 1.00] | **yes** |
-| context_poisoning | 23 | 1.00 | [0.857, 1.00] | **yes** |
-| multi_step_jailbreak | 24 | 1.00 | [0.862, 1.00] | **yes** |
-| encoded_instruction | 28 | 1.00 | [0.879, 1.00] | **yes** |
-| indirect_injection | 22 | 1.00 | [0.851, 1.00] | **yes** |
+| Test (post v0.3 discourse fix) | **0.000** | 62 | [0.0, 0.058] | UCI still &gt; 0.02; n modest |
+| Sealed HN first-run | **0.036** | 110 | [0.014, 0.090] | 4/110 FP; **not** tuned after first-run |
+| v0.2 test baseline (pre-fix) | **0.274** | 62 | — | 17 FP: 12 quotation / 5 legal; 15 block / 2 sanitize |
 
-**All 9 / 9** have supported text evidence for F3.
+## D2 gate detail
 
-## Format decision
-
-| Format | Decision |
-|---|---|
-| text | **D2** (meets claim rule) |
-| html, pdf, docx, email, markdown, api_response, source_code, image, user_message | **insufficient** — do not claim D3 / D2 |
-
-## Metric ledger
-
-| Claim | Measured | n / notes |
+| Gate | Measured | Pass? |
 |---|---|---|
-| Test benign FPR | **0.0** CI [0.0, 0.0185] | n=204 — meets ≤2% UCI target |
-| Test hard-negative FPR | **0.274** CI [0.179, 0.396] | n=62 — reported separately |
-| ASR scripted off→on | **0.875 → 0.0** (reduction 1.0) | n_injection=32 |
-| Utility scripted | **1.0** | n_benign=22 |
-| ASR/utility LLM agent | **not run** | no live LLM eval |
-| Judge | **offline, not evaluated** | |
-| Latency total p50/p95 | see EVIDENCE §4 | by stage + input size |
-| Adaptive R1 HN AD34 | before FPR **1.0** (n=1); after **allow** / FPR **0.0** | general quotation dampening |
-| Adaptive R2 attack recall | **0.909** (20/22) CI [0.722, 0.975] | held out; never tuned |
-| Leakage train∪dev vs test | flagged **0**; Jaccard p50/p95/max **0.15 / 0.27 / 0.29** | threshold 0.8 |
-| Leakage vs round2 | flagged **0**; max **0.21** | |
+| Test text LCI ≥ 0.85 (9 types, n≥22) | all LCI ≥ 0.851, recall 1.0 | yes |
+| Sealed round-3 overall LCI ≥ 0.85 | recall 0.906, CI [**0.758**, 0.968] | **no** |
+| Benign FPR UCI ≤ 0.02 (test) | 0.0, UCI 0.0185 | yes |
 
-## Classifier (honest)
+→ **D1**, D2 in progress (held-out sealed round-3 CI too wide / LCI below bar).
 
-| Field | Fact |
+## Other
+
+| Item | Measured |
 |---|---|
-| Backend | Explicit **`tfidf_logreg`** via `models/calibration.json` |
-| ONNX | **Not shipped.** Placeholder removed. `CLASSIFIER_PATH` to missing/fake ONNX → `ClassifierConfigError` |
-| Training splits | train+dev (+ signature/gallery); **never** test or adaptive-round-2 |
+| Judge | **not evaluated** |
+| Utility HN-like | **1.0** (n=32); decisions allow=32 |
+| Non-Docker demo | Documented in README §14.2 |
+| D3 | **not claimed** |
 
-## Removed / downgraded
+## Classifier
 
-- DeBERTa / runnable ONNX classifier — **not shipped**.
-- D3 multimodal — **not claimed**.
-- LLM Aria ASR — **not run**.
-- Round-2 per-type cells — **insufficient** (`n < 22` per type).
+Explicit **tfidf_logreg**; no ONNX. Trained on train+dev only (never sealed / test / round 2).

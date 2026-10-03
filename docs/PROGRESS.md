@@ -1,35 +1,25 @@
 # PromptShield — Progress
 
-Last updated: 2026-10-03 · tag `v0.2-evidence`
+Last updated: 2026-10-03 · tag `v0.3-evidence`
 
-## Freeze artefacts
-- `docs/EVIDENCE.md`, `docs/CLAIMS.md`, `docs/FREEZE.md`
-- Splits: train / dev / test / adaptive-round-2
-- Tag: `v0.2-evidence` (evidence strengthen; no feature work)
+## Freeze
+- Pre-sealed commit: `17216f7` (FREEZE hashes before sealed run)
+- Tag: `v0.3-evidence` after sealed first-run numbers recorded
 
-## Fresh clone / demo (measured this session)
-| Step | Result |
-|---|---|
-| `make train` | exit 0 → `tfidf_logreg`, n_train=1294, no ONNX |
-| `make test` | **366 passed** |
-| `make eval-fast` | exit 0 |
-| Non-Docker demo | API host `:8000` — `GET /v1/healthz` → ok; `POST /v1/scan` → decision **block** |
-| `make demo-docker` | **FAILED** — Docker Desktop manually paused |
-
-## Evidence snapshot (v0.2)
+## Measured (v0.3)
 | Metric | Value |
 |---|---|
-| Test text recall (9 types) | **1.0**, all LCI ≥ 0.851, n≥22 each |
-| Benign FPR (test) | **0.0** (n=204, CI UCI **0.0185**) |
-| Hard-neg FPR (test) | **0.274** (n=62) |
-| ASR scripted | **0.875 → 0.0** (n_inj=32); utility **1.0** (n=22) |
-| LLM ASR / judge | **not run** / **offline, not evaluated** |
-| AD34 | before FPR **1.0** → after **allow** |
-| R2 attack recall | **0.909** (20/22) — held out |
-| Leakage | 0 pairs >0.8; test Jaccard max **0.287** |
-| Claim | **D2 text**; F3 **9/9** supported |
+| Test text 9 types | recall **1.0**, LCI ≥ **0.851** |
+| Test benign FPR | **0.0** (n=204, UCI 0.0185) |
+| Test HN FPR | **0.0** (n=62) post-fix; v0.2 was **0.274** (17 FP) |
+| Sealed HN first-run | FPR **0.036** (4/110) |
+| Sealed R3 recall | **0.906** (29/32), LCI **0.758** |
+| E2E type4 ASR | 0.625 → 0.0 (scan on/off) |
+| E2E type6 ASR | 0.917 → 0.375 |
+| E2E type7 ASR | 0.792 → 0.042 |
+| Utility HN-like | **1.0** (n=32, allow=32) |
+| Judge | **not evaluated** |
+| Claim | **D1** (D2 in progress); F3 for **4/6/7** only |
 
-## Next
-- Unpause Docker → `make demo-docker`
-- Optional LLM Aria when `LLM_API_KEY` set
-- Do not tune on test / round 2
+## Tests
+- `make test`: **368 passed** (at discourse fix)

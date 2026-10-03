@@ -1,6 +1,6 @@
-# Freeze — v0.3-evidence (pre sealed first-run)
+# Freeze — v0.3-evidence
 
-Git tag: `v0.3-evidence` (applied after sealed first-run numbers are recorded).
+Pre-sealed commit: `17216f7`. Tag `v0.3-evidence` records sealed first-run in `docs/EVIDENCE.md` without further detector changes.
 
 ## Pre-run hashes (BEFORE sealed evaluation)
 
