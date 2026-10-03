@@ -1,6 +1,6 @@
 # Freeze — v0.1-phase5
 
-Git tag: `v0.1-phase5` · commit `07a6063704a123aa7247e94ffcc9d617842f11b0`
+Git tag: `v0.1-phase5` · commit `68688ad75bfc5d82aabb22337c340bbe8839ebda` (evidence pack `07a6063` + fresh-clone doc fix)
 
 SHA-256 digests of protected evaluation artefacts at tag `v0.1-phase5`.
 
