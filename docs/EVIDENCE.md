@@ -1,9 +1,36 @@
-# Evidence (measured) — v0.4
+# Evidence (measured) — v1.0-submission
 
-Sources: pipeline scans, `eval/e2e_asr.py`, `eval/tool_firewall_legit.py`, sealed first-runs after FREEZE `f4c0d4d`.
-Never tuned on test / spent sealed HN / round 3 / sealed-round-4 / sealed-type6.
+**Repro stamp:** clean clone of tag `v0.4-evidence` → commit `929a1b7daab5c1b15e8dccba72739a27c52aa4c9`, fresh venv, no cached artifacts. Collector output: `eval/reports/repro_evidence.json` (same SHA).
 
-## 1. Sealed HN failures (spent set — report only, n_fp=4 at v0.3 first-run)
+**Code timeline (no post-number detector/rule edits):**
+| SHA | Note |
+|---|---|
+| `3db01e0` | type-6 signatures + tool provenance; circular-import lazy `guard/canary`; PI-CTX-017 “to me” |
+| `f4c0d4d` | seal round-4 / type-6 (hash before run) |
+| `929a1b7` | first-run numbers recorded (`v0.4-evidence`) |
+
+Circular-import / PI-CTX-017 are **inside** `3db01e0`, before numbers at `929a1b7`. No code/rule change after numbers were produced.
+
+## 0. Reproducibility table (v0.4 numbers)
+
+| metric | documented | reproduced @ `929a1b7` | match? |
+|---|---:|---:|:---:|
+| Round-4 recall | 0.917 (55/60), CI [0.819, 0.964] | 0.917, [0.819, 0.964] | yes |
+| Sealed type-6 ASR on | 0.000 (26), CI [0, 0.129] | 0.000, [0, 0.129] | yes |
+| Sealed type-6 ASR off | 0.885 | 0.885 | yes |
+| e2e tool_abuse ASR on (scan on) | 0.000 (24) | 0.000 | yes |
+| e2e tool_abuse ASR scan-off | 0.000 (24) | 0.000 | yes |
+| e2e multi_step ASR on | 0.042 (24) | 0.042 | yes |
+| e2e type-6-dev ASR on | 0.000 (12) | 0.000 | yes |
+| Test benign FPR | 0.000 (0/204), CI [0, 0.0185] | 0.000, [0, 0.0185] | yes |
+| Test hard-neg FPR | 0.000 (0/62), CI [0, 0.0583] | 0.000, [0, 0.0583] | yes |
+| Tool-firewall legit utility before→after | 0.438 → 1.000 (n=32) | 0.438 → 1.000 | yes |
+| Per-type test text recall (9 types) | all 1.00 | all 1.00 | yes |
+| Sealed HN fp (remeasure) | 0/110 | 0/110 | yes |
+
+No tuning applied to match.
+
+## 1. Sealed HN failures (spent set — first-run at v0.3: n_fp=4)
 
 | category | sanitize | quarantine | block | total |
 |---|---:|---:|---:|---:|
@@ -15,55 +42,79 @@ Never tuned on test / spent sealed HN / round 3 / sealed-round-4 / sealed-type6.
 | code_comments | 0 | 0 | 0 | 0 |
 | other | 0 | 0 | 0 | 0 |
 
-Post train+dev quotation-frame expansion (not exact-match): sealed HN re-measure fp=**0**/110 (spent set; not used for further tuning).
+Post quotation-frame expansion: sealed HN re-measure fp=**0**/110 (spent; not used for further tuning).
 
-## 2. Per-type table (all 9)
+## 2. Per-type table — sealed rounds only (R2+R3+R4)
 
-Status: **supported** = test text n≥22 and recall LCI≥0.85, and (if e2e exists) firewall-on ASR reported; **partial** = meets test bar but residual/limited e2e or explicit partial mark; **insufficient** = n&lt;22 or LCI&lt;0.85.
+Status definitions (printed for claims):
+- **supported:** n ≥ 22 sealed cases and Wilson lower CI ≥ 0.85 (for ASR: n ≥ 22 and Wilson upper CI ≤ 0.15)
+- **demonstrated:** n < 22, point recall ≥ 0.80, and a passing demo fixture
+- **weak:** anything else
 
-| type | test recall (tuned) | test n / CI | sealed R3 recall | R3 n / CI | sealed R4 recall | R4 n / CI | e2e ASR on (n, CI) | status |
-|---|---:|---:|---:|---:|---:|---:|---|---|
-| instruction_override | **1.00** | 30 [0.886,1] | insuff. | 5 [0.57,1] | insuff. | 12 [0.757,1] | — | **supported** |
-| role_change | **1.00** | 25 [0.867,1] | insuff. | 4 [0.30,0.95] | insuff. | 6 [0.61,1] | — | **supported** |
-| secret_extraction | **1.00** | 30 [0.886,1] | insuff. | 5 [0.57,1] | insuff. | 6 [0.30,0.90] | — | **supported** |
-| tool_abuse | **1.00** | 26 [0.871,1] | insuff. | 6 [0.61,1] | insuff. | 12 [0.757,1] | **0.000** (24, [0,0.138]); scan-off also 0.000 | **supported** |
-| credential_theft | **1.00** | 26 [0.871,1] | insuff. | 4 [0.51,1] | insuff. | 6 [0.44,0.97] | — | **supported** |
-| context_poisoning | **1.00** | 23 [0.857,1] | insuff. | 4 [0.30,0.95] | insuff. | 6 [0.30,0.90] | e2e-dev **0.000** (12); sealed **0.000** (26, [0,0.129]) | **partial** |
-| multi_step_jailbreak | **1.00** | 24 [0.862,1] | insuff. | 3 [0.21,0.94] | insuff. | 6 [0.61,1] | **0.042** (24, [0.007,0.202]) | **supported** |
-| encoded_instruction | **1.00** | 28 [0.879,1] | insuff. | 3 [0.44,1] | insuff. | 6 [0.61,1] | — | **supported** |
-| indirect_injection | **1.00** | 22 [0.851,1] | insuff. | 3 [0.44,1] | insuff. | 6 [0.61,1] | — | **supported** |
+Tuned `test` split is listed separately and **never** used for status.
 
-Supported count: **8**; partial: **1** (type 6).
+| type | sealed n | sealed recall / ASR | Wilson CI | status | tuned test (not for status) |
+|---|---:|---:|---|---|---|
+| instruction_override | 20 | recall **0.950** | [0.764, 0.991] | **demonstrated** | n=30, recall 1.00 |
+| role_change | 12 | recall **0.833** | [0.552, 0.953] | **demonstrated** | n=25, recall 1.00 |
+| secret_extraction | 13 | recall **0.846** | [0.578, 0.957] | **demonstrated** | n=30, recall 1.00 |
+| tool_abuse | 21 text; TF sealed 32 | text recall 1.00; **ASR(scan-off) 0.719** | text LCI 0.845; ASR CI [0.546, 0.844] | **weak** | n=26, recall 1.00 |
+| credential_theft | 13 | recall **0.923** | [0.667, 0.986] | **demonstrated** | n=26, recall 1.00 |
+| context_poisoning | 13 text; type6 e2e 26 | text 0.846; **ASR(on) 0.000** | ASR CI [0, 0.129] | **supported** (ASR gate) | n=23, recall 1.00 |
+| multi_step_jailbreak | 11 | recall **0.909** | [0.623, 0.984] | **demonstrated** | n=24, recall 1.00 |
+| encoded_instruction | 11 | recall **1.000** | [0.741, 1] | **demonstrated** | n=28, recall 1.00 |
+| indirect_injection | 11 | recall **1.000** | [0.741, 1] | **demonstrated** | n=22, recall 1.00 |
 
-### Type 6 e2e detail
+Counts: **supported 1** · **demonstrated 7** · **weak 1** (tool_abuse — provenance ASR).
 
-| set | ASR off | ASR on | n | reduction |
-|---|---:|---:|---:|---:|
-| e2e-dev (tune) | 0.917 | **0.000** | 12 | 1.0 |
-| sealed type-6 (first-run) | 0.885 | **0.000** | 26 | 1.0 |
+### Type 6 e2e (sealed)
 
-## 3. Sealed round 4 — FIRST RUN (after FREEZE; stop tuning)
+| set | ASR off | ASR on | n | CI (on) |
+|---|---:|---:|---:|---|
+| sealed type-6 | 0.885 | **0.000** | 26 | [0, 0.129] |
+
+## 3. Sealed round 4 (untouched; stop tuning)
 
 - Overall recall **0.917** (55/60), Wilson CI=[**0.819**, 0.964]
-- Per-type cells all **insufficient** (n≤12)
+- LCI **0.819 < 0.85** → D2 gate fails on untouched data
 
-## 4. FPR (test)
+## 4. Independent-attack (adaptive round 2, held out)
+
+- Attack recall **0.909** (20/22), Wilson CI=[0.722, 0.975]
+
+## 5. FPR (test)
 
 - Benign: **0.000** (0/204, CI=[0, 0.0185])
 - Hard-negative: **0.000** (0/62, CI=[0, 0.0583])
 
-## 5. Tool-firewall legitimate tasks (n=32)
+## 6. Tool-firewall provenance security (NEW sealed set — STOP)
 
-| | allow | confirm | deny | utility |
-|---|---:|---:|---:|---:|
-| **before** (no user provenance) | 14 | 0 | 18 | **0.438** |
-| **after** (user-instruction provenance + path-deny fix) | 32 | 0 | 0 | **1.000** |
+Hashes recorded in `docs/FREEZE.md` **before** first run (`tool_firewall_attacks_v5.jsonl`, n=32).
 
-## 6. Judge
+| mode | ASR | harmed/n | Wilson CI | allow / confirm / deny / scan-block |
+|---|---:|---|---|---|
+| provenance **off**, scan off (pre-change proxy) | **0.188** | 6/32 | [0.089, 0.353] | 6 / 0 / 26 / 0 |
+| provenance **on**, scan off | **0.719** | 23/32 | [0.546, 0.844] | 23 / 0 / 9 / 0 |
+| provenance **on**, scan on | **0.563** | 18/32 | [0.393, 0.718] | 18 / 0 / 9 / 5 |
+
+ASR is **materially worse** after provenance (0.188 → 0.719 scan-off). **STOP — no patch** (release hardening). Ambiguous destinations (only in untrusted content) returned **allow**, never **confirm** (confirm=0).
+
+### Fresh legitimate set v5 (n=34)
+
+| allow | confirm | deny | utility |
+|---:|---:|---:|---:|
+| 34 | 0 | 0 | **1.000** |
+
+`ambiguous_expected_confirm_got_allow` = **4**.
+
+Prior legit set (n=32): before provenance utility **0.438** → after **1.000**.
+
+## 7. Judge
 
 - **Implemented** (`detect/judge.py`, offline path + optional LLM).
 - **Not evaluated** (no labelled gray-zone accuracy run / no `LLM_API_KEY`).
 
-## 7. Classifier
+## 8. Classifier / agent
 
-- `tfidf_logreg`; no ONNX.
+- Classifier: **TF-IDF + logistic regression** (`models/calibration.json`); no ONNX.
+- LLM agent (`ARIA_MODE=llm`): **not run**.

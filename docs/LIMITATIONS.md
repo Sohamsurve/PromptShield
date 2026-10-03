@@ -35,9 +35,12 @@ Honest gaps. Do not hide missed metrics — report the measured number with CI.
 - Tool firewall deny reasons may be domain-allowlist or taint; both fail closed for side effects.
 - Phase-4 signature families are high-precision phrases; paraphrase coverage beyond the held-out/signature sets remains limited.
 
-## Phase 5
+## Phase 5 / v1.0
 
-- Adaptive round 1 AD34 first-run FPR was 1.0 (v0.1); v0.2 applies general quotation dampening — see EVIDENCE §8 before/after. Round 2 is held out.
+- **Tool-firewall provenance relaxation:** sealed attack ASR rose from **0.188** (provenance off) to **0.719** (on, scan off) / **0.563** (scan on), n=32. Ambiguous “destination only in untrusted content” cases **allow** instead of **confirm**. Release hardening **STOP** — not patched (see EVIDENCE §6 / CLAIMS).
+- Sealed-only per-type status (R2+R3+R4): **1 supported, 7 demonstrated, 1 weak** (tool_abuse). Tuned test recall is not a status basis.
+- Round-4 overall LCI **0.819 < 0.85** → D2 not claimed.
+- Adaptive round 1 AD34 first-run FPR was 1.0 (v0.1); v0.2 applies general quotation dampening. Round 2 held-out attack recall **0.909** (20/22).
 - Adaptive red-team probes (`tests/test_adaptive_redteam.py`) are a small frozen set; novel paraphrases and story-framed attacks can still under-fire signatures — do not loosen thresholds to clear them; add labelled cases only.
 - Dashboard Coverage/Eval read `eval/reports/latest` via the API; stale reports need a fresh `make eval-fast`.
 - A11y/responsive covered by Playwright (`e2e/responsive-a11y.spec.ts`) for 390/768/1280 × light/dark; CI needs `pnpm exec playwright install`.
