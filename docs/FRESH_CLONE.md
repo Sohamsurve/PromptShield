@@ -1,17 +1,40 @@
-# Fresh-clone checklist (README-only)
+# Fresh clone notes
 
-Performed from tag `v0.1-phase5` via `git clone <repo>` into a temp directory, following README §14.2.
+## Commands measured (v0.2-evidence)
 
-| Step | Result | Outside-README knowledge needed? |
+| Step | Result | Notes |
 |---|---|---|
-| Prerequisites: `uv`, `pnpm` on PATH | Required before `make setup` | **Yes** — README now lists them under §14.2 |
-| `make setup` | **OK** (exit 0); installs Python deps, pnpm pkgs, seeds gallery JSONL, runs `make train` | No (after §14.2 fix) |
-| `make test` | **OK** — 361 passed | No |
-| `make eval-fast` | **OK** — harness passed | No |
-| `make demo` | **FAILED** — `docker compose up -d` → Docker Desktop was manually paused / unavailable | **Yes** — Docker must be running; README §14.2 now states Docker is required for `make demo` |
+| `make setup` | expected exit 0 | installs uv 3.11, syncs API, pnpm, trains classifier |
+| `make test` | **366 passed** | |
+| `make eval-fast` | exit 0 | |
+| Non-Docker demo | **OK** | see below |
+| `make demo` / `make demo-docker` | Docker path **FAILED** when Desktop paused | Unpause Whale menu |
 
-## Notes
+## Non-Docker demo path
 
-- `scripts/seed_eval_data.py` rewrites `eval/data/*/gallery.jsonl` stubs on setup; it does not touch `heldout_paraphrase.jsonl` or `adaptive/`.
-- Playwright e2e is **not** part of `make demo`; install browsers separately if running `make e2e`.
-- API-only verification without Docker: after `make setup`, `make test` and `make eval-fast` are sufficient.
+`make demo` documents the host path (Compose not required for API smoke):
+
+```bash
+# from repo root (PYTHONPATH exported by Makefile)
+cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 0.0.0.0 --port 8000
+# other terminal:
+cd apps/web && pnpm dev
+# open http://localhost:3000/arena
+```
+
+Verified this session:
+- `GET http://127.0.0.1:8000/v1/healthz` → `{"status":"ok"}`
+- `POST /v1/scan` with override text → `decision=block`, `risk≈0.998`
+
+## Docker demo
+
+```bash
+make demo-docker   # docker compose up -d
+```
+
+Requires Docker Desktop **unpaused**. Last attempt: `Docker Desktop is manually paused`.
+
+## Other
+
+- Playwright e2e is not part of `make demo`; install browsers separately for `make e2e`.
+- Classifier: `models/calibration.json` only (`tfidf_logreg`). No `classifier.onnx`.

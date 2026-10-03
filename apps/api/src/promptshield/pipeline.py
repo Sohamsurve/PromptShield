@@ -282,6 +282,13 @@ def scan(
         fusion=fusion_cfg,
     )
 
+    # General quotation / educational framing (not exact-match) — dampens before judge
+    from promptshield.detect.quotation import is_quotation_or_discussion, quotation_or_discussion_score
+
+    quote_text = "\n".join((s.text or "") for s in segments)
+    quote_score = quotation_or_discussion_score(quote_text)
+    structural_quote = is_quotation_or_discussion(quote_text)
+
     # Judge gray zone
     t_j = time.perf_counter()
     judge_lo = float((policy.get("judge") or {}).get("lo", 0.35))
@@ -289,11 +296,11 @@ def scan(
     timeout_ms = int((policy.get("judge") or {}).get("timeout_ms", 1500))
     judge_conf = 0.0
     judge_inj = False
-    judge_quote = False
+    judge_quote = structural_quote
     # Also consult judge for hard-negative-like text even outside gray zone when signatures fire on T1
     consult_judge = judge_lo <= pre_risk <= judge_hi or (
         request.trust.value <= TrustLevel.T1 and max_sev >= 0.75 and hidden == 0.0
-    )
+    ) or (structural_quote and max_sev >= 0.5)
     if consult_judge:
         target = max(segments, key=lambda s: len(s.text or ""), default=None)
         if target and (target.text or "").strip():
@@ -309,7 +316,7 @@ def scan(
                     pre_risk = max(pre_risk, 0.7)
             else:
                 judge_conf = jr.confidence
-                judge_quote = bool(jr.is_quotation_or_discussion)
+                judge_quote = judge_quote or bool(jr.is_quotation_or_discussion)
                 judge_inj = bool(jr.is_injection) and not judge_quote
                 if judge_inj:
                     findings.append(

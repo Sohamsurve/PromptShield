@@ -12,7 +12,7 @@ Honest gaps. Do not hide missed metrics — report the measured number with CI.
 ## Phase 1
 
 - Signature-only defence: paraphrases outside the rule set can evade; held-out/adaptive recall not yet measured.
-- Hard negative F18 (security blog quoting “ignore previous instructions”) is often **sanitised** — expected until the LLM judge / quotation detector (Phase 3). Reported separately from benign FPR.
+- Hard-negative quotation cases rely on `detect/quotation.py` framing cues + offline judge; LLM judge not evaluated (`offline, not evaluated`).
 - Fusion weights are interim (see DECISIONS.md); not yet fit on a validation set.
 - Multilingual coverage is a small starter set (HI/ES/FR/DE/ZH + Hinglish), not exhaustive.
 - Homoglyph folding uses a short confusables map, not the full Unicode confusables table.
@@ -37,7 +37,7 @@ Honest gaps. Do not hide missed metrics — report the measured number with CI.
 
 ## Phase 5
 
-- Adaptive round 1 (`eval/data/adaptive/round1.jsonl`): first-run hard-negative **AD34** was flagged (FPR 1.0 on n=1); left unfixed at freeze — see EVIDENCE §7.
+- Adaptive round 1 AD34 first-run FPR was 1.0 (v0.1); v0.2 applies general quotation dampening — see EVIDENCE §8 before/after. Round 2 is held out.
 - Adaptive red-team probes (`tests/test_adaptive_redteam.py`) are a small frozen set; novel paraphrases and story-framed attacks can still under-fire signatures — do not loosen thresholds to clear them; add labelled cases only.
 - Dashboard Coverage/Eval read `eval/reports/latest` via the API; stale reports need a fresh `make eval-fast`.
 - A11y/responsive covered by Playwright (`e2e/responsive-a11y.spec.ts`) for 390/768/1280 × light/dark; CI needs `pnpm exec playwright install`.

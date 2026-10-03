@@ -1,35 +1,35 @@
 # PromptShield — Progress
 
-Last updated: 2026-10-03 · tag `v0.1-phase5`
+Last updated: 2026-10-03 · tag `v0.2-evidence`
 
 ## Freeze artefacts
-- `docs/EVIDENCE.md`, `docs/CLAIMS.md`, `docs/FREEZE.md`, `docs/SUBMISSION.md`, `docs/FRESH_CLONE.md`
-- Adaptive R1: `eval/data/adaptive/round1.jsonl` (35 cases), first-run in EVIDENCE §7
-- Tag: `v0.1-phase5`
+- `docs/EVIDENCE.md`, `docs/CLAIMS.md`, `docs/FREEZE.md`
+- Splits: train / dev / test / adaptive-round-2
+- Tag: `v0.2-evidence` (evidence strengthen; no feature work)
 
-## Fresh clone (measured)
+## Fresh clone / demo (measured this session)
 | Step | Result |
 |---|---|
-| `make setup` | exit 0 |
-| `make test` | **361 passed** |
+| `make train` | exit 0 → `tfidf_logreg`, n_train=1294, no ONNX |
+| `make test` | **366 passed** |
 | `make eval-fast` | exit 0 |
-| `make demo` | **FAILED** (Docker Desktop paused) |
+| Non-Docker demo | API host `:8000` — `GET /v1/healthz` → ok; `POST /v1/scan` → decision **block** |
+| `make demo-docker` | **FAILED** — Docker Desktop manually paused |
 
-## Evidence snapshot (do not call “done” without these)
+## Evidence snapshot (v0.2)
 | Metric | Value |
 |---|---|
-| Held-out recall | **1.0** (n=10, CI [0.72,1.0]); template overlap empty |
-| Benign FPR | **0.0** (n=4) |
-| Hard-neg FPR | **0.0** (n=2) |
-| ASR scripted | **1.0 → 0.0** (n=17) |
-| Utility scripted | **1.0** (n=2) |
-| LLM ASR/utility | **not run** |
-| Judge rate | **0.0129** (4/311) |
-| Latency total p50/p95 | **12.95 / 17.51 ms** |
-| Adaptive R1 attack recall | **1.0** (32/32) |
-| Adaptive R1 HN FPR | **1.0** (1/1) — unfixed |
-| D2 formats | **text only**; other formats n&lt;10 insufficient |
+| Test text recall (9 types) | **1.0**, all LCI ≥ 0.851, n≥22 each |
+| Benign FPR (test) | **0.0** (n=204, CI UCI **0.0185**) |
+| Hard-neg FPR (test) | **0.274** (n=62) |
+| ASR scripted | **0.875 → 0.0** (n_inj=32); utility **1.0** (n=22) |
+| LLM ASR / judge | **not run** / **offline, not evaluated** |
+| AD34 | before FPR **1.0** → after **allow** |
+| R2 attack recall | **0.909** (20/22) — held out |
+| Leakage | 0 pairs >0.8; test Jaccard max **0.287** |
+| Claim | **D2 text**; F3 **9/9** supported |
 
 ## Next
-- Unpause Docker and re-run `make demo` if a live stack is required
-- Optional LLM Aria lane when `LLM_API_KEY` available
+- Unpause Docker → `make demo-docker`
+- Optional LLM Aria when `LLM_API_KEY` set
+- Do not tune on test / round 2

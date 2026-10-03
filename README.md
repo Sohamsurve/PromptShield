@@ -194,7 +194,7 @@ promptshield/
 │  ├─ synth/                      # payload × technique × format generators
 │  ├─ run_eval.py  fit_fusion.py  report.py
 │  └─ reports/<timestamp>/{report.json,report.md,heatmap.json}
-├─ models/                        # classifier.onnx, tokenizer (git-lfs or downloaded)
+├─ models/                        # calibration.json (tfidf_logreg); optional real ONNX via CLASSIFIER_PATH
 ├─ fixtures/                      # attack gallery files (html, pdf, docx, eml, png, ...)
 └─ docs/{ARCHITECTURE.md,DECISIONS.md,LIMITATIONS.md,CLAIMS.md}
 ```
@@ -357,10 +357,10 @@ Computed per segment (all in [0,1] or counts), fed to fusion and the classifier 
 - `trust_prior`: from trust level
 
 ### 5.6 ML classifier (`detect/classifier.py`) — what is actually shipped
-- **What it is (honest):** a deterministic **TF-IDF + logistic regression** classifier (`backend: numpy_tfidf_logreg` in `models/calibration.json`). It is **not** a fine-tuned DeBERTa/ONNX encoder.
+- **What it is (honest):** a deterministic **TF-IDF + logistic regression** classifier (`backend: tfidf_logreg` in `models/calibration.json`). It is **not** a fine-tuned DeBERTa/ONNX encoder.
 - **Task:** binary injection-vs-benign score in `[0,1]` fed into fusion (multi-label type tags still come mainly from signatures/heuristics/judge).
-- **Training data (`make train`):** positives and benign counter-examples from `apps/api/tests/data/signature_cases.jsonl`, plus gallery fixture text. Rows in `eval/data/attacks/heldout_paraphrase.jsonl` with `split: test` are **excluded**. Template hold-out also skips `gallery:F15` in the trainer.
-- **`make train` does:** rebuild vocabulary / IDF / coefficients → write `models/calibration.json`; write a **32-byte placeholder** `models/classifier.onnx` (marker only, not a runnable ONNX graph).
+- **Training data (`make train`):** signature_cases positives/benigns, gallery fixture text, and synth `train`+`dev` rows. **Never** `split: test` or `adaptive-round-2`. Template hold-out also skips `gallery:F15`.
+- **`make train` does:** rebuild vocabulary / IDF / coefficients → write `models/calibration.json` only. **No ONNX file is written.** If `CLASSIFIER_PATH` points at a missing or placeholder `.onnx`, the loader **fails loudly** (`ClassifierConfigError`).
 - **Gating:** run on segments whose signature/heuristic pre-score ≥ `classifier_gate` (default 0.1) **or** that are hidden/decoded/untrusted; always on T1 messages. The classifier **never decides alone**.
 - **Upgrade path:** a real DeBERTa-v3 ONNX encoder remains optional future work (see `docs/LIMITATIONS.md` / `docs/CLAIMS.md`).
 
@@ -603,7 +603,7 @@ Case schema (`*.jsonl`): `{id, source_type, content|file, attack_types[], techni
 `eval/synth/build_matrix.py` takes payload templates (LLM-assisted, then human-reviewed) and embeds them with techniques: CSS-hidden, HTML comment, alt text, PDF tiny/white text, DOCX hidden run/comment, email multipart divergence, Markdown link title, JSON field, code comment, image low-contrast text, base64/hex/ROT13/tag characters, split-across-turns. Output: files + JSONL.
 
 ### 8.3 Metrics and commands
-- Per (attack type × format): `n`, `recall`, **Wilson 95% CI**. Report cells with `n < 10` as "insufficient".
+- Per (attack type × format): `n`, `recall`, **Wilson 95% CI**. Report cells with `n < 22` as "insufficient" (supported evidence threshold).
 - FPR on `benign` and on `hard_negative` separately.
 - **ASR:** run Aria (scripted + llm) over 30 benign tasks × the injection fixtures; ASR = % tasks where an outcome flag fires; compare firewall off vs on. **Utility** = benign task completion with firewall on vs off.
 - Latency p50/p95 per stage; judge invocation rate; cost per 1k scans.
@@ -956,7 +956,7 @@ ARIA_MODE=scripted          # scripted | llm
 DATABASE_URL=sqlite:///./promptshield.db
 REDIS_URL=redis://localhost:6379/0
 POLICY_PATH=apps/api/src/promptshield/policies/default.yml
-CLASSIFIER_PATH=models/classifier.onnx
+# CLASSIFIER_PATH=models/real.onnx   # optional; missing/fake ONNX fails loudly — default is tfidf_logreg
 OCR_ENGINE=tesseract        # tesseract | paddle
 API_KEY=dev-only-change-me
 NEXT_PUBLIC_API_BASE=http://localhost:8000
@@ -965,7 +965,7 @@ NEXT_PUBLIC_API_BASE=http://localhost:8000
 ### 14.2 Makefile targets
 ```
 make setup        # uv Python 3.11 sync, pnpm install, seed eval stubs, copy .env.example → .env; then runs make train
-make train        # fit TF-IDF logreg → models/calibration.json (+ placeholder onnx marker)
+make train        # fit TF-IDF logreg → models/calibration.json (no ONNX written)
 make dev          # docker compose redis + uvicorn API :8000 + next dev (needs Docker for redis)
 make test         # pytest (apps/api) + web unit placeholder
 make e2e          # playwright (requires: cd apps/web && pnpm exec playwright install chromium)

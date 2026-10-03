@@ -66,6 +66,25 @@ def load_dataset() -> tuple[list[str], list[int], list[str]]:
             labels.append(1 if row.get("label") == "attack" else 0)
             tids.append(row.get("template_id", "heldout"))
 
+    # Synth train+dev only — never test / adaptive-round-2
+    for rel in (
+        "attacks/synth_text.jsonl",
+        "benign/synth.jsonl",
+        "hard_negatives/synth.jsonl",
+    ):
+        path = ROOT / "eval" / "data" / rel
+        if not path.exists():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if row.get("split") not in {"train", "dev"}:
+                continue
+            texts.append(row["content"])
+            labels.append(0 if row.get("label") in {"benign", "hard_negative"} else 1)
+            tids.append(row.get("template_id", rel))
+
     return texts, labels, tids
 
 
@@ -140,15 +159,18 @@ def main() -> None:
             temperature = 1.3
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "classifier.onnx").write_bytes(b"ONNX_PLACEHOLDER_PROMPTSHIELD_V1")
+    # No ONNX artifact — backend is explicitly tfidf_logreg (see detect/classifier.py).
+    onnx_path = OUT_DIR / "classifier.onnx"
+    if onnx_path.exists():
+        onnx_path.unlink()
     cal = {
         "temperature": temperature,
         "vocabulary": vocabulary,
         "idf": idf,
         "coef": coef,
         "intercept": intercept,
-        "backend": "numpy_tfidf_logreg",
-        "note": "Deterministic TF-IDF logreg for CI; DeBERTa ONNX upgrade path in LIMITATIONS.",
+        "backend": "tfidf_logreg",
+        "note": "Explicit TF-IDF logistic regression. No ONNX shipped. Set CLASSIFIER_PATH only for a real ONNX file.",
         "n_train": len(train_texts),
         "held_out_templates": sorted(hold),
     }

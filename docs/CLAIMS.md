@@ -1,63 +1,75 @@
-# Claims (measured only)
+# Claims (measured only) — v0.2-evidence
 
-Numbers from `docs/EVIDENCE.md` / `eval/reports/evidence.json` unless noted. Claims without support are downgraded.
+Numbers from `docs/EVIDENCE.md` / `eval/reports/evidence.json`. Claims without support are downgraded.
+
+## Claim rule (v0.2)
+
+**D2 for text** only if:
+1. Held-out (test) per-type **text** recall Wilson **lower CI ≥ 0.85** for supported cells (`n ≥ 22`), and
+2. Test **benign** FPR Wilson **upper CI ≤ 0.02** (README §1.3 target).
+
+Otherwise declare **D1** with **D2 in progress**.
 
 ## Declared 3×3 position
 
 | Axis | Claim | Measured support |
 |---|---|---|
-| Fidelity | **F3** — all 9 attack types have a detector | Yes: signature families for types 1–8 + type-9 via T2+/hidden tagging. Per-type text recall in heatmap (see EVIDENCE §1). |
-| Data | **D2** on text/structured where `n ≥ 10`; **D3 aspirational** elsewhere | See format table below. |
-| Disruption | Prefer sanitise / tool deny over blanket block | Utility scripted **1.0** (n_benign=2); hard-negative FPR gallery **0.0** (n=2) — both **insufficient n**. |
+| Fidelity | **F3** — detectors for all 9 attack types | See F3 list below. |
+| Data | **D2** on **text** only | Test text cells: all 9 types `n ≥ 22`, recall **1.0**, LCI ≥ **0.851**; benign FPR **0.0** (n=204, CI UCI **0.0185** ≤ 0.02). |
+| Disruption | Prefer sanitise / tool deny | Utility scripted **1.0** (n_benign=22); HN FPR test **0.274** (n=62) reported separately. |
 
-## Format decision (D2 vs D3)
+## F3 — which of the 9 attack types have supported evidence
 
-Rule: **D2** only if some attack-type cell for that format has `n ≥ 10` **and** measured recall is reported. Otherwise **insufficient / D3 not claimed**.
+Supported = test split, `source_type=text`, `n ≥ 22`, recall reported with Wilson CI.
 
-| Format | Max n in any type cell | Decision |
-|---|---:|---|
-| text | ≥10 for several type-1/2/3/4/5/6/7/8 families (signature cases) | **D2** (text) |
-| html | max n=2 (gallery) | **insufficient** — do not claim D3 |
-| pdf | n=1 | **insufficient** |
-| docx | n=1 | **insufficient** |
-| email | max n=2 | **insufficient** |
-| markdown | max n=2 | **insufficient** |
-| api_response | n=1 | **insufficient** |
-| source_code | n=1 | **insufficient** |
-| image | n=1 | **insufficient** |
-| user_message | max n=2 | **insufficient** |
+| Attack type | n (test×text) | recall | Wilson CI | Supported? |
+|---|---:|---:|---|---|
+| instruction_override | 30 | 1.00 | [0.886, 1.00] | **yes** |
+| role_change | 25 | 1.00 | [0.867, 1.00] | **yes** |
+| secret_extraction | 30 | 1.00 | [0.886, 1.00] | **yes** |
+| tool_abuse | 26 | 1.00 | [0.871, 1.00] | **yes** |
+| credential_theft | 26 | 1.00 | [0.871, 1.00] | **yes** |
+| context_poisoning | 23 | 1.00 | [0.857, 1.00] | **yes** |
+| multi_step_jailbreak | 24 | 1.00 | [0.862, 1.00] | **yes** |
+| encoded_instruction | 28 | 1.00 | [0.879, 1.00] | **yes** |
+| indirect_injection | 22 | 1.00 | [0.851, 1.00] | **yes** |
+
+**All 9 / 9** have supported text evidence for F3.
+
+## Format decision
+
+| Format | Decision |
+|---|---|
+| text | **D2** (meets claim rule) |
+| html, pdf, docx, email, markdown, api_response, source_code, image, user_message | **insufficient** — do not claim D3 / D2 |
 
 ## Metric ledger
 
 | Claim | Measured | n / notes |
 |---|---|---|
-| Held-out paraphrase recall | **1.0** CI [0.72, 1.0] | n=10 templates; train∩test template_id overlap **empty** in heldout file |
-| Benign FPR | **0.0** CI [0.0, 0.49] | n=4 — **insufficient** for a strong FPR claim |
-| Hard-negative FPR | **0.0** CI [0.0, 0.66] | n=2 — **insufficient** |
-| ASR scripted off→on | **1.0 → 0.0** (reduction 1.0) | n_attack=17 |
-| Utility scripted | **1.0** | n_benign=2 — **insufficient** |
-| ASR/utility LLM agent | **not run** | no `LLM_API_KEY` |
-| Judge invocation rate | **0.0129** (4/311) | offline judge |
-| Latency total p50/p95 | **12.95 / 17.51 ms** | n=311 scans in evidence collector |
-| Adaptive R1 attack recall | **1.0** (32/32) | first-run; detectors unchanged |
-| Adaptive R1 hard-neg FPR | **1.0** (1/1) | AD34 flagged — limitation, not “fixed” here |
-| Arena A/B ≥12 | pass | `tests/test_arena_gallery.py` |
-| Tool firewall w/ text scan off | pass | `tests/test_arena_disable_scan.py` |
+| Test benign FPR | **0.0** CI [0.0, 0.0185] | n=204 — meets ≤2% UCI target |
+| Test hard-negative FPR | **0.274** CI [0.179, 0.396] | n=62 — reported separately |
+| ASR scripted off→on | **0.875 → 0.0** (reduction 1.0) | n_injection=32 |
+| Utility scripted | **1.0** | n_benign=22 |
+| ASR/utility LLM agent | **not run** | no live LLM eval |
+| Judge | **offline, not evaluated** | |
+| Latency total p50/p95 | see EVIDENCE §4 | by stage + input size |
+| Adaptive R1 HN AD34 | before FPR **1.0** (n=1); after **allow** / FPR **0.0** | general quotation dampening |
+| Adaptive R2 attack recall | **0.909** (20/22) CI [0.722, 0.975] | held out; never tuned |
+| Leakage train∪dev vs test | flagged **0**; Jaccard p50/p95/max **0.15 / 0.27 / 0.29** | threshold 0.8 |
+| Leakage vs round2 | flagged **0**; max **0.21** | |
 
 ## Classifier (honest)
 
 | Field | Fact |
 |---|---|
-| What it is | Deterministic **TF-IDF + logistic regression** (`backend: numpy_tfidf_logreg`), not DeBERTa |
-| ONNX file | **Placeholder** 32-byte marker `models/classifier.onnx` — not a runnable ONNX encoder |
-| Trained on | `signature_cases.jsonl` positives+benigns + gallery fixture text; **skips** `heldout_paraphrase` rows with `split=test` |
-| `make train` | Re-fits vocab/idf/coef into `models/calibration.json` + writes placeholder onnx |
-| Held-out clf-alone @0.55 | recall **1.0** on n=10 paraphrases (post-hoc probe; fusion still required) |
-| Role | Gated feature into fusion; **never sole decider** |
+| Backend | Explicit **`tfidf_logreg`** via `models/calibration.json` |
+| ONNX | **Not shipped.** Placeholder removed. `CLASSIFIER_PATH` to missing/fake ONNX → `ClassifierConfigError` |
+| Training splits | train+dev (+ signature/gallery); **never** test or adaptive-round-2 |
 
 ## Removed / downgraded
 
-- “DeBERTa / fine-tuned encoder classifier” — **not shipped**; README §5.6 corrected.
-- “D3 multimodal reliability” — **not claimed**; format cells mostly n&lt;10.
-- “LLM Aria ASR ≥90% reduction” — **not run**.
-- Strong FPR/utility claims — sample sizes too small; report numbers only.
+- DeBERTa / runnable ONNX classifier — **not shipped**.
+- D3 multimodal — **not claimed**.
+- LLM Aria ASR — **not run**.
+- Round-2 per-type cells — **insufficient** (`n < 22` per type).

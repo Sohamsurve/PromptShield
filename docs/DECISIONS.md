@@ -35,3 +35,8 @@ Format: date · decision · reason.
 - **CI e2e:** GitHub Actions runs `make train`, `make test`, `make eval-fast`, and Playwright Chromium e2e. Reason: Phase 5 a11y/DoD must not be local-only.
 - **Adaptive R1 first-run:** `eval/data/adaptive/round1.jsonl` (35 cases) measured with detectors frozen; attack recall 1.0 (32/32); hard-negative AD34 FPR 1.0 — **no detector change** applied to clear AD34; reported in `docs/EVIDENCE.md` §7 / `docs/CLAIMS.md`.
 - **Classifier honesty:** README §5.6 documents TF-IDF logreg + placeholder onnx (not DeBERTa). Reason: evidence freeze for v0.1-phase5.
+- **v0.2 classifier:** Removed placeholder `models/classifier.onnx`. Loader backend is explicitly `tfidf_logreg`; `CLASSIFIER_PATH` to missing/fake ONNX raises `ClassifierConfigError`. Reason: evidence honesty.
+- **Data splits:** Corpora use `train` / `dev` / `test` / `adaptive-round-2`. Tuning allowed on train+dev and spent adaptive R1; **never** on test or round 2. Reason: README §8 / evidence strengthening.
+- **Support n:** Heatmap cells need `n ≥ 22` to be reported as supported (was 10). Reason: user evidence pack for v0.2.
+- **AD34 quotation dampening:** Added `detect/quotation.py` — general educational/quotation/discussion framing cues (regex families), not an exact-match allowlist for AD34 text. Wired into pipeline + offline judge. R1 first-run FPR=1.0 recorded as before; after measured separately in EVIDENCE. Reason: R1 spent permits train/dev tuning; fix must generalise.
+- **ASR parser separation:** Scripted agent patterns live in `agent/imperative_parser.py` and are not copied from `rules/*.yml`. ASR tasks in `eval/data/asr/` (≥30 injection, ≥20 benign). Reason: ASR must not share detector YAML verbatim.

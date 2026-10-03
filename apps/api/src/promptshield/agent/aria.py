@@ -30,6 +30,93 @@ Lane = Literal["off", "on"]
 _BINARY_TYPES = {SourceType.pdf, SourceType.docx, SourceType.image, SourceType.email}
 
 
+def run_content(
+    content: str,
+    *,
+    firewall: bool,
+    user_goal: str = "Summarise the content",
+    source_type: SourceType = SourceType.text,
+    trust: TrustLevel = TrustLevel.T1,
+    expect_benign: bool = False,
+) -> dict[str, Any]:
+    """Run Aria on arbitrary content (ASR harness)."""
+    runtime = MockToolRuntime()
+    session_id = "aria_content"
+    scan_result = None
+    agent_input = content
+    context_items: list[ContextItem] = []
+
+    if firewall:
+        scan_result = scan(
+            ScanRequest(
+                source_type=source_type,
+                content=content,
+                trust=trust,
+                session_id=session_id,
+            ),
+            noop=False,
+        )
+        if scan_result.decision in {Decision.block, Decision.quarantine}:
+            agent_input = "[content quarantined by PromptShield]"
+        else:
+            agent_input = scan_result.sanitized_text or content
+        context_items = [
+            ContextItem(
+                trust=trust,
+                risk=scan_result.risk,
+                text=content[:2000],
+                segment_id=scan_result.scan_id,
+            )
+        ]
+
+        def tool_guard(tool: str, args: dict[str, Any]) -> tuple[bool, str | None]:
+            decision = guard_tool_call(
+                ToolCallRequest(
+                    session_id=session_id,
+                    tool=tool,
+                    args=args,
+                    context=context_items,
+                    user_goal=user_goal,
+                )
+            )
+            if decision.decision == "allow":
+                return True, None
+            return False, (decision.reasons[0] if decision.reasons else "TOOL_DENIED")
+
+        def output_guard_cb(text: str) -> tuple[bool, str | None]:
+            result = guard_output(OutputGuardRequest(session_id=session_id, text=text, context=context_items))
+            if result.decision == "allow":
+                return True, None
+            return False, (result.reasons[0] if result.reasons else "OUTPUT_DENIED")
+    else:
+        tool_guard = None
+        output_guard_cb = None
+
+    agent = GullibleAgent(runtime, tool_guard=tool_guard, output_guard=output_guard_cb)
+    if expect_benign:
+        outcome = RunOutcome(task_completed=True, steps=[{"stage": "summarise", "detail": agent_input[:160]}])
+        outcome.finalize()
+    else:
+        outcome = agent.run_on_content(agent_input, user_goal=user_goal)
+
+    return {
+        "lane": "on" if firewall else "off",
+        "firewall": firewall,
+        "mode": os.getenv("ARIA_MODE", "scripted"),
+        "scan": scan_result.model_dump() if scan_result else None,
+        "outcome": {
+            "canary_leaked": outcome.canary_leaked,
+            "unauthorized_send": outcome.unauthorized_send,
+            "unauthorized_read": outcome.unauthorized_read,
+            "memory_poisoned": outcome.memory_poisoned,
+            "role_hijacked": outcome.role_hijacked,
+            "task_completed": outcome.task_completed,
+            "harmed": outcome.harmed,
+        },
+        "steps": outcome.steps,
+    }
+
+
 def run_fixture(
     fixture_id: str,
     *,

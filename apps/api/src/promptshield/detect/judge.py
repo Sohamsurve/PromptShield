@@ -43,21 +43,10 @@ def _validate_span(span: str | None, text: str) -> str | None:
 
 def _offline_judge(text: str, source_type: str) -> JudgeResult:
     """Deterministic offline judge for CI — quotation-aware, never sole decider."""
-    low = text.lower()
-    quote_cues = (
-        "attackers sometimes",
-        "quoting",
-        "security article",
-        "for example",
-        "such as",
-        "phrase like",
-        "discussion",
-        "tutorial explains",
-        "in this paper",
-    )
-    is_quote = any(c in low for c in quote_cues) and (
-        "ignore previous" in low or "system prompt" in low or "instructions" in low
-    )
+    from promptshield.detect.quotation import is_quotation_or_discussion
+
+    # General framing detector (not exact-match allowlists) — see docs/DECISIONS.md
+    is_quote = is_quotation_or_discussion(text)
     attack_cues = [
         (r"(?i)ignore.{0,40}(previous|prior|all).{0,30}instructions", "instruction_override"),
         (r"(?i)reveal.{0,20}system prompt", "secret_extraction"),

@@ -1,4 +1,4 @@
-.PHONY: setup dev test e2e eval eval-fast train gen-types fixtures scan-mcp-output demo lint
+.PHONY: setup dev test e2e eval eval-fast train gen-types fixtures scan-mcp-output demo demo-docker _demo-api lint
 
 ROOT := $(abspath .)
 API_DIR := $(ROOT)/apps/api
@@ -53,7 +53,20 @@ scan-mcp-output:
 	@test -n "$(FILE)" || (echo "Usage: make scan-mcp-output FILE=path.txt" && exit 1)
 	cd $(API_DIR) && $(UV) run python -c "from promptshield.pipeline import scan_text; import pathlib; print(scan_text(pathlib.Path('$(FILE)').read_text()).model_dump_json(indent=2))"
 
+# Non-Docker demo (default): API + web on the host. Docker path: `make demo-docker`.
+# PYTHONPATH is exported above so `uv run uvicorn promptshield…` resolves the package.
 demo: setup
+	@echo "Non-Docker demo path (no Compose required):"
+	@echo "  Terminal A: make -C $(ROOT) _demo-api   # or: cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 0.0.0.0 --port 8000"
+	@echo "  Terminal B: cd apps/web && $(PNPM) dev"
+	@echo "  Open http://localhost:3000/arena"
+	@echo "Verified: POST /v1/scan against host API (see docs/FRESH_CLONE.md)."
+	@echo "Docker (when daemon unpaused): make demo-docker"
+
+_demo-api:
+	cd $(API_DIR) && $(UV) run uvicorn promptshield.api.app:app --reload --host 0.0.0.0 --port 8000
+
+demo-docker: setup
 	docker compose up -d
 	@echo "Open http://localhost:3000/arena"
 
