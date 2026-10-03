@@ -7,6 +7,7 @@
 | `929a1b7` / `v0.4-evidence` | round-4 / type-6 first-run |
 | `3e566ad` / `v1.0-submission` | TF v5 STOP |
 | `a28f442` / `v1.1-evidence` | realistic / quote-bypass / TF v6 |
+| `6d3c8dd` / `v1.2-evidence` | LOLO / needle / realistic FP / TF v6 breakdown |
 
 | Path | SHA-256 | Bytes |
 |---|---|---:|
