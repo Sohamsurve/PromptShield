@@ -107,7 +107,7 @@ Design a Prompt Injection Firewall that **intercepts all incoming content before
 └───────────────┬────────────────────────────────────────────────────────────┘
                 ▼
 ┌────────────────────────────────────────────────────────────────────────────┐
-│ 3 FUSION & POLICY   calibrated score fusion · per-source thresholds        │
+│ 3 FUSION & POLICY   hand-set logistic + signature floor · per-source thr.  │
 │   decision: ALLOW | SANITIZE | QUARANTINE | BLOCK | ESCALATE               │
 └───────────────┬────────────────────────────────────────────────────────────┘
                 ▼
@@ -261,7 +261,7 @@ class ScanRequest(BaseModel):
     policy_id: str = "default"
 
 class ScanResult(BaseModel):
-    scan_id: str; decision: Decision; risk: float                # calibrated 0..1
+    scan_id: str; decision: Decision; risk: float                # hand-set logistic 0..1
     attack_types: list[AttackType]; findings: list[Finding]
     segments: list[SegmentSummary]
     sanitized_text: str | None; spotlighted_text: str | None; system_reminder: str | None

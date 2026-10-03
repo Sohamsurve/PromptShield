@@ -8,13 +8,13 @@ Short map of how the firewall teaches defence-in-depth for prompt injection.
 2. **Normalise** — Unicode canonicalise + recursive decode with offset maps back to the original.
 3. **Detect** — signatures (≥150 rules), heuristics, gated classifier, quarantined judge (never sole decider).
 4. **Session** — decayed risk, payload-split rescan, escalation features across turns.
-5. **Fusion + policy** — calibrated risk → allow / sanitise / quarantine / block / escalate.
+5. **Fusion + policy** — hand-set logistic with a signature floor → allow / sanitise / quarantine / block / escalate.
 6. **Neutralise** — redact spans, spotlight untrusted text, re-scan for idempotence.
 7. **Guards** — tool taint/provenance, memory/RAG ingest, canary/secret/egress on outputs.
 
 ## Demo path
 
-Follow `docs/DEMO_BACKUP.md` (≈6 min). Key proof: Arena **Disable text scanning** still denies tainted `send_email`.
+Follow `docs/DEMO_BACKUP.md` (≈6 min). Key proof: Arena **Disable text scanning** → protected lane **`Tool call denied — TOOL_DOMAIN_DENY`**.
 
 ## Claims & metrics
 

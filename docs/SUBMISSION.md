@@ -48,7 +48,7 @@ Adapters cover text, HTML, PDF, DOCX, email/MIME, Markdown, JSON/API, source cod
 | 2:15 | Encoded F09/F10 |
 | 3:00 | Hard-negative F18 (security article) |
 | 3:45 | Multi-turn F12 |
-| 4:30 | Disable text scanning → tool deny (classic taint) |
+| 4:30 | Disable text scanning → `Tool call denied — TOOL_DOMAIN_DENY` |
 | 5:15 | Coverage + Eval + claim ledger (D1 / F3 counts) |
 
 Full text: `docs/DEMO_BACKUP.md`.
@@ -69,9 +69,10 @@ Verified against README § commands / `docs/FRESH_CLONE.md`. Compose Redis not r
 
 ## Declared 3×3 position
 
-- **F3** — **1 type supported, 7 demonstrated** (sealed-only; see CLAIMS).
+- **F3** — **1 type supported, 7 demonstrated**; **tool_abuse weak** (sealed-only; see CLAIMS).
 - **D1** — **D2 in progress** (round-4 LCI 0.819 < 0.85). **No D3.**
-- Disruption reported as measured FPR only (sealed HN first-run **4/110**; realistic benign **0.027**).
+- Disruption reported as measured FPR only (sealed HN first-run **4/110**; realistic benign **0.027**, README ≤2% **NOT MET**).
+- Arena disable-scan: protected lane **`Tool call denied — TOOL_DOMAIN_DENY`**.
 
 **Note:** Demo gallery fixtures are in classifier **training** data.
 
