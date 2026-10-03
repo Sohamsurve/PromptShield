@@ -23,9 +23,13 @@ _FRAME_RES = [
     ),
     re.compile(
         r"(?i)\b(?:flashcard|placard|transcript|workshop\s+packet|handout|exhibit|postmortem|"
-        r"spaced-?repetition|journalism|presenter\s+says|blue-?team)\b"
+        r"spaced-?repetition|journalism|presenter\s+says|blue-?team|analyst\s+brief|"
+        r"sandbox\s+dump|specimen\s+string|ops\s+newsletter|style\s+guide|podcast\s+show)\b"
     ),
-    re.compile(r"(?i)\b(?:hard\s+negative|evidence\s+handling|classroom\s+examples?|lab\s+partners?)\b"),
+    re.compile(
+        r"(?i)\b(?:hard\s+negative|evidence\s+handling|classroom\s+examples?|lab\s+partners?|"
+        r"catalogu(?:e|ing)\s+it|not\s+an\s+instruction\s+to\s+an\s+assistant)\b"
+    ),
 ]
 
 # Surface forms often *quoted* when discussing attacks (broader than detector YAML).

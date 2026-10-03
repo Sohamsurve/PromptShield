@@ -20,6 +20,23 @@ SENSITIVE_KEYS = {
     "note",
 }
 
+# User asked to act on a value found in content (not a general taint loosen).
+_USER_REPLY = re.compile(
+    r"(?i)\b(?:reply\s+to\s+this\s+email|email\s+(?:them|him|her|the\s+(?:sender|contact|person))|"
+    r"forward\s+this\s+(?:file|document|email|message)\s+to\s+the\s+person|"
+    r"send\s+(?:this|it)\s+to\s+the\s+(?:person|address|contact)\s+named|"
+    r"mail\s+(?:the\s+)?(?:person|contact)\s+(?:named|in\s+this)|"
+    r"use\s+the\s+(?:address|email)\s+in\s+this)\b"
+)
+_USER_OPEN_LINK = re.compile(
+    r"(?i)\b(?:open\s+the\s+link\s+in\s+this|visit\s+the\s+url\s+in\s+this|"
+    r"fetch\s+the\s+(?:link|url)\s+(?:from|in)\s+this|follow\s+the\s+link\s+in\s+this)\b"
+)
+_USER_OPEN_FILE = re.compile(
+    r"(?i)\b(?:open\s+the\s+(?:file|attachment|path)\s+in\s+this|"
+    r"read\s+the\s+file\s+(?:named|mentioned)\s+in\s+this)\b"
+)
+
 
 def context_tainted(context: list[ContextItem], *, threshold: float = 0.3) -> bool:
     for item in context:
@@ -75,3 +92,37 @@ def untrusted_arguments(
             if str(raw) not in tainted:
                 tainted.append(str(raw))
     return tainted
+
+
+def user_requested_arg_provenance(
+    tool: str,
+    args: dict,
+    user_goal: str | None,
+    context: list[ContextItem],
+) -> list[str]:
+    """Return arg values the user's instruction explicitly asked to use from content.
+
+    Does not clear taint generally — only when the user requested that action class.
+    """
+    goal = (user_goal or "").strip()
+    # Also consult T0/T1 context text as the user instruction channel
+    for item in context:
+        if item.trust.value <= TrustLevel.T1 and item.text:
+            goal = (goal + " " + item.text).strip()
+    if not goal:
+        return []
+
+    authorized: list[str] = []
+    if tool == "send_email" and _USER_REPLY.search(goal):
+        to = str(args.get("to") or args.get("recipient") or args.get("email") or "")
+        if to:
+            authorized.append(to)
+    if tool == "fetch_url" and _USER_OPEN_LINK.search(goal):
+        url = str(args.get("url") or "")
+        if url:
+            authorized.append(url)
+    if tool == "read_file" and _USER_OPEN_FILE.search(goal):
+        path = str(args.get("path") or "")
+        if path:
+            authorized.append(path)
+    return authorized

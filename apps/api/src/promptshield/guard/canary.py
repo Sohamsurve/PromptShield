@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from promptshield.agent.canary import all_canaries
-
 
 def find_canaries(text: str) -> list[str]:
+    from promptshield.agent.canary import all_canaries
+
     return [c for c in all_canaries() if c in (text or "")]

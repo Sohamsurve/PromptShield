@@ -94,3 +94,67 @@
   context: any
   patterns:
     - regex: (?i)\bstore:\s*ignore\s+policy\s+whenever\s+tools\b
+- id: PI-CTX-013
+  attack_types: [context_poisoning]
+  severity: 0.85
+  reason_code: CTX_FROM_NOW_ALWAYS
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bfrom\s+now\s+on\s+always\b
+- id: PI-CTX-014
+  attack_types: [context_poisoning]
+  severity: 0.85
+  reason_code: CTX_ALWAYS_ANSWER
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\balways\s+answer\s+(?:as\s+if|with|YES\b|without)\b
+- id: PI-CTX-015
+  attack_types: [context_poisoning]
+  severity: 0.85
+  reason_code: CTX_PERSIST_THIS
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)\b(?:persist\s+this|store\s+permanently|save\s+permanently|keep\s+permanently)\s*:'
+- id: PI-CTX-016
+  attack_types: [context_poisoning]
+  severity: 0.85
+  reason_code: CTX_REMEMBER_TRUST
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)\bremember\s+that\b.{0,100}\b(?:trusted|admin|bypass|ignore\s+safety|policies?\s+do\s+not|receives?\s+all)\b'
+- id: PI-CTX-017
+  attack_types: [context_poisoning]
+  severity: 0.85
+  reason_code: CTX_POLICY_NOT_APPLY
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)\b(?:remember\s+that\s+)?(?:policies?|safety(?:\s+checks?)?)\s+do\s+not\s+apply\s+to\s+me\b'
+- id: PI-CTX-018
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_ADD_MEMORY_GENERIC
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)\badd\s+this\s+to\s+your\s+memory\b'
+- id: PI-CTX-019
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_HENCEFORTH
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)\bhenceforth\s+(?:reply|answer|always)\b'
+- id: PI-CTX-020
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_STORE_FOREVER
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)\b(?:store\s+forever|pin\s+instruction|sticky\s+rule|durable\s+state)\b.{0,40}\b(?:bypass|ignore|always|PWNED|admin)\b'

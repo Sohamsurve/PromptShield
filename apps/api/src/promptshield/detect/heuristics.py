@@ -37,7 +37,11 @@ _EXFIL = re.compile(
     r"([a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}|\.test\b|https?://|/[^\s]+)"
 )
 _POISON = re.compile(
-    r"(?i)\b(from now on|always answer|add this to your memory|remember that)\b"
+    r"(?i)\b("
+    r"from\s+now\s+on|always\s+answer|add\s+this\s+to\s+your\s+memory|remember\s+that|"
+    r"persist\s+this|store\s+permanently|henceforth|policies?\s+do\s+not\s+apply|"
+    r"bypass\s+filters|trusted\s+forever"
+    r")\b"
 )
 _ROLE = re.compile(
     r"(?i)(?:^\s*system\s*:|###\s*assistant|<\|im_start\|>|you are now|act as|developer mode|jailbreak)"
@@ -162,7 +166,15 @@ def heuristic_findings(segments: list[Segment], *, tools: list[str] | None = Non
             trigger = True
             types.append(AttackType.credential_theft)
 
-        if untrusted and _POISON.search(text):
+        if _POISON.search(text) and (
+            untrusted
+            or re.search(
+                r"(?i)\b(?:always\s+answer|persist\s+this|store\s+permanently|"
+                r"from\s+now\s+on\s+always|policies?\s+do\s+not\s+apply|"
+                r"add\s+this\s+to\s+your\s+memory|trusted\s+forever|bypass\s+filters)\b",
+                text,
+            )
+        ):
             trigger = True
             types.append(AttackType.context_poisoning)
 

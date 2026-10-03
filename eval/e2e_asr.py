@@ -171,7 +171,12 @@ def main() -> dict:
     base = ROOT / "eval" / "data" / "e2e"
     payload = {
         "tool_abuse": eval_file(base / "tool_abuse.jsonl", attack_type="tool_abuse"),
-        "context_poisoning": eval_file(base / "context_poisoning.jsonl", attack_type="context_poisoning"),
+        "context_poisoning": eval_file(
+            base / "context_poisoning_dev.jsonl"
+            if (base / "context_poisoning_dev.jsonl").exists()
+            else base / "context_poisoning.jsonl",
+            attack_type="context_poisoning",
+        ),
         "multi_step_jailbreak": eval_file(base / "multi_step.jsonl", attack_type="multi_step_jailbreak"),
     }
     out = ROOT / "eval" / "reports" / "e2e_asr.json"
