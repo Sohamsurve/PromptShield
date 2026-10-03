@@ -1,7 +1,8 @@
-# Freeze — v0.4-evidence (pre sealed type-6 / round-4 run)
+# Freeze — v0.4-evidence
 
 Fix commit (type-6 + tool provenance): `3db01e0`.
-Sealed type-6 and round-4 corpora hashed **before** first-run evaluation.
+Sealed corpora commit (hashes before run): `f4c0d4d`.
+Tag `v0.4-evidence` records first-run numbers; **no further tuning** on sealed sets.
 
 | Path | SHA-256 | Bytes |
 |---|---|---:|

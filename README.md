@@ -378,7 +378,7 @@ SCHEMA: {"is_injection": bool, "attack_types": [..9 enum values..], "offending_s
 ```
 Validate output against the schema; reject and ignore any non-conforming output. The judge's `offending_span` must be a verbatim substring of the segment (else dropped). The judge **never decides alone**; it is one input to fusion.
 
-**Judge evaluation status:** **judge: not evaluated** (no `LLM_API_KEY` / no labelled gray-zone accuracy run in v0.3). Offline deterministic judge remains for CI.
+**Judge status:** **implemented** (`detect/judge.py`) **but not evaluated** (no labelled gray-zone accuracy / invocation-rate study; `LLM_API_KEY` unset). Offline deterministic judge remains for CI.
 
 ### 5.7 Session analyser (`detect/session.py`) — multi-step jailbreaks & context poisoning
 State in Redis per `session_id`:

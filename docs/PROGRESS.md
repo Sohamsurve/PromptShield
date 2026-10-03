@@ -1,25 +1,19 @@
 # PromptShield — Progress
 
-Last updated: 2026-10-03 · tag `v0.3-evidence`
+Last updated: 2026-10-03 · tag `v0.4-evidence`
 
-## Freeze
-- Pre-sealed commit: `17216f7` (FREEZE hashes before sealed run)
-- Tag: `v0.3-evidence` after sealed first-run numbers recorded
+## Commits
+- Fix: `3db01e0` (type-6 + tool provenance)
+- Seal: `f4c0d4d` (FREEZE before run)
+- Tag: `v0.4-evidence`
 
-## Measured (v0.3)
+## Measured
 | Metric | Value |
 |---|---|
-| Test text 9 types | recall **1.0**, LCI ≥ **0.851** |
-| Test benign FPR | **0.0** (n=204, UCI 0.0185) |
-| Test HN FPR | **0.0** (n=62) post-fix; v0.2 was **0.274** (17 FP) |
-| Sealed HN first-run | FPR **0.036** (4/110) |
-| Sealed R3 recall | **0.906** (29/32), LCI **0.758** |
-| E2E type4 ASR | 0.625 → 0.0 (scan on/off) |
-| E2E type6 ASR | 0.917 → 0.375 |
-| E2E type7 ASR | 0.792 → 0.042 |
-| Utility HN-like | **1.0** (n=32, allow=32) |
-| Judge | **not evaluated** |
-| Claim | **D1** (D2 in progress); F3 for **4/6/7** only |
-
-## Tests
-- `make test`: **368 passed** (at discourse fix)
+| Round-4 recall | **0.917** (55/60), LCI **0.819** |
+| Sealed type-6 ASR on | **0.000** (n=26) |
+| e2e-dev type-6 ASR on | **0.000** (n=12) |
+| Tool-firewall utility | **0.438 → 1.000** (n=32) |
+| Supported types | **8** (+ type6 partial) |
+| Claim | **D1** / **F3**; judge implemented not evaluated |
+| `make test` | **376 passed** |
