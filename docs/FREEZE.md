@@ -1,43 +1,32 @@
-# Freeze — v0.2-evidence
+# Freeze — v0.3-evidence (pre sealed first-run)
 
-Git tag: `v0.2-evidence`.
+Git tag: `v0.3-evidence` (applied after sealed first-run numbers are recorded).
 
-SHA-256 digests of protected / evidence artefacts **before any further tuning**.
+## Pre-run hashes (BEFORE sealed evaluation)
+
+Taken after discourse-feature fix + E2E/utility harnesses, **before** executing sealed sets.
+Do not tune on `test`, `adaptive-round-2`, or `sealed*` after this point without a new freeze.
 
 | Path | SHA-256 | Bytes |
 |---|---|---:|
 | `eval/thresholds.yml` | `b318a50630d10367538efe32dea9618952c122018fef45f3d4556c03656c2446` | 449 |
-| `docs/freeze/test_split.jsonl` (all `split=test` **and** `adaptive-round-2` rows from `eval/data/**/*.jsonl`) | `36276a75680d890b2902a7a96b8287283c94a4c56c033664d91b2c462943658b` | 230678 |
-| `models/calibration.json` | `92d52ce20c7131310e7f4111199c2815bf247de16720c283b374d91f4d71ba32` | 80016 |
-| `eval/reports/leakage.json` | `cea167550bb7f922d3d0bd62e335b97a4693a53fafa83db06da3f22da0ea7439` | 2544 |
-| `eval/reports/evidence.json` | `930c51379a0d189defef201e12601869194621f224ca707283d1e2210195b214` | 23169 |
+| `models/calibration.json` | `34badae9327628d781651ddd8a54aa1a6b2892fcd006d67dfb64b40a11e1b21c` | 80001 |
+| `eval/data/sealed/hard_negatives_v3.jsonl` | `546fdc3e60c86b4797e6a158a8975d0069a88b0e54926f5d236f43167e8db67d` | 42453 |
+| `eval/data/sealed/round3.jsonl` | `a09fed7c5b2a65832d2b561f695ecd96827ad240339089f6b257fa32847d7bc8` | 9883 |
+| `docs/freeze/test_split.jsonl` (`split` ∈ {test, adaptive-round-2}, excluding sealed) | `99c1c2c6754a2bee7292ab0b4a456a1ca2e877c52e8a14c88e1a347e7dc3cd9d` | 172037 |
+| `eval/reports/e2e_asr.json` | `b4fbd7f7b169362db56d4e18e5d5848f0cce37427face9a1f12609af8de581b9` | 1725 |
+| `eval/reports/utility_hn.json` | `ab4a6d21030a95d61bc3d73f2ea7f200e79d62b0101340915aa2040ddc9a88ce` | 268 |
 
-## Policy at freeze
+## Policy
 
-- Tune on: `train`, `dev` (adaptive round 1 **spent**)
-- Never tune on: `test`, `adaptive-round-2`
-- Classifier: `tfidf_logreg` only; no ONNX artifact
-- Support threshold: heatmap cells need `n ≥ 22`
+- Tune on: `train`, `dev` only (R1 spent)
+- Never tune on: `test`, `adaptive-round-2`, `sealed`, `sealed-round-3`
+- Classifier: `tfidf_logreg`; no ONNX
+- Support threshold: `n ≥ 22`
 
-## How to verify
+## Verify
 
 ```bash
-shasum -a 256 eval/thresholds.yml models/calibration.json eval/reports/leakage.json eval/reports/evidence.json
-python3 -c "
-import json, hashlib
-from pathlib import Path
-rows=[]
-for p in sorted(Path('eval/data').rglob('*.jsonl')):
-  for line in p.read_text().splitlines():
-    if not line.strip(): continue
-    r=json.loads(line)
-    if r.get('split') in {'test','adaptive-round-2'}:
-      rows.append(json.dumps(r, sort_keys=True, ensure_ascii=False))
-Path('docs/freeze/test_split.jsonl').write_text('\\n'.join(rows)+'\\n')
-print(hashlib.sha256(Path('docs/freeze/test_split.jsonl').read_bytes()).hexdigest())
-"
+shasum -a 256 eval/thresholds.yml models/calibration.json \
+  eval/data/sealed/hard_negatives_v3.jsonl eval/data/sealed/round3.jsonl
 ```
-
-## Prior freeze
-
-`v0.1-phase5` remains the Phase-5 code freeze; this tag strengthens evidence only.

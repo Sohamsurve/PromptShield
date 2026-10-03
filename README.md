@@ -378,6 +378,8 @@ SCHEMA: {"is_injection": bool, "attack_types": [..9 enum values..], "offending_s
 ```
 Validate output against the schema; reject and ignore any non-conforming output. The judge's `offending_span` must be a verbatim substring of the segment (else dropped). The judge **never decides alone**; it is one input to fusion.
 
+**Judge evaluation status:** **judge: not evaluated** (no `LLM_API_KEY` / no labelled gray-zone accuracy run in v0.3). Offline deterministic judge remains for CI.
+
 ### 5.7 Session analyser (`detect/session.py`) — multi-step jailbreaks & context poisoning
 State in Redis per `session_id`:
 - `risk_t = λ·risk_{t-1} + max(finding scores in turn t)`, λ = 0.7; escalate friction when `risk_t` > `session_threshold` (default 1.2).
@@ -974,10 +976,22 @@ make eval-fast    # CI subset
 make gen-types    # OpenAPI → packages/shared-types
 make fixtures     # (re)generate attack gallery files
 make scan-mcp-output  # optional: scan text from a file with the firewall (dogfooding)
-make demo         # docker compose up -d; open http://localhost:3000/arena (requires Docker)
+make demo         # **non-Docker path (default):** prints host commands for API :8000 + web :3000
+make demo-docker  # docker compose up -d (requires Docker Desktop unpaused)
 ```
 
-Prerequisites (not installed by Make): **uv**, **pnpm**, **Docker** (for `make dev` / `make demo` redis/stack), and for e2e **Playwright Chromium** (`pnpm exec playwright install chromium` in `apps/web`).
+**Non-Docker `make demo` path** (Compose not required for a local smoke demo):
+
+```bash
+# Terminal A — API (Makefile exports PYTHONPATH so the package resolves)
+cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 0.0.0.0 --port 8000
+# Terminal B — web
+cd apps/web && pnpm dev
+# Open http://localhost:3000/arena
+# Smoke: GET /v1/healthz  ·  POST /v1/scan
+```
+
+Prerequisites (not installed by Make): **uv**, **pnpm**, **Docker** (optional; for `make demo-docker` / Compose redis), and for e2e **Playwright Chromium** (`pnpm exec playwright install chromium` in `apps/web`).
 
 ### 14.3 `docker-compose.yml` (outline)
 Services: `api` (FastAPI, mounts `models/` and `fixtures/`), `web` (Next.js), `redis`, optional `postgres`. Healthchecks on `/healthz`; `web` depends on `api`.

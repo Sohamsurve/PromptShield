@@ -84,6 +84,9 @@ def compute_features(
         seg.trust, 1.0
     )
 
+    from promptshield.detect.quotation import discourse_features
+
+    disc = discourse_features(text)
     return {
         "addressee": float(addressee),
         "imperative_density": float(imperative_density),
@@ -95,6 +98,10 @@ def compute_features(
         "invisible_chars": float(inv),
         "instruction_in_data": float(instruction_in_data),
         "trust_prior": float(trust_prior),
+        "quotation_score": float(disc.quotation_score),
+        "educational_score": float(disc.educational_score),
+        "human_reader_score": float(disc.human_reader_score),
+        "ai_agent_score": float(disc.ai_agent_score),
     }
 
 
@@ -114,6 +121,12 @@ def heuristic_score(features: dict[str, float]) -> float:
     score = sum(features.get(k, 0.0) * w for k, w in weights.items())
     if features.get("hidden", 0) and features.get("imperative_density", 0) > 0:
         score = min(1.0, score + 0.15)
+    # Dampen when discourse looks human/educational rather than AI-directed
+    q = features.get("quotation_score", 0.0)
+    human = features.get("human_reader_score", 0.0)
+    ai = features.get("ai_agent_score", 0.0)
+    if q >= 0.55 or (human > ai and human >= 0.45 and features.get("educational_score", 0) >= 0.35):
+        score *= 0.25
     return max(0.0, min(1.0, score))
 
 

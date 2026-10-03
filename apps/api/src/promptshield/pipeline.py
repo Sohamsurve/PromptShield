@@ -282,12 +282,13 @@ def scan(
         fusion=fusion_cfg,
     )
 
-    # General quotation / educational framing (not exact-match) — dampens before judge
-    from promptshield.detect.quotation import is_quotation_or_discussion, quotation_or_discussion_score
+    # General quotation / educational + human-vs-AI discourse (not exact-match)
+    from promptshield.detect.quotation import discourse_features
 
     quote_text = "\n".join((s.text or "") for s in segments)
-    quote_score = quotation_or_discussion_score(quote_text)
-    structural_quote = is_quotation_or_discussion(quote_text)
+    disc = discourse_features(quote_text)
+    quote_score = disc.quotation_score
+    structural_quote = disc.dampen
 
     # Judge gray zone
     t_j = time.perf_counter()
