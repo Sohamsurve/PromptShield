@@ -1,0 +1,1360 @@
+- id: PI-OVR-001
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-002
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-003
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-004
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-005
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-006
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-007
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-008
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-009
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-010
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-011
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-012
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-013
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-014
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-015
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-016
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-017
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-018
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-019
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-020
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-021
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-022
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-023
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-024
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-025
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bignore\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-026
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-027
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-028
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-029
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-030
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-031
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-032
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-033
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-034
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-035
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-036
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-037
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-038
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-039
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-040
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-041
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-042
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-043
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-044
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-045
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-046
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-047
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-048
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-049
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-050
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdisregard\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-051
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-052
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-053
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-054
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-055
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-056
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-057
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-058
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-059
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-060
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-061
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-062
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-063
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-064
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-065
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-066
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-067
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-068
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-069
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-070
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-071
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-072
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-073
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-074
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-075
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bforget\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-076
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-077
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-078
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-079
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-080
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-081
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-082
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-083
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-084
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-085
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-086
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-087
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-088
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-089
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-090
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-091
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-092
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-093
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-094
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-095
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-096
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-097
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-098
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-099
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-100
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\boverride\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-101
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-102
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-103
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-104
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-105
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bprevious\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-106
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-107
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-108
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-109
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-110
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bprior\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-111
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-112
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-113
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-114
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-115
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\babove\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-116
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-117
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-118
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-119
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-120
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\bearlier\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-121
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\binstructions\b
+- id: PI-OVR-122
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\brules\b
+- id: PI-OVR-123
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bprompts\b
+- id: PI-OVR-124
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bdirections\b
+- id: PI-OVR-125
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bbypass\b[^.\n]{0,40}\ball\b[^.\n]{0,30}\bguidelines\b
+- id: PI-OVR-X01
+  attack_types:
+  - instruction_override
+  severity: 0.85
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: '(?i)\bnew instructions?\s*:'
+- id: PI-OVR-X02
+  attack_types:
+  - instruction_override
+  severity: 0.85
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bfrom now on you must\b
+- id: PI-OVR-X03
+  attack_types:
+  - instruction_override
+  severity: 0.85
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bsystem override\b
+- id: PI-OVR-X04
+  attack_types:
+  - instruction_override
+  severity: 0.85
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bthis message has higher priority\b
+- id: PI-OVR-X05
+  attack_types:
+  - instruction_override
+  severity: 0.85
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdo not follow (your|the) (system|original) (prompt|instructions)\b
+- id: PI-OVR-HI01
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - multi
+  context: any
+  patterns:
+  - regex: पिछले सभी निर्देशों को अनदेखा करें
+- id: PI-OVR-HI02
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - multi
+  context: any
+  patterns:
+  - regex: (?i)pichle sabhi instructions ignore karo
+- id: PI-OVR-ES01
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - multi
+  context: any
+  patterns:
+  - regex: (?i)ignora (las )?instrucciones (anteriores|previas)
+- id: PI-OVR-FR01
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - multi
+  context: any
+  patterns:
+  - regex: (?i)ignorez les instructions (pr[eé]c[eé]dentes|anterieures)
+- id: PI-OVR-DE01
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - multi
+  context: any
+  patterns:
+  - regex: (?i)ignoriere (die )?vorherigen anweisungen
+- id: PI-OVR-ZH01
+  attack_types:
+  - instruction_override
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs:
+  - multi
+  context: any
+  patterns:
+  - regex: 忽略(之前|以上|所有)?(的)?(指令|规则)

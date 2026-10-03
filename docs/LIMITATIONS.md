@@ -1,0 +1,46 @@
+# Limitations
+
+Honest gaps. Do not hide missed metrics — report the measured number with CI.
+
+## Phase 0
+
+- Fixtures F03/F04/F08 are **text stand-ins** for PDF/DOCX/image until Phase 2 adapters exist.
+- LLM judge and Aria `llm` mode are not wired; demos/CI use `ARIA_MODE=scripted`.
+- No classifier ONNX yet; `models/` is empty.
+- Session analyser uses in-memory state (Redis optional); multi-process demos do not share session risk.
+
+## Phase 1
+
+- Signature-only defence: paraphrases outside the rule set can evade; held-out/adaptive recall not yet measured.
+- Hard negative F18 (security blog quoting “ignore previous instructions”) is often **sanitised** — expected until the LLM judge / quotation detector (Phase 3). Reported separately from benign FPR.
+- Fusion weights are interim (see DECISIONS.md); not yet fit on a validation set.
+- Multilingual coverage is a small starter set (HI/ES/FR/DE/ZH + Hinglish), not exhaustive.
+- Homoglyph folding uses a short confusables map, not the full Unicode confusables table.
+- ASR(on) improved with adapters; remaining gallery harms (if any) are mostly multi-step / tool-taint cases for Phase 4.
+
+## Phase 2
+
+- Image OCR variants are best-effort; CI relies on PNG `tEXt` chunks when Tesseract is absent (`degraded: ocr_unavailable` possible).
+- Homoglyph / full confusables and rich CSS class resolution remain incomplete.
+- Type-9 cells with small `n` have wide Wilson CIs — treat as directional until the synth matrix grows.
+## Phase 3
+
+- Classifier is a deterministic TF-IDF logistic model (`models/calibration.json`), not a fine-tuned DeBERTa ONNX encoder yet. Placeholder `classifier.onnx` marks the export slot.
+- LLM judge uses an offline deterministic path in scripted/CI mode; live provider calls require `LLM_API_KEY` and are still never the sole decider.
+- Held-out paraphrase set is small (n=10); Wilson CIs are wide.
+
+## Phase 4
+
+- ASR reduction and utility measured on **scripted** GullibleAgent; `ARIA_MODE=llm` path is not yet a separate accept lane.
+- Tool firewall deny reasons may be domain-allowlist or taint; both fail closed for side effects.
+- Phase-4 signature families are high-precision phrases; paraphrase coverage beyond the held-out/signature sets remains limited.
+
+## Phase 5
+
+- Adaptive round 1 (`eval/data/adaptive/round1.jsonl`): first-run hard-negative **AD34** was flagged (FPR 1.0 on n=1); left unfixed at freeze — see EVIDENCE §7.
+- Adaptive red-team probes (`tests/test_adaptive_redteam.py`) are a small frozen set; novel paraphrases and story-framed attacks can still under-fire signatures — do not loosen thresholds to clear them; add labelled cases only.
+- Dashboard Coverage/Eval read `eval/reports/latest` via the API; stale reports need a fresh `make eval-fast`.
+- A11y/responsive covered by Playwright (`e2e/responsive-a11y.spec.ts`) for 390/768/1280 × light/dark; CI needs `pnpm exec playwright install`.
+- Backup demo is scripted in `docs/DEMO_BACKUP.md` (video recording optional); perf notes in `docs/PERF.md` (no Lighthouse CI budgets).
+- Policy “save new version” is demo-local (sliders + replay estimate); durable policy store is not wired.
+

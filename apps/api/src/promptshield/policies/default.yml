@@ -1,0 +1,128 @@
+version: 2
+sources:
+  user_message:
+    trust: T1
+    block: 0.92
+    quarantine: 0.7
+    sanitize_span: 0.75
+    escalate_band:
+    - 0.55
+    - 0.7
+  web_page:
+    trust: T3
+    block: 0.85
+    quarantine: 0.5
+    sanitize_span: 0.6
+    escalate_band:
+    - 0.4
+    - 0.5
+  email:
+    trust: T3
+    block: 0.85
+    quarantine: 0.5
+    sanitize_span: 0.6
+    escalate_band:
+    - 0.4
+    - 0.5
+  pdf:
+    trust: T3
+    block: 0.85
+    quarantine: 0.5
+    sanitize_span: 0.6
+  docx:
+    trust: T3
+    block: 0.85
+    quarantine: 0.5
+    sanitize_span: 0.6
+  api_response:
+    trust: T2
+    block: 0.88
+    quarantine: 0.55
+    sanitize_span: 0.65
+  source_code:
+    trust: T3
+    block: 0.88
+    quarantine: 0.55
+    sanitize_span: 0.65
+  image:
+    trust: T3
+    block: 0.85
+    quarantine: 0.45
+    sanitize_span: 0.55
+  html:
+    trust: T3
+    block: 0.85
+    quarantine: 0.5
+    sanitize_span: 0.6
+  markdown:
+    trust: T3
+    block: 0.85
+    quarantine: 0.5
+    sanitize_span: 0.6
+  text:
+    trust: T1
+    block: 0.92
+    quarantine: 0.7
+    sanitize_span: 0.75
+  ocr_text:
+    trust: T3
+    block: 0.85
+    quarantine: 0.45
+    sanitize_span: 0.55
+spotlight:
+  mode: delimit
+max_removal_ratio: 0.4
+judge:
+  lo: 0.35
+  hi: 0.8
+  timeout_ms: 1500
+classifier_gate: 0.1
+session:
+  lambda: 0.7
+  threshold: 1.2
+  window: 5
+fail_mode:
+  scan_error: quarantine
+  tool_guard_error: deny
+text_scanning_enabled: true
+taint_threshold: 0.3
+tools:
+  send_email:
+    side_effect: external
+    allowed_domains:
+    - example.com
+    - example.test
+    require_confirm_if_tainted: true
+  fetch_url:
+    side_effect: read_external
+    url_allowlist_mode: strict
+  read_file:
+    side_effect: read_local
+    deny_paths:
+    - ~/.ssh/**
+    - '**/.env'
+    - '**/credentials*'
+  save_memory:
+    side_effect: persistent
+    block_if_tainted: true
+  read_inbox:
+    side_effect: read_local
+  search_docs:
+    side_effect: read_local
+  reveal_system:
+    side_effect: external
+    block_if_tainted: true
+fusion:
+  b: -5.1085
+  w_sig: 6.7068
+  w_h: 1.5
+  w_ml: 5.0838
+  w_j: 2.0
+  w_hid: 0.2318
+  w_enc: 0.0318
+  w_trust:
+    T0: -2.0
+    T1: 0.0
+    T2: 0.4
+    T3: 0.6
+  w_sess: 1.5

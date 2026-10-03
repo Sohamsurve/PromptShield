@@ -1,0 +1,96 @@
+- id: PI-TOOL-001
+  attack_types: [tool_abuse]
+  severity: 0.85
+  reason_code: TOOL_EXFIL_EMAIL
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bforward\s+the\s+last\s+\d+\s+emails?\s+to\b
+- id: PI-TOOL-002
+  attack_types: [tool_abuse]
+  severity: 0.8
+  reason_code: TOOL_SEND_EMAIL
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\b(?:call|invoke)\s+send_email\b
+- id: PI-TOOL-003
+  attack_types: [tool_abuse]
+  severity: 0.8
+  reason_code: TOOL_SEND_EMAIL
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bsend_email\s*\(\s*to\s*=
+- id: PI-TOOL-004
+  attack_types: [tool_abuse]
+  severity: 0.8
+  reason_code: TOOL_FETCH
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bfetch_url\s+https?://(?:evil\.|attacker\.)
+- id: PI-TOOL-005
+  attack_types: [tool_abuse]
+  severity: 0.8
+  reason_code: TOOL_WIRE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\btransfer\s+funds\s+to\s+account\b
+- id: PI-TOOL-006
+  attack_types: [tool_abuse]
+  severity: 0.75
+  reason_code: TOOL_CALENDAR
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bcalendar\s+invite\b.{0,40}\bsend_email\b
+- id: PI-TOOL-007
+  attack_types: [tool_abuse]
+  severity: 0.8
+  reason_code: TOOL_EXFIL_EMAIL
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bexfiltrate\s+(?:the\s+)?(?:email|inbox)\b
+- id: PI-TOOL-008
+  attack_types: [tool_abuse]
+  severity: 0.8
+  reason_code: TOOL_SHELL
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\brun\s+bash\s+curl\s+https?://
+- id: PI-TOOL-009
+  attack_types: [tool_abuse]
+  severity: 0.8
+  reason_code: TOOL_CC_ATTACKER
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bcc\s+\S+@(?:evil\.|attacker\.)
+- id: PI-TOOL-010
+  attack_types: [tool_abuse]
+  severity: 0.75
+  reason_code: TOOL_DELETE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bdelete\s+all\s+emails\s+after\s+sending\b
+- id: PI-TOOL-011
+  attack_types: [tool_abuse]
+  severity: 0.85
+  reason_code: TOOL_ATTACH_EXFIL
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\battach\s+\.env\b.{0,40}\bemail\b
+- id: PI-TOOL-012
+  attack_types: [tool_abuse]
+  severity: 0.8
+  reason_code: TOOL_API_NOTE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bnote_to_ai\s*:\s*.{0,40}\b(?:forward|send_email)\b

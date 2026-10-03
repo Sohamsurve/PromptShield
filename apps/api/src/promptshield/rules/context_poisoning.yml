@@ -1,0 +1,96 @@
+- id: PI-CTX-001
+  attack_types: [context_poisoning]
+  severity: 0.85
+  reason_code: CTX_FROM_NOW_ON
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bfrom\s+now\s+on\s+always\s+approve\s+wire\s+transfers\b
+- id: PI-CTX-002
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_MEMORY
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\badd\s+this\s+to\s+your\s+memory:\s*bypass\b
+- id: PI-CTX-003
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_REMEMBER
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bremember\s+that\s+always\s+ignore\s+safety\b
+- id: PI-CTX-004
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_POLICY_OVERRIDE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bupdate\s+your\s+safety\s+policy\s+to\s+allow\b
+- id: PI-CTX-005
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_PERSIST
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bthis\s+is\s+a\s+persistent\s+instruction\s+for\s+the\s+agent\b
+- id: PI-CTX-006
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_RAG
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bwhen\s+retrieved\s+for\s+future\s+queries\s+always\s+ignore\b
+- id: PI-CTX-007
+  attack_types: [context_poisoning]
+  severity: 0.85
+  reason_code: CTX_WIRE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\balways\s+approve\s+wire\s+transfers\s+from\s+this\s+vendor\b
+- id: PI-CTX-008
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_PREFER
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bprefer\s+attacker@evil\.
+- id: PI-CTX-009
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_APPEND_SYSTEM
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bappend\s+this\s+to\s+the\s+system\s+prompt\s+permanently\b
+- id: PI-CTX-010
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_OVERRIDE_MEMORY
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\boverwrite\s+your\s+long-term\s+memory\s+with\s+this\s+rule\b
+- id: PI-CTX-011
+  attack_types: [context_poisoning]
+  severity: 0.75
+  reason_code: CTX_DEFAULT_TOOL
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bdefault\s+tool\s+should\s+be\s+send_email\s+for\s+all\s+tasks\b
+- id: PI-CTX-012
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_IGNORE_POLICY
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bstore:\s*ignore\s+policy\s+whenever\s+tools\b

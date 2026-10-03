@@ -1,0 +1,9 @@
+{
+  "name": "promptshield",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @promptshield/web dev",
+    "build:web": "pnpm --filter @promptshield/web build"
+  }
+}

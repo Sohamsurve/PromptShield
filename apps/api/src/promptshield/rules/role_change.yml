@@ -1,0 +1,530 @@
+- id: PI-ROLE-001
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)you\ are\ now.{0,40}unrestricted\ assistant
+- id: PI-ROLE-002
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)you\ are\ now.{0,40}DAN
+- id: PI-ROLE-003
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)you\ are\ now.{0,40}developer
+- id: PI-ROLE-004
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)you\ are\ now.{0,40}system
+- id: PI-ROLE-005
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)you\ are\ now.{0,40}admin
+- id: PI-ROLE-006
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)you\ are\ now.{0,40}without\ restrictions
+- id: PI-ROLE-007
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)you\ are\ now.{0,40}no\ limits
+- id: PI-ROLE-008
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)act\ as.{0,40}unrestricted\ assistant
+- id: PI-ROLE-009
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)act\ as.{0,40}DAN
+- id: PI-ROLE-010
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)act\ as.{0,40}developer
+- id: PI-ROLE-011
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)act\ as.{0,40}system
+- id: PI-ROLE-012
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)act\ as.{0,40}admin
+- id: PI-ROLE-013
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)act\ as.{0,40}without\ restrictions
+- id: PI-ROLE-014
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)act\ as.{0,40}no\ limits
+- id: PI-ROLE-015
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)pretend\ to\ be.{0,40}unrestricted\ assistant
+- id: PI-ROLE-016
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)pretend\ to\ be.{0,40}DAN
+- id: PI-ROLE-017
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)pretend\ to\ be.{0,40}developer
+- id: PI-ROLE-018
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)pretend\ to\ be.{0,40}system
+- id: PI-ROLE-019
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)pretend\ to\ be.{0,40}admin
+- id: PI-ROLE-020
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)pretend\ to\ be.{0,40}without\ restrictions
+- id: PI-ROLE-021
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)pretend\ to\ be.{0,40}no\ limits
+- id: PI-ROLE-022
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)switch\ to.{0,40}unrestricted\ assistant
+- id: PI-ROLE-023
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)switch\ to.{0,40}DAN
+- id: PI-ROLE-024
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)switch\ to.{0,40}developer
+- id: PI-ROLE-025
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)switch\ to.{0,40}system
+- id: PI-ROLE-026
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)switch\ to.{0,40}admin
+- id: PI-ROLE-027
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)switch\ to.{0,40}without\ restrictions
+- id: PI-ROLE-028
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)switch\ to.{0,40}no\ limits
+- id: PI-ROLE-029
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enter\ developer\ mode.{0,40}unrestricted\ assistant
+- id: PI-ROLE-030
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enter\ developer\ mode.{0,40}DAN
+- id: PI-ROLE-031
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enter\ developer\ mode.{0,40}developer
+- id: PI-ROLE-032
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enter\ developer\ mode.{0,40}system
+- id: PI-ROLE-033
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enter\ developer\ mode.{0,40}admin
+- id: PI-ROLE-034
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enter\ developer\ mode.{0,40}without\ restrictions
+- id: PI-ROLE-035
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enter\ developer\ mode.{0,40}no\ limits
+- id: PI-ROLE-036
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enable\ jailbreak\ mode.{0,40}unrestricted\ assistant
+- id: PI-ROLE-037
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enable\ jailbreak\ mode.{0,40}DAN
+- id: PI-ROLE-038
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enable\ jailbreak\ mode.{0,40}developer
+- id: PI-ROLE-039
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enable\ jailbreak\ mode.{0,40}system
+- id: PI-ROLE-040
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enable\ jailbreak\ mode.{0,40}admin
+- id: PI-ROLE-041
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enable\ jailbreak\ mode.{0,40}without\ restrictions
+- id: PI-ROLE-042
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)enable\ jailbreak\ mode.{0,40}no\ limits
+- id: PI-ROLE-043
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)DAN\ mode.{0,40}unrestricted\ assistant
+- id: PI-ROLE-044
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)DAN\ mode.{0,40}DAN
+- id: PI-ROLE-045
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)DAN\ mode.{0,40}developer
+- id: PI-ROLE-046
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)DAN\ mode.{0,40}system
+- id: PI-ROLE-047
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)DAN\ mode.{0,40}admin
+- id: PI-ROLE-048
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)DAN\ mode.{0,40}without\ restrictions
+- id: PI-ROLE-049
+  attack_types:
+  - role_change
+  severity: 0.78
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)DAN\ mode.{0,40}no\ limits
+- id: PI-ROLE-X01
+  attack_types:
+  - role_change
+  severity: 0.82
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)(?:^|\n)\s*system\s*:\s*
+- id: PI-ROLE-X02
+  attack_types:
+  - role_change
+  severity: 0.82
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)###\s*assistant\b
+- id: PI-ROLE-X03
+  attack_types:
+  - role_change
+  severity: 0.82
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: <\|im_start\|>
+- id: PI-ROLE-X04
+  attack_types:
+  - role_change
+  severity: 0.82
+  reason_code: ROLE_MARKER
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\benable developer mode\b

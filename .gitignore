@@ -1,0 +1,54 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/mcp.json
+!.vscode/extensions.json
+*.swp
+*~
+.cursor/**/cache/
+
+# Env / secrets
+.env
+.env.local
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.db
+
+# Node
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+apps/web/.env*.local
+
+# Eval / models / local artifacts
+eval/reports/
+models/**
+!models/.gitkeep
+!models/calibration.json
+*.log
+apps/web/test-results/
+apps/web/playwright-report/
+apps/api/.venv/
+.venv/
+
+# UV / tooling
+.python-version
+
+# Generated (regenerate via make gen-types; keep package entry)
+packages/shared-types/src/openapi.ts.bak

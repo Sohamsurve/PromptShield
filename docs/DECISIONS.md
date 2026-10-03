@@ -1,0 +1,37 @@
+# Decisions
+
+Format: date · decision · reason.
+
+## 2026-10-03
+
+- **Source of truth:** Use `README.md`, ignore drift in `README_PromptShield.md` (missing §14.7 only). Reason: AGENTS.md and README §0 declare README.md authoritative.
+- **Python runtime:** Target Python 3.11 in Docker and via `uv` for local API; host currently has 3.10 only. Reason: README §3.2 requires 3.11+.
+- **JS package manager:** `pnpm` for `apps/web` and workspace root. Reason: already installed; faster installs than npm.
+- **Database (demo):** SQLite via `DATABASE_URL=sqlite:///./promptshield.db`. Reason: README §3.2 / §14.1 allow SQLite for demo.
+- **Redis:** Provided by Docker Compose; local `make dev` starts Redis in Compose. Reason: `redis-server` not installed on host.
+- **Phase 0 firewall:** Eval baseline uses an explicit no-op scanner (`decision=allow`, no findings) so ASR(off) is high and measurable. Reason: README Phase 0 accept criteria.
+- **Fixtures:** Inert educational payloads only; domains `evil.test` / `example.test`; canaries `CANARY-*`; no real secrets or network. Reason: safety frame.
+- **Git commits:** Do not create commits unless the human asks. Reason: user rule overrides AGENTS “small commits” guidance for when to commit.
+- **Missing starter editor files:** Create `.cursor/mcp.json`, `.vscode/mcp.json`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`, and `.github/instructions/*` in Phase 0. Reason: README §14.7 assumes they exist; tree did not include them.
+- **eval/thresholds.yml (initial):** Phase 0 thresholds only assert harness runs and ASR(off) is high / ASR reduction not yet required. Reason: no detectors yet; do not invent passing detector metrics.
+- **GullibleAgent encoding expansion:** Phase 0 agent locally expands HTML comments, base64 near “base64”, and Unicode tag characters before matching imperatives. Reason: F09/F10 must contribute to ASR(off) baseline without a real decoder pipeline yet.
+- **Fixture stand-ins:** F03/F04/F08 ship as text files labelled with hidden_reason markers until Phase 2 PDF/DOCX/OCR adapters. Reason: unblock Arena/eval without binary generators in Phase 0.
+- **Phase 1 fusion interim:** Use b=-2, w_sig=5 and a floor `risk=max(risk,0.8)` when max signature severity ≥ 0.75. Reason: README starter weights (b=-4,w_sig=3) leave signature-only hits at ~0.17 risk, so sanitize/block never fires before the classifier exists; Phase 3 will refit.
+- **F18 label:** `hard_negative`, not `benign`. Reason: README §7.2 / §1.3 — security blog quoting attack phrases is a hard negative; FPR on benign is reported separately from hard-negative FPR.
+- **Phase 2 binaries:** Ship real `F03_hidden.pdf`, `F04_hidden.docx`, `F08_hidden.png` (PNG tEXt payload) with text fallbacks. Reason: golden tests must exercise real parsers; PNG tEXt avoids requiring Tesseract in CI.
+- **Hidden-imperative heuristic:** Emit `HIDDEN_IMPERATIVE` / `EXFIL_SHAPE` on hidden or T2+ tool/exfil/poison cues so type-9 tagging has a non-signature path. Reason: defence in depth; adapters alone do not create findings.
+- **Email non-MIME (.ics):** Fall back to raw body segment when MIME parse yields no parts. Reason: F17 calendar invite is educational ICS, not multipart MIME.
+- **Phase 3 classifier:** Deterministic TF-IDF logistic regression weights in `models/calibration.json` (placeholder `.onnx` marker). Reason: CI-friendly, no giant model download; upgrade path to DeBERTa ONNX noted in LIMITATIONS.
+- **Phase 3 judge:** Offline deterministic judge when `LLM_API_KEY` absent / scripted mode; schema-validated; never sole decider. Reason: README gray-zone + deterministic CI.
+- **thresholds.yml:** Left unchanged (protected). Phase 3 held-out ≥0.85 enforced in `tests/test_phase3_accept.py`; metrics still reported by `make eval`.
+- **Blocked content to Aria:** On `block`/`quarantine`, Aria receives a fixed quarantine placeholder, not residual redacted text. Reason: redaction spans can leave imperative remnants that still flip scripted ASR flags; fail-closed for agent consumption.
+- **Session store:** In-memory `SessionAnalyser` (no Redis required for demo/CI). Reason: host may lack Redis; behaviour matches §5.7 formulas; `degraded` not set for intentional in-memory mode.
+- **Phase 4 ASR/utility floors:** Enforced in `tests/test_phase4_accept.py` (not by loosening `eval/thresholds.yml`). Reason: thresholds.yml is protected; Phase 4 accept criteria still gate CI.
+- **Eval dashboard data:** `GET /v1/eval/latest` reads `eval/reports/latest/report.json` (+ heatmap). Reason: single source of truth with harness output; no duplicate metrics store.
+- **Adaptive red-team:** Frozen probe set in `test_adaptive_redteam.py`; misses go to LIMITATIONS / add-only eval cases, never threshold loosening. Reason: README Phase 5 “after freezing detectors”.
+- **Backup demo:** Ship `docs/DEMO_BACKUP.md` timed script instead of requiring a binary video in-repo. Reason: reproducible for judges; recording remains optional.
+- **A11y gate:** Playwright viewports 390/768/1280 × light/dark + axe serious/critical on Console/Arena. Reason: README §0.4 / §9 without manual-only sign-off.
+- **Arena DoD gate:** `tests/test_arena_gallery.py` requires ≥12 attack fixtures with off=harmed and on=safe. Reason: README §0.4 A/B Arena claim must be CI-enforced, not demo-only.
+- **CI e2e:** GitHub Actions runs `make train`, `make test`, `make eval-fast`, and Playwright Chromium e2e. Reason: Phase 5 a11y/DoD must not be local-only.
+- **Adaptive R1 first-run:** `eval/data/adaptive/round1.jsonl` (35 cases) measured with detectors frozen; attack recall 1.0 (32/32); hard-negative AD34 FPR 1.0 — **no detector change** applied to clear AD34; reported in `docs/EVIDENCE.md` §7 / `docs/CLAIMS.md`.
+- **Classifier honesty:** README §5.6 documents TF-IDF logreg + placeholder onnx (not DeBERTa). Reason: evidence freeze for v0.1-phase5.

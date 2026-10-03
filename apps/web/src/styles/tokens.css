@@ -1,0 +1,33 @@
+:root {
+  --paper: #f3f5f9;
+  --surface: #ffffff;
+  --ink: #0e1726;
+  --slate: #5b667a;
+  --rule: #d5dae4;
+  --uv: #6a4dff;
+  --allow: #138a5b;
+  --sanitize: #b26b00;
+  --quarantine: #0b7ba7;
+  --block: #c62839;
+  --escalate: #a4237a;
+}
+
+.dark {
+  --paper: #0b1020;
+  --surface: #121a2e;
+  --ink: #e8ecf5;
+  --slate: #9aa6bd;
+  --rule: #26324d;
+  --uv: #9b86ff;
+  --allow: #3ccb8e;
+  --sanitize: #f0a63a;
+  --quarantine: #4fb6de;
+  --block: #ff6b7a;
+  --escalate: #e064b4;
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+}

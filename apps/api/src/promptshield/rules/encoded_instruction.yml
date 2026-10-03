@@ -1,0 +1,80 @@
+- id: PI-ENC-001
+  attack_types:
+  - encoded_instruction
+  severity: 0.84
+  reason_code: ENC_BASE64_IMPERATIVE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)decode (this|the following) (base64|hex|rot13) and (execute|follow|run)
+- id: PI-ENC-002
+  attack_types:
+  - encoded_instruction
+  severity: 0.84
+  reason_code: ENC_BASE64_IMPERATIVE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)base64[- ]decode.{0,40}(follow|execute|run)
+- id: PI-ENC-003
+  attack_types:
+  - encoded_instruction
+  severity: 0.84
+  reason_code: ENC_BASE64_IMPERATIVE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)rot13.{0,30}(instructions?|follow)
+- id: PI-ENC-004
+  attack_types:
+  - encoded_instruction
+  severity: 0.84
+  reason_code: ENC_BASE64_IMPERATIVE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)hex[- ]decode.{0,40}(follow|execute|run)
+- id: PI-ENC-005
+  attack_types:
+  - encoded_instruction
+  severity: 0.84
+  reason_code: ENC_BASE64_IMPERATIVE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bexecute the decoded\b
+- id: PI-ENC-006
+  attack_types:
+  - encoded_instruction
+  severity: 0.84
+  reason_code: ENC_BASE64_IMPERATIVE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bunhide (the )?instructions?\b
+- id: PI-ENC-007
+  attack_types:
+  - encoded_instruction
+  severity: 0.84
+  reason_code: ENC_BASE64_IMPERATIVE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\bdecode and (obey|comply|execute)\b
+- id: PI-ENC-008
+  attack_types:
+  - encoded_instruction
+  severity: 0.84
+  reason_code: ENC_BASE64_IMPERATIVE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)\brun the decoded (payload|command|instruction)
