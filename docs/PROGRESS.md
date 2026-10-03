@@ -8,8 +8,8 @@ Last updated: 2026-10-03 (evidence freeze v0.1-phase5)
 - README §5.6 classifier honesty; `README_PromptShield.md` → redirect
 - `.gitignore` covers env/venvs/node_modules/models/build; `make setup` runs `make train`
 
-## In progress
-- Git commit + tag + fresh-clone verification (this session)
+## Fresh clone
+- `make setup` OK · `make test` 361 passed · `make eval-fast` OK · `make demo` **FAILED** (Docker paused) — see `docs/FRESH_CLONE.md`
 
 ## Measured (freeze)
 

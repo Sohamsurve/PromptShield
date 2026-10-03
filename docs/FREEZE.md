@@ -1,5 +1,7 @@
 # Freeze — v0.1-phase5
 
+Git tag: `v0.1-phase5` · commit `07a6063704a123aa7247e94ffcc9d617842f11b0`
+
 SHA-256 digests of protected evaluation artefacts at tag `v0.1-phase5`.
 
 | Path | SHA-256 | Bytes |
