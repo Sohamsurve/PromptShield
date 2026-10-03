@@ -1,4 +1,4 @@
-# Submission pack — PromptShield v1.0-submission
+# Submission pack — PromptShield v1.1-evidence
 
 ## Architecture
 
@@ -36,7 +36,7 @@ Adapters cover text, HTML, PDF, DOCX, email/MIME, Markdown, JSON/API, source cod
 | Classifier | TF-IDF + logistic regression (`calibration.json`) | CI-friendly, no GPU | Skip layer; `degraded:["classifier"]` |
 | Judge | Offline deterministic JSON; optional live LLM | Gray-zone only | Unknown → never allow alone; **not evaluated** |
 | Aria | Scripted GullibleAgent | Offline demo/ASR | LLM mode if `LLM_API_KEY` (**not run**) |
-| Fusion | Calibrated logistic | Combine layers | Policy thresholds |
+| Fusion | Hand-set logistic + signature floor | Combine layers; `max_sev≥0.75→risk≥0.8` | Policy thresholds |
 
 ## Demo script (~6 min)
 
@@ -69,13 +69,15 @@ Verified against README § commands / `docs/FRESH_CLONE.md`. Compose Redis not r
 
 ## Declared 3×3 position
 
-- **F3** — **1 type supported, 7 demonstrated** (sealed-only table; tool_abuse **weak** after provenance ASR).
+- **F3** — **1 type supported, 7 demonstrated** (sealed-only; see CLAIMS).
 - **D1** — **D2 in progress** (round-4 LCI 0.819 < 0.85). **No D3.**
-- **Minimal disruption** — test HN FPR 0.0 (n=62); TF legit utility 1.0; provenance security ASR regression documented (STOP).
+- Disruption reported as measured FPR only (sealed HN first-run **4/110**; realistic benign **0.027**).
+
+**Note:** Demo gallery fixtures are in classifier **training** data.
 
 ## Claim ledger
 
-See `docs/CLAIMS.md` and `docs/CLAIM_LEDGER.md`. Evidence: `docs/EVIDENCE.md`. Freeze hashes: `docs/FREEZE.md`. Licences: `docs/LICENCES.md`.
+See `docs/CLAIMS.md`, `docs/CLAIM_LEDGER.md`, `docs/ERRATA.md`. Evidence: `docs/EVIDENCE.md`. Freeze: `docs/FREEZE.md`. Licences: `docs/LICENCES.md`.
 
 ## Secrets scan
 
@@ -83,4 +85,4 @@ No real API keys or credentials in tree. Demo secrets are **canaries only** (`CA
 
 ## Freeze / tag
 
-Tag **`v1.0-submission`**. Hashes in `docs/FREEZE.md`.
+Tag **`v1.1-evidence`** (prior tags untouched). Hashes in `docs/FREEZE.md`.

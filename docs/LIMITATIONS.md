@@ -1,49 +1,36 @@
-# Limitations
+# Limitations (current)
 
-Honest gaps. Do not hide missed metrics — report the measured number with CI.
+Honest gaps. Measured numbers with CI where available. Historical phase notes removed; see git tags for older wording.
 
-## Phase 0
+## Detection / fusion
 
-- Fixtures F03/F04/F08 are **text stand-ins** for PDF/DOCX/image until Phase 2 adapters exist.
-- LLM judge and Aria `llm` mode are not wired; demos/CI use `ARIA_MODE=scripted`.
-- No classifier ONNX yet; `models/` is empty.
-- Session analyser uses in-memory state (Redis optional); multi-process demos do not share session risk.
+- Fusion is a **hand-set / sample-fitted logistic with a signature floor** (`max_sev ≥ 0.75 → risk ≥ 0.8`). Weights in `policies/default.yml` came from `eval/fit_fusion.py` on a **signature_cases sample**, not a documented full train+dev fit.
+- Classifier is **TF-IDF + logistic regression** only (`models/calibration.json`). No ONNX / DeBERTa.
+- **Demo gallery fixtures are in classifier training data** (`make train`). Do not treat gallery recall as held-out.
+- Ablation (v1.1): signatures-only recall on test **0.611**; classifier-only decision recall **0.000** (prob alone rarely crosses policy block without signature floor). Markers stripped: same as as-is on test/R3/R4.
+- Quotation-bypass sealed (T3): pass-rate **0.95** (19/20); one residual miss remains.
 
-## Phase 1
+## False positives
 
-- Signature-only defence: paraphrases outside the rule set can evade; held-out/adaptive recall not yet measured.
-- Hard-negative quotation cases rely on `detect/quotation.py` framing cues + offline judge; LLM judge not evaluated (`offline, not evaluated`).
-- Fusion weights are interim (see DECISIONS.md); not yet fit on a validation set.
-- Multilingual coverage is a small starter set (HI/ES/FR/DE/ZH + Hinglish), not exhaustive.
-- Homoglyph folding uses a short confusables map, not the full Unicode confusables table.
-- ASR(on) improved with adapters; remaining gallery harms (if any) are mostly multi-step / tool-taint cases for Phase 4.
+- **Sealed HN first-run (spent): 4/110** blocked (all `security_article` specimen briefs) — headline spent-set FPR.
+- Tuned test HN FPR can read **0.0** (n=62) after later quotation work; ablation as-is on synth test HN: **0.100** (6/60).
+- Realistic local set (first-run): benign FPR **0.027** (14/523, CI [0.016, 0.044]); hard-negative FPR **0.000** (0/120, CI [0, 0.031]).
 
-## Phase 2
+## Tool firewall
 
-- Image OCR variants are best-effort; CI relies on PNG `tEXt` chunks when Tesseract is absent (`degraded: ocr_unavailable` possible).
-- Homoglyph / full confusables and rich CSS class resolution remain incomplete.
-- Type-9 cells with small `n` have wide Wilson CIs — treat as directional until the synth matrix grows.
-## Phase 3
+- v1.0 sealed TF v5 (spent): provenance ASR **0.719** scan-off — STOP recorded in ERRATA/EVIDENCE.
+- v1.1 sealed TF v6 (after confirm fix): ASR(allow) **0.000** (0/32); confirm counted as blocked; legit confirm-rate **0.286** (10/35).
 
-- Classifier is a deterministic TF-IDF logistic model (`models/calibration.json`), not a fine-tuned DeBERTa ONNX encoder yet. Placeholder `classifier.onnx` marks the export slot.
-- LLM judge uses an offline deterministic path in scripted/CI mode; live provider calls require `LLM_API_KEY` and are still never the sole decider.
-- Held-out paraphrase set is small (n=10); Wilson CIs are wide.
+## Claims / data
 
-## Phase 4
+- Round-4 LCI **0.819 < 0.85** → **D2 not claimed** (D1).
+- Independent-attack R2 recall **0.909** (20/22).
+- Judge: implemented, **not evaluated**. LLM agent: **not run**.
+- Synth corpora carry template markers (`Unique=`, `Variant`, `Case`, `[r2:`) — see leakage audit; train∪dev→test/sealed Jaccard n≥0.8 count was **0**.
 
-- ASR reduction and utility measured on **scripted** GullibleAgent; `ARIA_MODE=llm` path is not yet a separate accept lane.
-- Tool firewall deny reasons may be domain-allowlist or taint; both fail closed for side effects.
-- Phase-4 signature families are high-precision phrases; paraphrase coverage beyond the held-out/signature sets remains limited.
+## Ops / demo
 
-## Phase 5 / v1.0
-
-- **Tool-firewall provenance relaxation:** sealed attack ASR rose from **0.188** (provenance off) to **0.719** (on, scan off) / **0.563** (scan on), n=32. Ambiguous “destination only in untrusted content” cases **allow** instead of **confirm**. Release hardening **STOP** — not patched (see EVIDENCE §6 / CLAIMS).
-- Sealed-only per-type status (R2+R3+R4): **1 supported, 7 demonstrated, 1 weak** (tool_abuse). Tuned test recall is not a status basis.
-- Round-4 overall LCI **0.819 < 0.85** → D2 not claimed.
-- Adaptive round 1 AD34 first-run FPR was 1.0 (v0.1); v0.2 applies general quotation dampening. Round 2 held-out attack recall **0.909** (20/22).
-- Adaptive red-team probes (`tests/test_adaptive_redteam.py`) are a small frozen set; novel paraphrases and story-framed attacks can still under-fire signatures — do not loosen thresholds to clear them; add labelled cases only.
-- Dashboard Coverage/Eval read `eval/reports/latest` via the API; stale reports need a fresh `make eval-fast`.
-- A11y/responsive covered by Playwright (`e2e/responsive-a11y.spec.ts`) for 390/768/1280 × light/dark; CI needs `pnpm exec playwright install`.
-- Backup demo is scripted in `docs/DEMO_BACKUP.md` (video recording optional); perf notes in `docs/PERF.md` (no Lighthouse CI budgets).
-- Policy “save new version” is demo-local (sliders + replay estimate); durable policy store is not wired.
-
+- ASR/utility measured on **scripted** GullibleAgent.
+- OCR best-effort; CI may use PNG `tEXt` when Tesseract absent.
+- Docker Compose demo requires unpaused Docker Desktop; non-Docker `make demo` path is the default.
+- Session state is in-memory unless Redis is configured.

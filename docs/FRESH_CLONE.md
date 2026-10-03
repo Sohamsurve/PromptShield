@@ -1,40 +1,31 @@
-# Fresh clone notes
+# Fresh clone notes — tag `v1.1-evidence`
 
-## Commands measured (v0.2-evidence)
+## Commands measured
 
 | Step | Result | Notes |
 |---|---|---|
-| `make setup` | expected exit 0 | installs uv 3.11, syncs API, pnpm, trains classifier |
-| `make test` | **366 passed** | |
-| `make eval-fast` | exit 0 | |
-| Non-Docker demo | **OK** | see below |
-| `make demo` / `make demo-docker` | Docker path **FAILED** when Desktop paused | Unpause Whale menu |
+| `make setup` | expected exit 0 | uv 3.11, API sync, pnpm, `make train` |
+| `make test` | **380 passed** | API pytest + web placeholder |
+| `make eval-fast` | exit 0 | when run |
+| Non-Docker demo API | **OK** | `/v1/healthz` → `{"status":"ok"}` |
+| Web UI start | **OK** | `cd apps/web && pnpm dev` → http://localhost:3000 (Arena) |
+| `make demo-docker` | needs Docker Desktop unpaused | |
 
-## Non-Docker demo path
-
-`make demo` documents the host path (Compose not required for API smoke):
+## Non-Docker path (README)
 
 ```bash
-# from repo root (PYTHONPATH exported by Makefile)
+# Terminal A — API
 cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 0.0.0.0 --port 8000
-# other terminal:
+# Terminal B — web
 cd apps/web && pnpm dev
-# open http://localhost:3000/arena
+# Open http://localhost:3000/arena
+# Smoke: GET /v1/healthz  ·  POST /v1/scan
 ```
 
-Verified this session:
-- `GET http://127.0.0.1:8000/v1/healthz` → `{"status":"ok"}`
-- `POST /v1/scan` with override text → `decision=block`, `risk≈0.998`
-
-## Docker demo
-
-```bash
-make demo-docker   # docker compose up -d
-```
-
-Requires Docker Desktop **unpaused**. Last attempt: `Docker Desktop is manually paused`.
+Or: `make demo` (prints the same host commands after `make setup`).
 
 ## Other
 
-- Playwright e2e is not part of `make demo`; install browsers separately for `make e2e`.
-- Classifier: `models/calibration.json` only (`tfidf_logreg`). No `classifier.onnx`.
+- Current evidence tag: **`v1.1-evidence`**. Prior tags are immutable; corrections in `docs/ERRATA.md`.
+- Classifier: `models/calibration.json` only. Gallery fixtures are in training data.
+- Playwright e2e browsers: `pnpm exec playwright install chromium` in `apps/web`.

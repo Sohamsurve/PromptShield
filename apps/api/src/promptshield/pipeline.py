@@ -357,11 +357,37 @@ def scan(
     if "adapter" in degraded and request.trust.value >= TrustLevel.T3:
         risk = max(risk, 0.55)
     if judge_quote:
-        # Judge never sole-decides safe alone: keep a small floor from other layers if hidden/encoded
-        risk = min(risk, 0.2 if hidden == 0.0 and encoded == 0.0 else 0.45)
-        # Drop attack findings that are pure signature hits on quoted discussion
-        if hidden == 0.0 and encoded == 0.0:
-            findings = [f for f in findings if f.detector == "judge"]
+        # Quotation dampening must not lower T2/T3 content below sanitize/block
+        # when signatures fire or the text addresses an agent.
+        agent_directed = disc.ai_agent_score_raw >= 0.35 or (
+            disc.attackish_present
+            and disc.ai_agent_score_raw >= max(disc.human_reader_score, 0.01)
+        )
+        t2t3_live = request.trust.value >= TrustLevel.T2 and (
+            (agent_directed and (max_sev >= 0.5 or clf_prob >= 0.55))
+            or max_sev >= 0.75
+        )
+        if t2t3_live:
+            risk = fuse_risk(
+                max_signature_severity=max_sev,
+                heuristic_score=heur,
+                classifier_prob=clf_prob,
+                judge_confidence=judge_conf,
+                judge_says_injection=True,
+                hidden=hidden,
+                encoded=encoded,
+                trust=request.trust,
+                session_risk=min(session_risk, 2.0) / 2.0,
+                fusion=fusion_cfg,
+            )
+            if max_sev >= 0.75 or clf_prob >= 0.7:
+                risk = max(risk, 0.8)
+            # Keep findings (do not strip)
+        else:
+            # Judge never sole-decides safe alone: small floor if hidden/encoded
+            risk = min(risk, 0.2 if hidden == 0.0 and encoded == 0.0 else 0.45)
+            if hidden == 0.0 and encoded == 0.0:
+                findings = [f for f in findings if f.detector == "judge"]
 
 
     high_impact = bool(request.agent_context and request.agent_context.high_impact)

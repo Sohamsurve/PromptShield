@@ -24,6 +24,9 @@ _MEMORY_POISON = re.compile(
     r")\b"
 )
 
+# Tools whose args are checked for untrusted provenance even when side_effect is read_*.
+_SENSITIVE_TOOLS = {"send_email", "fetch_url", "read_file", "save_memory", "reveal_system"}
+
 
 def _policy() -> dict[str, Any]:
     return yaml.safe_load(POLICY_PATH.read_text(encoding="utf-8")) or {}
@@ -53,6 +56,18 @@ def _path_denied(path: str, patterns: list[str]) -> bool:
     return False
 
 
+def _explicit_in_user_goal(values: list[str], user_goal: str | None) -> list[str]:
+    """Values the user literally named in their instruction (not only in untrusted docs)."""
+    goal = (user_goal or "").strip().lower()
+    if not goal:
+        return []
+    out: list[str] = []
+    for v in values:
+        if v and str(v).strip().lower() in goal:
+            out.append(v)
+    return out
+
+
 def guard_tool_call(req: ToolCallRequest) -> ToolDecision:
     try:
         return _guard_tool_call_inner(req)
@@ -78,7 +93,7 @@ def _guard_tool_call_inner(req: ToolCallRequest) -> ToolDecision:
     reasons: list[str] = []
     tainted_args: list[str] = []
 
-    # Canary in args
+    # Canary in args — schema/safety rule; provenance never waives
     for k, v in (req.args or {}).items():
         cans = find_canaries(str(v))
         if cans:
@@ -88,7 +103,7 @@ def _guard_tool_call_inner(req: ToolCallRequest) -> ToolDecision:
                 tainted_args=[str(v)],
             )
 
-    # Path deny-list
+    # Path deny-list — never waived by provenance
     if "path" in (req.args or {}):
         deny_paths = list(tool_pol.get("deny_paths") or [])
         if _path_denied(str(req.args["path"]), deny_paths):
@@ -98,20 +113,26 @@ def _guard_tool_call_inner(req: ToolCallRequest) -> ToolDecision:
                 tainted_args=[str(req.args["path"])],
             )
 
-    # Domain allowlist for send_email / fetch_url
+    # Domain allowlist — never waived by provenance
     if req.tool == "send_email":
         allowed = list(tool_pol.get("allowed_domains") or ["example.com", "example.test"])
         to = str((req.args or {}).get("to", ""))
         if to and not _domain_allowed(to, allowed):
-            reasons.append("TOOL_DOMAIN_DENY")
-            # still continue to taint check — final deny
-            return ToolDecision(decision="deny", reasons=reasons + ["TOOL_DOMAIN_DENY"], tainted_args=[to])
+            return ToolDecision(
+                decision="deny",
+                reasons=["TOOL_DOMAIN_DENY"],
+                tainted_args=[to],
+            )
 
     if req.tool == "fetch_url":
         allowed = list(tool_pol.get("allowed_domains") or ["example.com", "example.test"])
         url = str((req.args or {}).get("url", ""))
         if url and not _domain_allowed(url, allowed):
-            return ToolDecision(decision="deny", reasons=["TOOL_DOMAIN_DENY"], tainted_args=[url])
+            return ToolDecision(
+                decision="deny",
+                reasons=["TOOL_DOMAIN_DENY"],
+                tainted_args=[url],
+            )
 
     # Memory-write guard: block persistent-instruction payloads regardless of trust tag
     if req.tool == "save_memory":
@@ -125,24 +146,53 @@ def _guard_tool_call_inner(req: ToolCallRequest) -> ToolDecision:
 
     tainted_ctx = context_tainted(req.context, threshold=taint_threshold)
     untrusted = untrusted_arguments(req.args or {}, req.context, req.user_goal)
-    # User instruction as provenance: args the user explicitly asked to use from content
+    # User instruction as provenance of the *action class* (reply / open link / …)
     user_prov = user_requested_arg_provenance(req.tool, req.args or {}, req.user_goal, req.context)
-    if user_prov:
-        untrusted = [u for u in untrusted if u not in user_prov]
+    # Provenance may waive taint only for values the user literally named in user_goal.
+    # Ambiguous destinations (only in untrusted content) stay tainted → confirm.
+    explicit = _explicit_in_user_goal(user_prov, req.user_goal)
+    if explicit:
+        untrusted = [u for u in untrusted if u not in explicit]
     tainted_args.extend(untrusted)
 
-    if side_effect in {"external", "persistent"} and (tainted_ctx or untrusted):
-        # If the only issue was taint but user explicitly requested this action+arg, allow
-        if user_prov and not untrusted and not (
-            tainted_ctx and req.tool == "save_memory"
-        ):
+    taint_gated = (
+        side_effect in {"external", "persistent", "read_external"}
+        or req.tool in _SENSITIVE_TOOLS
+    )
+
+    if taint_gated and (tainted_ctx or untrusted):
+        # Explicit user-named destination + no remaining untrusted args → allow (taint waived only)
+        if explicit and not untrusted and not (tainted_ctx and req.tool == "save_memory"):
             return ToolDecision(
                 decision="allow",
                 reasons=["USER_REQUESTED_PROVENANCE"],
                 tainted_args=[],
             )
-        if tool_pol.get("block_if_tainted") or tool_pol.get("require_confirm_if_tainted"):
-            # Demo/default: deny rather than interactive confirm
+        # User asked for the action class but destination still only from untrusted → confirm
+        if user_prov and untrusted:
+            return ToolDecision(
+                decision="confirm",
+                reasons=["TOOL_AMBIGUOUS_DESTINATION"] + reasons,
+                tainted_args=tainted_args,
+            )
+        if user_prov and tainted_ctx and not untrusted and req.tool != "save_memory":
+            # Action authorised but context still tainted and args cleared only via action-class
+            # match without explicit naming — treat as ambiguous
+            return ToolDecision(
+                decision="confirm",
+                reasons=["TOOL_AMBIGUOUS_DESTINATION"] + reasons,
+                tainted_args=tainted_args,
+            )
+        if tool_pol.get("require_confirm_if_tainted"):
+            code = "TOOL_TAINTED_SEND" if req.tool == "send_email" else "TOOL_TAINTED"
+            if req.tool == "save_memory":
+                code = "MEMORY_WRITE_UNTRUSTED"
+            return ToolDecision(
+                decision="confirm",
+                reasons=[code] + reasons,
+                tainted_args=tainted_args,
+            )
+        if tool_pol.get("block_if_tainted"):
             code = "TOOL_TAINTED_SEND" if req.tool == "send_email" else "TOOL_TAINTED"
             if req.tool == "save_memory":
                 code = "MEMORY_WRITE_UNTRUSTED"
@@ -151,11 +201,18 @@ def _guard_tool_call_inner(req: ToolCallRequest) -> ToolDecision:
                 reasons=[code] + reasons,
                 tainted_args=tainted_args,
             )
-        return ToolDecision(decision="confirm", reasons=["TOOL_TAINT_CONFIRM"] + reasons, tainted_args=tainted_args)
+        return ToolDecision(
+            decision="confirm",
+            reasons=["TOOL_TAINT_CONFIRM"] + reasons,
+            tainted_args=tainted_args,
+        )
 
-    # User-requested provenance with no remaining untrusted args → allow
-    if user_prov and not untrusted:
-        return ToolDecision(decision="allow", reasons=["USER_REQUESTED_PROVENANCE"], tainted_args=[])
+    if explicit and not untrusted:
+        return ToolDecision(
+            decision="allow",
+            reasons=["USER_REQUESTED_PROVENANCE"],
+            tainted_args=[],
+        )
 
     if reasons and fail_mode == "deny":
         return ToolDecision(decision="deny", reasons=reasons, tainted_args=tainted_args)

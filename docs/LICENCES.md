@@ -4,23 +4,35 @@ PromptShield itself: see repository root licence (if published). This note cover
 
 ## Datasets / corpora
 
-| Material | Location | Notes |
-|---|---|---|
-| Synthetic attack/benign matrix | `eval/data/`, `eval/synth/` | Generated for this project; inert reserved domains (`*.example.test`, `*.invalid`) and canary tokens only |
-| Adaptive / sealed rounds | `eval/data/adaptive/`, `eval/data/sealed/` | Project-authored held-out sets; do not redistribute as “benchmark leaderboard” without this provenance |
-| Gallery fixtures | `fixtures/` | Project-authored attack gallery; text stand-ins for some binary formats |
-| Signature unit cases | `apps/api/tests/data/signature_cases.jsonl` | Project-authored positives + benign counter-examples |
-| Public attack sets (optional references in README §8) | not vendored as full dumps | If you add deepset/prompt-injections, HackAPrompt, BIPIA, InjecAgent, AgentDojo, JailbreakBench, etc., **cite the upstream licence** before redistribution |
+| Material | Location | Licence | Notes |
+|---|---|---|---|
+| Synthetic attack/benign matrix | `eval/data/`, `eval/synth/` | Project | Inert reserved domains / canaries only |
+| Adaptive / sealed rounds | `eval/data/adaptive/`, `eval/data/sealed/` | Project | Held-out; not a public leaderboard dump |
+| Gallery fixtures | `fixtures/` | Project | **Also used in classifier training** |
+| Signature unit cases | `apps/api/tests/data/signature_cases.jsonl` | Project | |
+| Realistic benign (local eval) | `eval/data/realistic/benign.jsonl` | mixed — see rows | **Local eval only; do not redistribute as a dataset release** |
+| Realistic hard negatives | `eval/data/realistic/hard_negatives.jsonl` | mixed — see rows | Same |
 
-No licensed commercial corpora are bundled in this freeze.
+### Realistic set source licences (per row `licence` field)
+
+| `licence` value | Source | Terms |
+|---|---|---|
+| `public_domain_US_gutenberg` | Project Gutenberg ebooks (Pride and Prejudice, Alice, Frankenstein) | Public domain in the US |
+| `CC_BY_SA_3_Wikipedia` | English Wikipedia plain extracts (security topics) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
+| `CC_BY_SA_4_OWASP_LLM_Top10` | OWASP Top 10 for LLM Apps — LLM01 Prompt Injection markdown | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (OWASP project) |
+| `PSF_Python` | CPython stdlib `.py` excerpts | [PSF License](https://docs.python.org/3/license.html) |
+| `project_local_eval_only` | This repo’s README/docs chunks | Project; local eval only |
+| `project_synthetic_inert` | Synthetic long email / OpenAPI JSON | Project; inert |
+
+Optional public attack sets named in README §8 are **not** vendored here; cite upstream licences before adding.
 
 ## Models
 
 | Artifact | Licence / terms | Notes |
 |---|---|---|
-| `models/calibration.json` | Project-trained TF-IDF + logistic regression | Trained only on `train`/`dev` (+ signature cases / gallery); **never** on `test` or sealed adaptive splits |
-| Optional live LLM judge / Aria | Provider ToS (OpenAI or configured) | Requires operator-supplied `LLM_API_KEY`; not used in measured CI evidence |
-| DeBERTa / ONNX encoder | **not shipped** | Documented upgrade path only |
+| `models/calibration.json` | Project-trained TF-IDF + logistic regression | Trained on `train`/`dev` + signature cases + **gallery**; never on `test` / sealed |
+| Optional live LLM judge / Aria | Provider ToS | `LLM_API_KEY`; not in measured CI |
+| DeBERTa / ONNX | **not shipped** | |
 
 ## Canaries
 

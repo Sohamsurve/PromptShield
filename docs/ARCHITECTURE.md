@@ -29,7 +29,7 @@ Session analyser maintains per-`session_id` risk with decay, payload-split resca
 | `adapters/` | HTML, PDF, DOCX, email, MD, JSON, code, image-OCR |
 | `normalize/` | Unicode canonicalise + recursive decode |
 | `detect/` | Signatures, heuristics, classifier, judge, session |
-| `fusion/` | Calibrated logistic risk + decision |
+| `fusion/` | Hand-set logistic risk + **signature floor** (`max_sev≥0.75→risk≥0.8`); weights from `fit_fusion` on signature_cases sample |
 | `neutralize/` | Redact, spotlight |
 | `guard/` | Taint, tool firewall, canary/secrets, egress, ingest |
 | `agent/` | Aria + GullibleAgent (scripted demo) |
@@ -40,6 +40,7 @@ Session analyser maintains per-`session_id` risk with decay, payload-split resca
 - Tool guard errors → **deny** (side effects).
 - Scan errors → quarantine (policy `fail_mode.scan_error`).
 - Judge never sole-decides; fusion always includes other layers.
+- Tool firewall: provenance may waive **taint only**; never domain allowlist / path deny / canary rules. Ambiguous destinations → `confirm`.
 
 ## Contracts
 

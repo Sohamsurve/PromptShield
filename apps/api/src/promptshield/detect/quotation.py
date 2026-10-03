@@ -50,12 +50,13 @@ _QUOTE_MARKERS = re.compile(
 
 # Imperatives / second-person aimed at an AI agent persona.
 _AI_ADDRESS = re.compile(
-    r"(?i)\b(?:"
-    r"you\s+are\s+now|your\s+system\s+prompt|as\s+an?\s+ai|"
-    r"assistant[,:]|from\s+now\s+on\s+always|obey\s+(?:me|these|only)|"
-    r"ignore\s+(?:all\s+)?(?:previous|prior)\s+(?:instructions?|rules?)|"
-    r"reveal\s+your|print\s+your\s+hidden"
-    r")\b"
+    r"(?i)(?:"
+    r"\b(?:you\s+are\s+now|your\s+system\s+prompt|as\s+an?\s+ai|"
+    r"from\s+now\s+on\s+always|obey\s+(?:me|these|only)|"
+    r"ignore\s+(?:all\s+)?(?:previous|prior)\s+(?:instructions?|rules?|policies)|"
+    r"reveal\s+your|print\s+your\s+hidden)\b|"
+    r"\bassistant\s*:"  # "Assistant:" imperatives (trailing colon is not a word char)
+    r")"
 )
 
 # Language that addresses a human reader / operator / student about content.
@@ -75,6 +76,7 @@ class DiscourseFeatures:
     educational_score: float
     human_reader_score: float
     ai_agent_score: float
+    ai_agent_score_raw: float
     attackish_present: bool
     quote_marked: bool
 
@@ -83,17 +85,32 @@ class DiscourseFeatures:
         """True when content looks like discussion/education for humans, not an AI instruction."""
         if not self.attackish_present and self.educational_score < 0.4:
             return False
-        if self.quotation_score >= 0.55:
+        # Strong multi-cue educational/quotation frames (security articles) win
+        if self.educational_score >= 0.5 and self.quotation_score >= 0.7:
+            return True
+        if (
+            self.educational_score >= 0.5
+            and self.quotation_score >= 0.55
+            and self.quote_marked
+        ):
+            return True
+        # Thin wrappers around live agent imperatives are not dampened
+        if (
+            self.ai_agent_score_raw >= 0.5
+            and self.ai_agent_score_raw > self.human_reader_score + 0.05
+            and self.educational_score < 0.45
+        ):
+            return False
+        if self.quotation_score >= 0.55 and self.ai_agent_score_raw < 0.45:
             return True
         # Human-directed discourse with citation markers + attack specimen
         if (
             self.attackish_present
             and self.human_reader_score >= 0.45
-            and self.ai_agent_score <= self.human_reader_score
+            and self.ai_agent_score_raw <= self.human_reader_score
             and (self.quote_marked or self.educational_score >= 0.35)
         ):
             return True
-        # Strong educational framing even if AI-ish tokens appear inside quotes
         if self.educational_score >= 0.6 and self.attackish_present and self.quote_marked:
             return True
         return False
@@ -101,7 +118,7 @@ class DiscourseFeatures:
 
 def discourse_features(text: str) -> DiscourseFeatures:
     if not text:
-        return DiscourseFeatures(0.0, 0.0, 0.0, 0.0, False, False)
+        return DiscourseFeatures(0.0, 0.0, 0.0, 0.0, 0.0, False, False)
     attackish = bool(_ATTACKISH.search(text))
     frame_hits = sum(1 for r in _FRAME_RES if r.search(text))
     educational = min(1.0, 0.2 * frame_hits)
@@ -116,11 +133,9 @@ def discourse_features(text: str) -> DiscourseFeatures:
 
     human_hits = len(_HUMAN_READER.findall(text))
     ai_hits = len(_AI_ADDRESS.findall(text))
-    # Normalize lightly by length
-    toks = max(len(re.findall(r"\w+", text)), 1)
     human = min(1.0, human_hits / 3.0 + (0.1 if human_hits else 0.0))
-    # AI address density; quoted specimens still match _AI_ADDRESS — discount when framed
-    ai = min(1.0, ai_hits / 2.0)
+    ai_raw = min(1.0, ai_hits / 2.0)
+    ai = ai_raw
     if quotation >= 0.55 or educational >= 0.5:
         ai *= 0.35  # specimen tokens inside discussion count less as live address
 
@@ -128,7 +143,6 @@ def discourse_features(text: str) -> DiscourseFeatures:
     if re.search(r"(?i)\b(?:shall|must)\b", text) and human_hits and not re.search(
         r"(?i)\b(?:you\s+are\s+now|reveal\s+your\s+system)\b", text
     ):
-        # "shall" alone is weak; need malware-footnote style discussion
         if re.search(r"(?i)\b(?:malware|footnote|lure|prose)\b", text):
             human = max(human, 0.55)
             educational = max(educational, 0.45)
@@ -140,6 +154,7 @@ def discourse_features(text: str) -> DiscourseFeatures:
         educational_score=educational,
         human_reader_score=human,
         ai_agent_score=ai,
+        ai_agent_score_raw=ai_raw,
         attackish_present=attackish,
         quote_marked=quote_marked,
     )
@@ -153,6 +168,13 @@ def is_quotation_or_discussion(text: str, *, threshold: float = 0.55) -> bool:
     feats = discourse_features(text)
     if feats.dampen:
         return True
+    # Thin agent-directed wrappers (low educational score) are not discussion
+    if (
+        feats.ai_agent_score_raw >= 0.5
+        and feats.ai_agent_score_raw > feats.human_reader_score
+        and feats.educational_score < 0.45
+    ):
+        return False
     return feats.quotation_score >= threshold
 
 

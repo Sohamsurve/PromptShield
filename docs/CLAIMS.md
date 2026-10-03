@@ -1,22 +1,22 @@
-# Claims (measured only) — v1.0-submission
+# Claims (measured only) — v1.1-evidence
 
-Numbers from `docs/EVIDENCE.md` (repro-stamped `929a1b7`; TF sealed first-run after FREEZE hash).
+Numbers from `docs/EVIDENCE.md`. Corrections to v1.0 wording: `docs/ERRATA.md`.
 
 ## Claim rules
 
-1. **D2** only if sealed round-4 overall recall Wilson **lower CI ≥ 0.85** on untouched data; else **D1** with D2 in progress.
-2. **F3** stated as **“N types supported, M demonstrated”** from the sealed-only per-type table (never from tuned test).
+1. **D2** only if sealed round-4 overall recall Wilson **lower CI ≥ 0.85**; else **D1** with D2 in progress.
+2. **F3** stated as **“N types supported, M demonstrated”** from sealed-only tables (never tuned test).
 3. **No D3.**
-4. Judge: **implemented but not evaluated** unless a labelled gray-zone run is reported.
-5. No detector/rule/threshold tuning after seals are spent.
+4. Judge: **implemented but not evaluated**.
+5. Never tune on inspected/sealed sets.
 
 ## Declared position
 
 | Axis | Claim | Support |
 |---|---|---|
-| Fidelity | **F3** — **1 type supported, 7 demonstrated** (1 weak: tool_abuse) | Sealed R2+R3+R4 + type-6 ASR + TF sealed ASR |
+| Fidelity | **F3** — **1 type supported, 7 demonstrated** (tool_abuse weak at v1.0; TF v6 ASR fixed — report separately) | Sealed R2+R3+R4 + type-6 ASR |
 | Data | **D1** — **D2 in progress** | Round-4 recall 0.917, LCI **0.819 < 0.85** |
-| Disruption | Prefer sanitise / confirm over silent allow | Legit TF utility 1.0 (n=34) but ambiguous cases **allow** not **confirm**; see STOP |
+| Disruption | Measured FPR only (no “prefer sanitise/confirm” claim) | Sealed HN first-run **4/110**; realistic benign FPR **0.027** (n=523) |
 
 ## Round-4 D2 gate
 
@@ -24,34 +24,37 @@ Numbers from `docs/EVIDENCE.md` (repro-stamped `929a1b7`; TF sealed first-run af
 |---|---|---|
 | Round-4 overall LCI ≥ 0.85 | 0.917, CI [**0.819**, 0.964], n=60 | **no** → D1 |
 
-## F3 / sealed-only status
+## Fusion (honesty)
 
-| status | types |
-|---|---|
-| supported (1) | **6 context_poisoning** — sealed e2e ASR(on) **0.000** (n=26, CI [0, 0.129]) |
-| demonstrated (7) | 1 instruction_override, 2 role_change, 3 secret_extraction, 5 credential_theft, 7 multi_step_jailbreak, 8 encoded_instruction, 9 indirect_injection |
-| weak (1) | **4 tool_abuse** — sealed TF ASR(scan-off) **0.719** (n=32, CI [0.546, 0.844]); confirm=0 |
+Fusion is a **hand-set logistic with a signature floor** (`max_sev ≥ 0.75 → risk ≥ 0.8`). Weights were written by `eval/fit_fusion.py` on a signature_cases sample — **not** a full train+dev fit.
 
-→ **F3: 1 type supported, 7 demonstrated.**
+## Training note
+
+**Demo gallery fixtures are included in classifier training data** (`make train`). Gallery metrics are not held-out.
 
 ## Limitations (measured)
 
 | Limitation | Measured value |
 |---|---|
-| Hard-negative FPR (test) | **0.000** (0/62), Wilson CI **[0, 0.0583]** |
-| Sealed HN first-run FPs | **4** blocked security_article specimen briefs (then spent; remeasure 0/110) |
-| Independent-attack recall (adaptive R2) | **~0.91** — **0.909** (20/22), CI [0.722, 0.975] |
-| Type 6 | **partial / ASR-supported:** text sealed n=13 (demonstrated band); e2e ASR(on) **0.000** (n=26) |
-| Tool-firewall after provenance | ASR **0.719** scan-off / **0.563** scan-on vs **0.188** pre-change proxy — **STOP, not patched**; ambiguous → **allow** not confirm |
-| Judge | **implemented, not evaluated** |
+| Sealed HN first-run FPR (headline) | **4/110** (all security_article / block) |
+| Tuned test HN FPR | **0.000** (0/62), CI [0, 0.0583] — post-tuning; not the spent-set headline |
+| Ablation as-is test HN FPR | **0.100** (6/60) |
+| Realistic benign FPR | **0.027** (14/523), CI [0.016, 0.044] |
+| Realistic HN FPR | **0.000** (0/120), CI [0, 0.031] |
+| Independent-attack recall (R2) | **0.909** (20/22), CI [0.722, 0.975] |
+| Type 6 sealed e2e ASR on | **0.000** (n=26) |
+| TF v5 (spent) ASR after provenance | **0.719** scan-off — STOP |
+| TF v6 ASR (confirm=blocked) | **0.000** (0/32); legit confirm-rate **0.286** (10/35) |
+| Quote-bypass sealed T3 | **0.95** (19/20) |
+| Judge | **not evaluated** |
 | LLM agent | **not run** |
-| Classifier | **TF-IDF + logistic regression** (no ONNX / no DeBERTa) |
+| Classifier | **TF-IDF + logistic regression** |
 
-## Other measured
+## Other
 
 | Item | Value |
 |---|---|
 | Test benign FPR | **0.0** (n=204, UCI 0.0185) |
-| Fresh TF legit utility v5 | **1.0** (allow 34 / confirm 0 / deny 0, n=34) |
-| Prior TF legit utility | **0.438 → 1.000** (n=32) |
+| `git diff 929a1b7 3e566ad -- apps/ eval/thresholds.yml models/` | **empty** |
+| `make test` | **380 passed** |
 | D3 | **not claimed** |
