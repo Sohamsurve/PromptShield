@@ -30,7 +30,7 @@ First-run ASR (do not retune): provenance-off 0.188 → on/scan-off **0.719** �
 
 - Never tune on: `test`, `adaptive-round-2`, `sealed*`, `sealed-round-3`, `sealed-round-4`, `sealed-type6`, `tool_firewall_attacks_v5`
 - Tuning **closed** for v1.0-submission
-- Tag: `v1.0-submission`
+- Tag: `v1.0-submission` → commit `4d26d80d051da1b09551d546001e69bf83868197` (docs pack; tip may include freeze SHA note)
 
 ## Verify
 
