@@ -1,4 +1,4 @@
-# Freeze — v1.3-evidence (Part B)
+# Freeze — v1.3-evidence
 
 ## Prior seals (spent)
 
@@ -8,7 +8,7 @@
 | `3e566ad` / `v1.0-submission` | TF v5 STOP |
 | `a28f442` / `v1.1-evidence` | realistic / quote-bypass / TF v6 |
 | `a3700fe` / `v1.2-evidence` | LOLO / needle / realistic FP / TF v6 breakdown |
-| `5d13a9f` / `v1.3-evidence` | sliding windows / clf_graded / staging first-run |
+| `5d13a9f` / `v1.3-evidence` (superseded tip) | incorrectly treated repo redteam as independent — see ERRATA |
 
 | Path | SHA-256 | Bytes |
 |---|---|---:|
@@ -18,77 +18,57 @@
 | `eval/data/realistic/benign.jsonl` | `25fd4cfc61fedc792bb7e6f6e850a2a17d2f45d92e640ce4935ce081c2af35e6` | 590153 |
 | `eval/data/sealed/tool_firewall_attacks_v6.jsonl` | `6fd25685397daa581149cd971d5fba508f493f58faf4007df44593944f7fb078` | 10521 |
 
-## v1.3 Part B — pre-registered success rules (BEFORE code change)
-
-Locked before any detector/policy edit:
+## Pre-registered success rules (BEFORE Part B code)
 
 | Cell / rule | Definition |
 |---|---|
-| **ACTED** | decision ∈ {sanitize, quarantine, block, escalate} — headline metric |
-| **FLAGGED** | any finding — diagnostic only |
-| **D1** | iff pooled **new-sealed** ACTED ≥ 0.5 |
-| **F3** | iff ≥ 7 types with ACTED ≥ 0.80 and n ≥ 10 |
-| **F2** | iff ≥ 5 such types |
+| **ACTED** | decision ∈ {sanitize, quarantine, block, escalate} — headline |
+| **FLAGGED** | any finding — diagnostic |
+| **D1** | iff pooled **new independent sealed** ACTED ≥ 0.5 |
+| **F3** | iff ≥7 types ACTED ≥0.80 and n≥10 |
+| **F2** | iff ≥5 such types |
 | **F1** | otherwise |
-| **Operating point** | maximise ACTED on train+dev attacks subject to **dev benign+HN FPR ≤ 2%** (ACTED) |
+| **Operating point** | maximise ACTED on train+dev(+dev_redteam) subject to **dev benign+HN ACTED FPR ≤ 2%** |
 
-Never tune on spent / inspected / sealed / staging-independent sets. Staging files hashed below before first read.
+Never tune on spent / inspected / sealed / external-independent sets.
 
-## Independent staging sets (hashed BEFORE ingest / first-run)
+## dev_redteam (NOT independent — tuning allowed, NO claims)
 
-Source folder: `eval/data/redteam/` (independent batches; not for training).
+Repo script `eval/synth/build_redteam_batches.py` generated these batches. Path: `eval/data/dev_redteam/` (renamed from `redteam/`).
 
-| Path | SHA-256 | Bytes | Lines |
-|---|---|---:|---:|
-| `eval/data/redteam/batch_a_attacks.jsonl` | `a09252aaa831da8102743a1cea873dcd408ebc4fb7e787bb859a461f55240cb9` | 114161 | 110 |
-| `eval/data/redteam/batch_b_hard_negatives.jsonl` | `f04a790a7986d1f21b1a72530c813588c59e4755ebd2a8e7f192316ae26decdf` | 64774 | 104 |
-| `eval/data/redteam/batch_c_benign.jsonl` | `3654e40f8cd38ecf3ee56487aed255f4796554bd66a62bc8f61b5b062a704903` | 211521 | 300 |
-
-
-## v1.3 Part B construction scripts (hashed BEFORE run)
-
-| Path | SHA-256 |
-|---|---|
-| `eval/synth/build_realistic_dev_v13.py` (SEED=42) | `da1c37a717eea035a83822b722f81f591f554a3f829761cee99e8277016ab056` |
-| `eval/fit_fusion_acted_v13.py` (SEED=42) | `24b5490e37b00d092a1962cb85d46ad4cbe0813b11fcd81b98edf7eda11dfcc6` |
-
-## v1.3 Part B dev realistic (hashed before fit)
-
-| Path | SHA-256 | Bytes |
+| Path | SHA-256 | Lines |
 |---|---|---:|
-| `eval/data/realistic_dev/benign.jsonl` | `7c445f9b421457b1f6d75892c722342fcfe7b8a1097bcc4edb93680dc3fd6f4e` | 321643 |
-| `eval/data/realistic_dev/hard_negatives.jsonl` | `b745f700b0fd80fb8abd6d07da411d1bd1f5691f350faa627ddf7100b2ddd42f` | 55730 |
-
-
-## v1.3 first-run harness (hashed BEFORE run)
-
-| Path | SHA-256 | Bytes |
-|---|---|---:|
-| `eval/sealed_first_run_v13.py` (SEED=42) | `310c2c562e0390eb39853b2888065bf67098dda1037fb38bd492a66f55cd634d` | 7794 |
-
-## Policy (post-fit, hashed)
-
-| Path | SHA-256 |
-|---|---|
-| `apps/api/src/promptshield/policies/default.yml` | `44a1043a98c8b9384c0eec87540152f75dda7cfb2bd943a1a357d22cd6713e75` |
-
-- Tune only on train+dev (+ new Part B **dev** realistic corpora built for fitting)
-- Do **not** move or delete prior tags; corrections → `docs/ERRATA.md`
-- Tag: **`v1.3-evidence`** → commit `5d13a9f` (this docs tip pointer is not retagged)
-
-## First-run outcome (measured once)
-
-| Cell | Result |
-|---|---|
-| F | **F1** (0 types ACTED≥0.80 n≥10) |
-| D | **below_D1** (pooled ACTED 0.364) |
-| Staging benign ACTED FPR | 0.073 — NOT MET ≤2% |
-| Dev fit FPR | 0.0045 — MET on fit set |
-
-## Verify
+| `eval/data/dev_redteam/batch_a_attacks.jsonl` | `a09252aaa831da8102743a1cea873dcd408ebc4fb7e787bb859a461f55240cb9` | 110 |
+| `eval/data/dev_redteam/batch_b_hard_negatives.jsonl` | `f04a790a7986d1f21b1a72530c813588c59e4755ebd2a8e7f192316ae26decdf` | 104 |
+| `eval/data/dev_redteam/batch_c_benign.jsonl` | `3654e40f8cd38ecf3ee56487aed255f4796554bd66a62bc8f61b5b062a704903` | 300 |
+| `eval/data/dev_redteam/judge_grayzone.jsonl` | `2869fffc630a33c6735a4228a2b3815a8f726bc5b98e9ccbd21dfffd1d1860df` | 75 |
 
 ```bash
-shasum -a 256 eval/data/redteam/batch_a_attacks.jsonl \
-  eval/data/redteam/batch_b_hard_negatives.jsonl \
-  eval/data/redteam/batch_c_benign.jsonl
+shasum -a 256 eval/data/dev_redteam/batch_*.jsonl
 ```
+
+## Independent staging (external) — DO NOT READ until hashed
+
+Awaiting sets authored outside this repo. Hash in this file **before** first ingest; run once; report FLAGGED/ACTED + cluster-bootstrap CIs.
+
+**Status:** not arrived. Independent sealed first-run **not evaluated**.
+
+## Construction / eval scripts (hashed)
+
+| Path | SHA-256 |
+|---|---|
+| `eval/synth/build_realistic_dev_v13.py` | `da1c37a717eea035a83822b722f81f591f554a3f829761cee99e8277016ab056` |
+| `eval/fit_fusion_acted_v13.py` (SEED=42) | `7c41da409f90a1c4defbcb5c420837daf1fbeccbb1165dcc1196a20479af0616` |
+| `eval/audit_leakage.py` | `aad292037aa5e98307a566dabf9c57cc864c300837075c8318d4aab8f44f729b` |
+| `eval/synth/build_judge_grayzone_v13.py` | `b027dc99f88e17edc40440c3e2041d5e6ed41377beae6c184136197778fe0b93` |
+| `eval/judge_eval_v13.py` | `7aa7fc22820973567114ebcce2097e75b7afe921ccf549d3d5526731fc4ddfa4` |
+
+## Policy (post-fit)
+
+| Path | SHA-256 |
+|---|---|
+| `apps/api/src/promptshield/policies/default.yml` | `c970692d5b43b504fef6757263dd9d6882b312e1d134392f8d23abf7a457ed89` |
+
+## Tag
+
+**`v1.3-evidence`** — tip recorded after tag without self-referential SHA inside the tagged blob.

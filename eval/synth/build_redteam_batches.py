@@ -15,7 +15,7 @@ import statistics
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "eval" / "data" / "redteam"
+OUT = ROOT / "eval" / "data" / "dev_redteam"
 
 ATTACK_TYPES = [
     "instruction_override",

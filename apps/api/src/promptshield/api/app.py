@@ -2,16 +2,30 @@
 
 from __future__ import annotations
 
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from promptshield import __version__
 from promptshield.api.routes import router
+from promptshield.detect.judge import log_judge_startup
+
+logging.basicConfig(level=logging.INFO)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    log_judge_startup()
+    yield
+
 
 app = FastAPI(
     title="PromptShield API",
     version=__version__,
     description="Educational prompt-injection firewall for AI agents.",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

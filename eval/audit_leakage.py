@@ -87,7 +87,9 @@ def discover_datasets() -> dict[str, list[Path]]:
     for p in sorted(data.rglob("*.jsonl")):
         rel = p.relative_to(data).as_posix()
         # classify by path / split field later; path-first
-        if "tool_firewall" in rel:
+        if "dev_redteam" in rel.split("/") or rel.startswith("redteam/"):
+            buckets["dev_redteam"].append(p)
+        elif "tool_firewall" in rel:
             buckets["tool-firewall"].append(p)
         elif "sealed" in rel.split("/"):
             buckets["sealed"].append(p)
@@ -104,6 +106,142 @@ def discover_datasets() -> dict[str, list[Path]]:
             buckets["split-tagged"].append(p)
     return dict(buckets)
 
+
+def _content_len(row: dict) -> int:
+    t = _text_of(row)
+    return len(t)
+
+
+def length_by_class(rows: list[dict]) -> dict:
+    by: dict[str, list[int]] = defaultdict(list)
+    for r in rows:
+        by[r.get("label") or "unlabelled"].append(_content_len(r))
+
+    def stats(xs: list[int]) -> dict:
+        if not xs:
+            return {"n": 0}
+        xs = sorted(xs)
+        return {
+            "n": len(xs),
+            "min": xs[0],
+            "p25": xs[len(xs) // 4],
+            "p50": xs[len(xs) // 2],
+            "p75": xs[(3 * len(xs)) // 4],
+            "max": xs[-1],
+            "mean": round(sum(xs) / len(xs), 1),
+        }
+
+    return {k: stats(v) for k, v in sorted(by.items())}
+
+
+def source_document_counts(rows: list[dict]) -> dict:
+    """Count distinct source documents (source_file / doc:* technique / id prefix)."""
+    keys = []
+    for r in rows:
+        key = r.get("source_file") or r.get("source_id") or r.get("doc_id")
+        tech = str(r.get("technique") or "")
+        if not key and tech.startswith("doc:"):
+            # doc:name:partN → name
+            parts = tech.split(":")
+            key = parts[1] if len(parts) >= 2 else tech
+        if not key:
+            key = tech or (str(r.get("id") or "").rsplit("_", 1)[0] if r.get("id") else "unknown")
+        keys.append(str(key))
+    c = Counter(keys)
+    return {"n_rows": len(rows), "n_sources": len(c), "top_sources": c.most_common(15)}
+
+def id_counter_leakage(rows: list[dict]) -> dict:
+    """Label words / IDs / counters appearing inside content text."""
+    id_hits = 0
+    counter_hits = 0
+    label_hits = 0
+    examples = []
+    for r in rows:
+        text = _text_of(r)
+        rid = str(r.get("id") or "")
+        hit = False
+        if rid and rid in text:
+            id_hits += 1
+            hit = True
+        if re.search(r"(?i)\b(case|variant|unique)\s*[:=]?\s*\d+\b", text):
+            counter_hits += 1
+            hit = True
+        lab = r.get("label") or ""
+        if lab in LABELS and re.search(rf"(?i)\b{re.escape(lab)}\b", text):
+            label_hits += 1
+            hit = True
+        if hit and len(examples) < 10:
+            examples.append(rid or r.get("_path"))
+    return {
+        "id_string_in_text": id_hits,
+        "counter_marker_in_text": counter_hits,
+        "label_string_in_text": label_hits,
+        "example_ids": examples,
+    }
+
+
+def length_matched_attack_vs_benign(rows: list[dict], *, bins: int = 10) -> dict:
+    """Does length alone separate attack vs benign? Length-matched accuracy of a length threshold."""
+    atk = [_content_len(r) for r in rows if r.get("label") == "attack"]
+    ben = [_content_len(r) for r in rows if r.get("label") == "benign"]
+    if len(atk) < 5 or len(ben) < 5:
+        return {"n_attack": len(atk), "n_benign": len(ben), "separable_by_length": None}
+
+    # Best single threshold on char length (attack longer or shorter)
+    candidates = sorted(set(atk + ben))
+    best = {"acc": 0.0, "threshold": None, "rule": None}
+    n = len(atk) + len(ben)
+    for thr in candidates[:: max(1, len(candidates) // 40)]:
+        for rule in ("attack_ge", "attack_le"):
+            correct = 0
+            for x in atk:
+                pred_atk = x >= thr if rule == "attack_ge" else x <= thr
+                correct += int(pred_atk)
+            for x in ben:
+                pred_atk = x >= thr if rule == "attack_ge" else x <= thr
+                correct += int(not pred_atk)
+            acc = correct / n
+            if acc > best["acc"]:
+                best = {"acc": acc, "threshold": thr, "rule": rule}
+
+    # Overlap of length distributions (histogram intersection)
+    lo = min(atk + ben)
+    hi = max(atk + ben)
+    width = max(1, (hi - lo) // bins)
+    def hist(xs: list[int]) -> list[float]:
+        h = [0] * bins
+        for x in xs:
+            i = min(bins - 1, (x - lo) // width)
+            h[i] += 1
+        s = sum(h) or 1
+        return [v / s for v in h]
+
+    ha, hb = hist(atk), hist(ben)
+    overlap = sum(min(a, b) for a, b in zip(ha, hb))
+    # Chance baseline ~0.5 for balanced; if best acc >> 0.65 and overlap low, length separates.
+    separable = bool(best["acc"] >= 0.70 and overlap <= 0.55)
+    return {
+        "n_attack": len(atk),
+        "n_benign": len(ben),
+        "attack_len": {
+            "p50": sorted(atk)[len(atk) // 2],
+            "mean": round(sum(atk) / len(atk), 1),
+        },
+        "benign_len": {
+            "p50": sorted(ben)[len(ben) // 2],
+            "mean": round(sum(ben) / len(ben), 1),
+        },
+        "best_length_threshold_acc": round(best["acc"], 4),
+        "best_threshold": best["threshold"],
+        "best_rule": best["rule"],
+        "hist_overlap": round(overlap, 4),
+        "separable_by_length": separable,
+        "verdict": (
+            "LENGTH_SEPARATES_CLASSES"
+            if separable
+            else "LENGTH_DOES_NOT_RELIABLY_SEPARATE"
+        ),
+    }
 
 def rows_by_split(paths: list[Path]) -> dict[str, list[dict]]:
     out: dict[str, list[dict]] = defaultdict(list)
@@ -298,10 +436,42 @@ def main() -> dict:
         "train_dev_vs_adaptive": cross_nn_jaccard(adaptive, train_dev),
     }
 
+    # Focused dev_redteam audit (tuning-only; not independent)
+    dr_rows = []
+    for p in buckets.get("dev_redteam", []):
+        for r in _load_jsonl(p):
+            r = dict(r)
+            r["_path"] = str(p.relative_to(ROOT))
+            dr_rows.append(r)
+    if dr_rows:
+        by_file: dict[str, list[dict]] = defaultdict(list)
+        for r in dr_rows:
+            by_file[r["_path"]].append(r)
+        report["dev_redteam_detail"] = {
+            "role": "dev_redteam — repo-generated; tuning allowed; NO claims",
+            "n": len(dr_rows),
+            "markers": marker_counts(dr_rows),
+            "id_counter_label_leakage": id_counter_leakage(dr_rows),
+            "distinct": distinct_normalised(dr_rows),
+            "within_nn_jaccard": nn_jaccard(dr_rows),
+            "length_by_class": length_by_class(dr_rows),
+            "source_document_counts": source_document_counts(dr_rows),
+            "length_matched_attack_vs_benign": length_matched_attack_vs_benign(dr_rows),
+            "per_file": {
+                path: {
+                    "n": len(rs),
+                    "distinct": distinct_normalised(rs),
+                    "within_nn_jaccard": nn_jaccard(rs),
+                    "length_by_class": length_by_class(rs),
+                    "sources": source_document_counts(rs),
+                }
+                for path, rs in by_file.items()
+            },
+        }
+
     out = ROOT / "eval" / "reports" / "leakage_audit.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")
-
     # Compact markdown table to stdout
     print("# Leakage audit (char 5-gram Jaccard NN)\n")
     print("| set | n | distinct_norm | marker_rows (Unique=/Variant/Case/[r2:) | within nn_p95 |")
@@ -323,6 +493,18 @@ def main() -> dict:
     for k, v in report["cross"].items():
         print(
             f"| {k} | {v.get('heldout_n')} | {v.get('nn_max')} | {v.get('nn_p95')} | {v.get('n_jaccard_ge_0_8')} |"
+        )
+    if report.get("dev_redteam_detail"):
+        d = report["dev_redteam_detail"]
+        lm = d["length_matched_attack_vs_benign"]
+        print("\n## dev_redteam detail\n")
+        print(f"n={d['n']} distinct_norm={d['distinct']['distinct_normalised']}")
+        print(f"id/counter/label leakage: {d['id_counter_label_leakage']}")
+        print(f"length_by_class: {d['length_by_class']}")
+        print(f"sources: {d['source_document_counts']['n_sources']}")
+        print(
+            f"length-matched: acc={lm.get('best_length_threshold_acc')} "
+            f"overlap={lm.get('hist_overlap')} → {lm.get('verdict')}"
         )
     print(f"\nWrote {out}")
     return report

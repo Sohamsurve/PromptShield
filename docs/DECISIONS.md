@@ -64,3 +64,13 @@ Format: date · decision · reason.
 - **realistic_dev:** ≥50 new source documents each for benign and hard-negatives, separate from spent `eval/data/realistic/`. Reason: fit-set FPR without retuning on spent realistic.
 - **Staging ingest:** Hashed `eval/data/redteam/batch_{a,b,c}_*.jsonl` in FREEZE before first read; single first-run. Cluster bootstrap by case id (no `source_file` field). Result: F1 / below_D1; staging benign FPR 0.073 NOT MET. Reason: independent evidence; no second-run retune.
 - **v1.3 tag:** `v1.3-evidence`. Prior tags immutable; corrections in ERRATA.
+- **dev_redteam redesignation:** `eval/data/redteam/` batches A/B/C are repo-generated → path `eval/data/dev_redteam/`; tuning allowed; **no F/D claims**. Reason: independence honesty after audit.
+- **Length confound:** length-matched audit shows attack vs benign separable by length (acc 0.924). Reason: record data limitation before any transfer claim.
+- **Judge env:** read `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL_JUDGE` (+ timeout / reasoning_effort) from `.env`; expose mode/model on `/v1/healthz` + startup log without key. Offline without key or on error → `unknown` (never allows). CI: `JUDGE_FORCE_OFFLINE=1` + mocked HTTP client. Live smoke only if `JUDGE_LIVE_SMOKE=1`.
+- **reasoning_effort vs temperature:** For reasoning/Sol-class models set `reasoning_effort` (default `low`) and **omit** `temperature` (OpenAI docs: unsupported when effort ≠ none). Non-reasoning models: `temperature=0`, no `reasoning_effort`.
+- **Judge timeout:** default `JUDGE_TIMEOUT_MS=30000` for live Sol (1.5s too short; measured p50 ~2.4s).
+- **Judge cache key:** `(model, sha256(system+user prompt))` for reproducible evals.
+- **Judge eval scope:** ≥60 gray-zone + ≥10 manipulation from dev_redteam+dev text only; report Sol + `gpt-4o-mini`. Not an independent sealed claim.
+- **Part B fit pool:** train+dev+**dev_redteam**; operating curve on that pool. Independent staging still sealed/unread until hashed.
+- **Empty LLM_BASE_URL:** treat as default `https://api.openai.com/v1` (empty env var is not missing).
+- **Dotenv scope:** judge loader imports only LLM/JUDGE/ARIA keys — never `CLASSIFIER_PATH` (would break tfidf_logreg CI).

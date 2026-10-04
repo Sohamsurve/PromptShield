@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""First-run on independent staging sets (eval/data/redteam/). Hash before run.
+"""First-run on *independent* staging sets only (NOT eval/data/dev_redteam/).
+
+dev_redteam is repo-generated (tuning only). Point this harness at external
+staging paths after hashing them in docs/FREEZE.md. Hash before run.
 
 Reports FLAGGED + ACTED with Wilson CIs and cluster-bootstrap by source document
 (or by id prefix if source_file absent). Also needle detect/localise/preserve.
@@ -187,9 +190,20 @@ def needle() -> dict:
 
 
 def main() -> dict:
-    atk = _load(ROOT / "eval/data/redteam/batch_a_attacks.jsonl")
-    hn = _load(ROOT / "eval/data/redteam/batch_b_hard_negatives.jsonl")
-    ben = _load(ROOT / "eval/data/redteam/batch_c_benign.jsonl")
+    # Independent staging only — never silently fall back to dev_redteam.
+    staging = ROOT / "eval" / "data" / "staging"
+    atk_p = staging / "batch_a_attacks.jsonl"
+    hn_p = staging / "batch_b_hard_negatives.jsonl"
+    ben_p = staging / "batch_c_benign.jsonl"
+    if not (atk_p.exists() and hn_p.exists() and ben_p.exists()):
+        raise SystemExit(
+            "Independent staging sets not present under eval/data/staging/. "
+            "Hash them in docs/FREEZE.md before first-run. "
+            "dev_redteam is tuning-only and must not be used here."
+        )
+    atk = _load(atk_p)
+    hn = _load(hn_p)
+    ben = _load(ben_p)
     print("scanning attacks…", flush=True)
     atk_m = eval_label(atk, "atk")
     print("scanning HN…", flush=True)

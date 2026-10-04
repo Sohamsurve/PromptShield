@@ -12,7 +12,7 @@ flowchart LR
     N --> H[Heuristics]
     S --> C[TF-IDF logreg sliding windows]
     H --> C
-    C --> J[Judge gray-zone offline/live]
+    C --> J[Judge gray-zone]
     S --> F[Fusion + Policy]
     H --> F
     C --> F
@@ -21,69 +21,36 @@ flowchart LR
   end
   F --> Neu[Redact / Spotlight / Quarantine]
   Neu --> Agent[Aria / host agent]
-  Agent --> TG[Tool firewall taint + provenance]
-  Agent --> OG[Output / canary / egress]
+  Agent --> TG[Tool firewall]
+  Agent --> OG[Output guard]
 ```
-
-Adapters cover text, HTML, PDF, DOCX, email/MIME, Markdown, JSON/API, source code, image-OCR. Defence in depth: signatures + heuristics + classifier + optional judge + session risk + tool/output guards. Offsets preserved through transforms. Classifier findings use max-scoring window character spans (512 tokens, stride 128).
 
 ## Model-usage table
 
 | Component | Model / algorithm | Why | Fallback |
 |---|---|---|---|
-| Signatures | YAML regex rules (294+) | Deterministic, explainable | N/A |
-| Heuristics | Feature scores (+ discourse) | Cheap structure cues | N/A |
-| Classifier | TF-IDF + logistic regression + sliding windows | CI-friendly, localised spans | Skip layer; `degraded:["classifier"]` |
-| Judge | Offline deterministic JSON; optional live LLM | Gray-zone only | Unknown → never allow alone; **not evaluated** |
-| Aria | Scripted GullibleAgent | Offline demo/ASR | LLM mode if `LLM_API_KEY` (**not run**) |
-| Fusion | Hand-set logistic + signature floor + `clf_graded` | Combine layers; graded clf decisions | Policy thresholds |
+| Signatures | YAML regex | Deterministic | N/A |
+| Heuristics | Features + discourse | Cheap cues | N/A |
+| Classifier | TF-IDF logreg + windows | CI-friendly spans | `degraded:["classifier"]` |
+| Judge | `LLM_MODEL_JUDGE` (Sol) / cheap tier | Gray-zone only | unknown; never allow alone; CI offline heuristic via `JUDGE_FORCE_OFFLINE` |
+| Aria | Scripted GullibleAgent | Offline demo | LLM mode not evaluated |
+| Fusion | Logistic + floor + clf_graded | Combine layers | Policy thresholds |
 
-## Demo script (~6 min)
+## Declared position
 
-| Time | Scene |
-|---|---|
-| 0:00 | Frame the problem (prompt injection → agent tools) |
-| 0:30 | Arena F01 A/B (unprotected harmed / protected safe) |
-| 1:30 | X-ray UV + findings (offsets, reason codes) |
-| 2:15 | Encoded F09/F10 |
-| 3:00 | Hard-negative F18 (security article) |
-| 3:45 | Multi-turn F12 |
-| 4:30 | Disable text scanning → `Tool call denied — TOOL_DOMAIN_DENY` |
-| 5:15 | Coverage + Eval + claim ledger (F1 / below_D1) |
-
-Full text: `docs/DEMO_BACKUP.md`.
-
-### Non-Docker `make demo` (README path)
-
-From a fresh clone (uv + pnpm required; Docker optional):
-
-```bash
-make demo
-# Terminal A: make _demo-api
-#   or: cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 0.0.0.0 --port 8000
-# Terminal B: cd apps/web && pnpm dev
-# Open http://localhost:3000/arena
-```
-
-Verified against README § commands / `docs/FRESH_CLONE.md`. Compose Redis not required for this smoke path.
-
-## Declared 3×3 position
-
-- **F1** under ACTED (0/9 staging types meet ACTED≥0.80 n≥10).
-- **below_D1** — pooled independent staging ACTED **0.364 < 0.5**. **No D2/D3.**
-- Disruption: staging benign ACTED FPR **0.073** (≤2% **NOT MET**). Dev fit FPR **0.0045** (fit set only).
-- Arena disable-scan: protected lane **`Tool call denied — TOOL_DOMAIN_DENY`**.
-
-**Note:** Demo gallery fixtures are in classifier **training** data.
+- **F/D on independent sealed:** **not evaluated** (external staging not arrived).
+- Prior redteam-as-independent claim **withdrawn** (repo-generated → **dev_redteam**).
+- Dev fit: ACTED **0.417**, FPR **0.0938** (≤2% **NOT MET**).
+- Judge (dev): Sol acc **1.000**; mini **0.800**.
 
 ## Claim ledger
 
-See `docs/CLAIMS.md`, `docs/CLAIM_LEDGER.md`, `docs/ERRATA.md`. Evidence: `docs/EVIDENCE.md`. Freeze: `docs/FREEZE.md`. Licences: `docs/LICENCES.md`.
+See `docs/CLAIMS.md`, `docs/CLAIM_LEDGER.md`, `docs/ERRATA.md`. Evidence: `docs/EVIDENCE.md`. Freeze: `docs/FREEZE.md`.
 
-## Secrets scan
+## Secrets
 
-No real API keys or credentials in tree. Demo secrets are **canaries only** (`CANARY-*`, `fake_ssh`, reserved `*.example.test` / `*.invalid`). `LLM_API_KEY` in `.env.example` is empty.
+No API keys in git. `.env.example` has empty LLM fields. Healthz exposes `api_key_configured` boolean only.
 
-## Freeze / tag
+## Tag
 
-Tag **`v1.3-evidence`** (prior tags untouched). Hashes in `docs/FREEZE.md`.
+**`v1.3-evidence`**.

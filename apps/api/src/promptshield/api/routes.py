@@ -9,7 +9,6 @@ from typing import Any
 
 import yaml
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
-
 from promptshield.agent.aria import run_fixture
 from promptshield.agent.fixtures import list_fixtures, load_fixture_text
 from promptshield.domain import (
@@ -34,9 +33,19 @@ _EVAL_LATEST = _REPO_ROOT / "eval" / "reports" / "latest"
 
 
 @router.get("/healthz")
-def healthz() -> dict[str, str]:
-    return {"status": "ok"}
+def healthz() -> dict[str, Any]:
+    from promptshield.detect.judge import judge_config
 
+    cfg = judge_config()
+    return {
+        "status": "ok",
+        "judge_mode": cfg["judge_mode"],
+        "judge_model": cfg["judge_model"] or "",
+        "llm_provider": cfg["llm_provider"] or "",
+        "api_key_configured": cfg["api_key_configured"],
+        "judge_timeout_ms": cfg["timeout_ms"],
+        "judge_reasoning_effort": cfg["reasoning_effort"] or "",
+    }
 
 @router.get("/metrics")
 def metrics() -> dict[str, Any]:

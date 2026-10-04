@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Decision-level fusion + clf_graded fit on train+dev only (v1.3 Part B).
+"""Decision-level fusion + clf_graded fit on train+dev+dev_redteam (v1.3 Part B).
 
 Operating point (pre-registered in FREEZE): maximise ACTED on attacks subject to
-dev benign+HN ACTED FPR <= 2%.
+dev benign+HN ACTED FPR <= 2% (curve reported on the fit/dev pool).
 
 Uses full pipeline.scan so quotation dampening / signature floor match product.
-Never reads sealed / redteam staging sets.
+dev_redteam is repo-generated (tuning allowed, no claims). Never reads independent sealed/staging.
 SEED=42.
 """
 
@@ -100,20 +100,44 @@ def main() -> None:
         r for r in _load(ROOT / "eval/data/realistic_dev/hard_negatives.jsonl") if r.get("split") == "dev"
     ]
 
-    dev_atk = [r for r in attacks if r.get("split") == "dev"]
+    # Repo-generated redteam → tuning pool only (not independent)
+    rt_atk = _load(ROOT / "eval/data/dev_redteam/batch_a_attacks.jsonl")
+    rt_hn = _load(ROOT / "eval/data/dev_redteam/batch_b_hard_negatives.jsonl")
+    rt_ben = _load(ROOT / "eval/data/dev_redteam/batch_c_benign.jsonl")
+
+    def _content(r: dict) -> str:
+        c = r.get("content")
+        if isinstance(c, list):
+            return "\n".join(str(x) for x in c)
+        return str(c or "")
+
+    for r in rt_atk + rt_hn + rt_ben:
+        r["content"] = _content(r)
+        r.setdefault("source_type", "text")
+
+    dev_atk = [r for r in attacks if r.get("split") == "dev"] + rt_atk
     random.shuffle(dev_atk)
-    dev_atk = dev_atk[:80]
-    neg = [r for r in benign if r.get("split") == "dev"] + [
-        r for r in hn if r.get("split") == "dev"
-    ]
-    # subsample realistic_dev into operating-point neg set
+    # Cap for fit runtime while keeping redteam representation
+    if len(dev_atk) > 120:
+        # keep all redteam attacks + fill from synth
+        synth_dev = [r for r in attacks if r.get("split") == "dev"]
+        random.shuffle(synth_dev)
+        dev_atk = rt_atk + synth_dev[: max(0, 120 - len(rt_atk))]
+        random.shuffle(dev_atk)
+
+    neg = (
+        [r for r in benign if r.get("split") == "dev"]
+        + [r for r in hn if r.get("split") == "dev"]
+        + rt_ben
+        + rt_hn
+    )
     random.shuffle(dev_ben)
     random.shuffle(dev_hn)
-    neg = neg + dev_ben[:120] + dev_hn[:80]
+    neg = neg + dev_ben[:80] + dev_hn[:40]
     random.shuffle(neg)
-    neg = neg[:220]
+    neg = neg[:320]
 
-    print(f"dev_atk={len(dev_atk)} neg={len(neg)}", flush=True)
+    print(f"dev_atk={len(dev_atk)} neg={len(neg)} (includes dev_redteam)", flush=True)
 
     base = yaml.safe_load(POLICY_PATH.read_text(encoding="utf-8")) or {}
     base_fusion = dict(base.get("fusion") or {})
