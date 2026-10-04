@@ -74,4 +74,4 @@ Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit po
 
 ## Tag
 
-**`v1.4-evidence`** (tip recorded after tag without self-referential SHA in the tagged blob).
+**** → commit  (docs tip pointer follows; not retagged).
