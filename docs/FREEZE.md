@@ -8,6 +8,7 @@
 | `3e566ad` / `v1.0-submission` | TF v5 STOP |
 | `a28f442` / `v1.1-evidence` | realistic / quote-bypass / TF v6 |
 | `a3700fe` / `v1.2-evidence` | LOLO / needle / realistic FP / TF v6 breakdown |
+| `5d13a9f` / `v1.3-evidence` | sliding windows / clf_graded / staging first-run |
 
 | Path | SHA-256 | Bytes |
 |---|---|---:|
@@ -73,7 +74,7 @@ Source folder: `eval/data/redteam/` (independent batches; not for training).
 
 - Tune only on train+dev (+ new Part B **dev** realistic corpora built for fitting)
 - Do **not** move or delete prior tags; corrections → `docs/ERRATA.md`
-- Tag: **`v1.3-evidence`** (tip SHA recorded after tag; do not self-refer inside the tagged blob)
+- Tag: **`v1.3-evidence`** → commit `5d13a9f` (this docs tip pointer is not retagged)
 
 ## First-run outcome (measured once)
 
