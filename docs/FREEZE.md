@@ -71,4 +71,4 @@ Awaiting sets authored outside this repo. Hash in this file **before** first ing
 
 ## Tag
 
-**`v1.3-evidence`** — tip recorded after tag without self-referential SHA inside the tagged blob.
+**`v1.3-evidence`** → commit `da7674b` (docs tip pointer commit follows; not retagged).
