@@ -51,3 +51,16 @@ Format: date · decision · reason.
 - **v1.1 quotation bypass:** T2/T3 agent-directed or high-sev signature hits are not collapsed by quotation dampening; thin educational wrappers around live imperatives do not count as discussion. Tuned on quote-bypass-dev only.
 - **v1.1 fusion honesty:** Document (do not silently re-fit) hand-set logistic + signature floor; `fit_fusion` sample ≠ full train+dev.
 - **v1.1 tags:** Do not move/delete prior tags; record claim corrections in `docs/ERRATA.md`.
+- **v1.3 metrics (before recompute):** **FLAGGED** = any finding; **ACTED** = decision ∈ {sanitize, quarantine, block, escalate}. ACTED is the headline for attack rates and FPRs. Prior “recall” figures were FLAGGED-based (ERRATA).
+- **v1.3 F/D cell rules (written before recompute):** F3 iff ≥7 attack types have sealed ACTED point rate ≥0.80 with n≥10; F2 iff ≥5 such types; else F1. D1 iff pooled sealed independent-attack ACTED rate ≥0.5 (state caveat either way). Per-type supported/demonstrated/weak status re-applied on ACTED using prior n/LCI rules.
+
+## 2026-10-04
+
+- **Red-team batches location:** New add-only corpus under `eval/data/redteam/` (not sealed, not wired into thresholds). Generator `eval/synth/build_redteam_batches.py`. Reason: human-requested inert A/B/C JSONL with creative payloads; keep separate from protected labelled splits until a human opts to integrate.
+- **v1.3 Part B pre-registration:** Before any detector/policy edit, locked in FREEZE: D1 iff pooled new-sealed ACTED≥0.5; F3 iff ≥7 types ACTED≥0.80 n≥10; F2 iff ≥5; else F1; operating point = max ACTED s.t. dev benign+HN ACTED FPR≤2%. Reason: claim-grid honesty; no post-hoc cell shopping.
+- **Classifier sliding windows:** `predict_span` scores 512-token windows stride 128; finding span = max-scoring window character offsets. Reason: README localisation / needle; unit tests cover payload and offset integrity.
+- **clf_graded policy:** Graded decisions from classifier probability (sanitize 0.85 / quarantine 0.92 / block 0.98) when signature floor does not already escalate. Reason: ACTED can fire without requiring full fusion risk≥block while keeping high block confidence.
+- **Fusion fit choice:** Grid over fusion weights + graded thresholds on train+dev (+ new `realistic_dev`); chose point with max ACTED subject to FPR≤2%. Selected prior fusion weights (b=-5.1085, w_ml=5.0838) + graded thresholds above; dev ACTED **1.0**, FPR **0.0045**. Did not loosen `sanitize_span`. Judge not run (no API key). Reason: pre-registered operating point; no spent/sealed tuning.
+- **realistic_dev:** ≥50 new source documents each for benign and hard-negatives, separate from spent `eval/data/realistic/`. Reason: fit-set FPR without retuning on spent realistic.
+- **Staging ingest:** Hashed `eval/data/redteam/batch_{a,b,c}_*.jsonl` in FREEZE before first read; single first-run. Cluster bootstrap by case id (no `source_file` field). Result: F1 / below_D1; staging benign FPR 0.073 NOT MET. Reason: independent evidence; no second-run retune.
+- **v1.3 tag:** `v1.3-evidence`. Prior tags immutable; corrections in ERRATA.

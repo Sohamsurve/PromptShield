@@ -6,9 +6,9 @@ Short map of how the firewall teaches defence-in-depth for prompt injection.
 
 1. **Adapters** — pull visible + hidden text from HTML/PDF/DOCX/email/MD/JSON/code/images; never fetch remote resources.
 2. **Normalise** — Unicode canonicalise + recursive decode with offset maps back to the original.
-3. **Detect** — signatures (≥150 rules), heuristics, gated classifier, quarantined judge (never sole decider).
+3. **Detect** — signatures (≥150 rules), heuristics, gated classifier (sliding windows → localised spans), quarantined judge (never sole decider).
 4. **Session** — decayed risk, payload-split rescan, escalation features across turns.
-5. **Fusion + policy** — hand-set logistic with a signature floor → allow / sanitise / quarantine / block / escalate.
+5. **Fusion + policy** — logistic + signature floor + graded classifier decisions → allow / sanitise / quarantine / block / escalate.
 6. **Neutralise** — redact spans, spotlight untrusted text, re-scan for idempotence.
 7. **Guards** — tool taint/provenance, memory/RAG ingest, canary/secret/egress on outputs.
 
@@ -19,6 +19,10 @@ Follow `docs/DEMO_BACKUP.md` (≈6 min). Key proof: Arena **Disable text scannin
 ## Claims & metrics
 
 See `docs/CLAIM_LEDGER.md` and `eval/reports/latest/`. Thresholds in `eval/thresholds.yml` are protected — fix detectors or record limits in `LIMITATIONS.md`, never loosen labels to pass.
+
+**Headline metric:** **ACTED** = decision ∈ {sanitize, quarantine, block, escalate}. **FLAGGED** = any finding (older “recall” numbers were FLAGGED).
+
+**v1.3-evidence position:** **F1** / **below_D1**. Independent staging pooled ACTED **0.364**; staging benign ACTED FPR **0.073** (≤2% NOT MET). Needle localise **0.313**. See `docs/CLAIMS.md`.
 
 ## Safety frame
 

@@ -1,4 +1,4 @@
-"""Calibrated fusion + policy decision (README §5.8)."""
+"""Fusion + policy decision (README §5.8). Graded classifier path (v1.3)."""
 
 from __future__ import annotations
 
@@ -58,6 +58,16 @@ def fuse_risk(
     return risk
 
 
+def _span_localised(f: Finding, text_len: int) -> bool:
+    if not f.span or text_len <= 0:
+        return False
+    lo, hi = f.span
+    if hi <= lo:
+        return False
+    # Localised = covers < 85% of the document
+    return (hi - lo) < int(0.85 * text_len)
+
+
 def decide(
     risk: float,
     findings: list[Finding],
@@ -83,10 +93,27 @@ def decide(
     escalate_band = p.get("escalate_band") or [0.55, 0.70]
     max_removal = float(policy.get("max_removal_ratio", 0.40))
 
-    if risk >= block:
+    # Graded classifier thresholds (decision-level fit may overwrite)
+    graded = policy.get("clf_graded") or {}
+    clf_sanitize = float(graded.get("sanitize", 0.55))
+    clf_quarantine = float(graded.get("quarantine", 0.70))
+    clf_block = float(graded.get("block", 0.95))
+
+    clf_findings = [f for f in findings if f.detector == "classifier"]
+    max_clf = max((f.score for f in clf_findings), default=0.0)
+    local_clf = [f for f in clf_findings if _span_localised(f, text_len)]
+    unlocal_clf = [f for f in clf_findings if f not in local_clf]
+
+    # Block only on high confidence (fused risk or very high clf)
+    if risk >= block or max_clf >= clf_block:
         return Decision.block
 
+    # Sanitise localised spans (signature/heuristic/classifier) under removal budget
     spans = [f for f in findings if f.span and f.score >= sanitize_span]
+    # Also allow classifier localised spans at clf_sanitize threshold
+    for f in local_clf:
+        if f.score >= clf_sanitize and f not in spans:
+            spans.append(f)
     if spans and text_len > 0:
         covered = sum(max(0, (f.span[1] - f.span[0])) for f in spans if f.span)
         ratio = covered / text_len
@@ -96,6 +123,10 @@ def decide(
             if trust.value >= TrustLevel.T2 and residual_risk is None and risk >= quarantine:
                 return Decision.quarantine
             return Decision.sanitize
+
+    # Quarantine / spotlight when classifier fires but span is not localised
+    if unlocal_clf and max_clf >= clf_quarantine:
+        return Decision.quarantine
 
     if risk >= quarantine:
         return Decision.quarantine

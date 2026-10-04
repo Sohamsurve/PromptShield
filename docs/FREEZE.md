@@ -1,4 +1,4 @@
-# Freeze — v1.2-evidence
+# Freeze — v1.3-evidence (Part B)
 
 ## Prior seals (spent)
 
@@ -17,36 +17,77 @@
 | `eval/data/realistic/benign.jsonl` | `25fd4cfc61fedc792bb7e6f6e850a2a17d2f45d92e640ce4935ce081c2af35e6` | 590153 |
 | `eval/data/sealed/tool_firewall_attacks_v6.jsonl` | `6fd25685397daa581149cd971d5fba508f493f58faf4007df44593944f7fb078` | 10521 |
 
-## v1.2 construction scripts + needle set (hashed BEFORE first-run)
+## v1.3 Part B — pre-registered success rules (BEFORE code change)
+
+Locked before any detector/policy edit:
+
+| Cell / rule | Definition |
+|---|---|
+| **ACTED** | decision ∈ {sanitize, quarantine, block, escalate} — headline metric |
+| **FLAGGED** | any finding — diagnostic only |
+| **D1** | iff pooled **new-sealed** ACTED ≥ 0.5 |
+| **F3** | iff ≥ 7 types with ACTED ≥ 0.80 and n ≥ 10 |
+| **F2** | iff ≥ 5 such types |
+| **F1** | otherwise |
+| **Operating point** | maximise ACTED on train+dev attacks subject to **dev benign+HN FPR ≤ 2%** (ACTED) |
+
+Never tune on spent / inspected / sealed / staging-independent sets. Staging files hashed below before first read.
+
+## Independent staging sets (hashed BEFORE ingest / first-run)
+
+Source folder: `eval/data/redteam/` (independent batches; not for training).
+
+| Path | SHA-256 | Bytes | Lines |
+|---|---|---:|---:|
+| `eval/data/redteam/batch_a_attacks.jsonl` | `a09252aaa831da8102743a1cea873dcd408ebc4fb7e787bb859a461f55240cb9` | 114161 | 110 |
+| `eval/data/redteam/batch_b_hard_negatives.jsonl` | `f04a790a7986d1f21b1a72530c813588c59e4755ebd2a8e7f192316ae26decdf` | 64774 | 104 |
+| `eval/data/redteam/batch_c_benign.jsonl` | `3654e40f8cd38ecf3ee56487aed255f4796554bd66a62bc8f61b5b062a704903` | 211521 | 300 |
+
+
+## v1.3 Part B construction scripts (hashed BEFORE run)
+
+| Path | SHA-256 |
+|---|---|
+| `eval/synth/build_realistic_dev_v13.py` (SEED=42) | `da1c37a717eea035a83822b722f81f591f554a3f829761cee99e8277016ab056` |
+| `eval/fit_fusion_acted_v13.py` (SEED=42) | `24b5490e37b00d092a1962cb85d46ad4cbe0813b11fcd81b98edf7eda11dfcc6` |
+
+## v1.3 Part B dev realistic (hashed before fit)
 
 | Path | SHA-256 | Bytes |
 |---|---|---:|
-| `eval/leave_one_layer_out.py` (SEED=42) | `c29212d127210815b61fa6634393ce08c60d53e291e04077e6555ecc687fecf1` | 20251
-| `eval/synth/build_needle_v12.py` (SEED=42) | `3cfbb102dc20418844237a226e90e42d76666167f7daf759998e086c4959192e` | — |
-| `eval/needle_eval.py` | `6d7a204990b0b546f1374f20e4cc1d1583c815d69bfd75b8588c3ff729e72a0d` | — |
-| `eval/realistic_fp_analysis.py` (SEED=42) | `c16000fb577e5ef644810f6573e307b0405c148fb0365f0b19a46c603beba5c3` | — |
-| `eval/tool_firewall_v6_breakdown.py` | `69e6d0681f2ebd9982dc98d4b5262d908bf1430b36737a9b68ba54cd76353756` | — |
-| `eval/data/needle/needle_v12.jsonl` | `684be435fdc30fece9e8d7d3c98cf480df5698cd3812ce663b4eeb970def9d16` | 209606 |
+| `eval/data/realistic_dev/benign.jsonl` | `7c445f9b421457b1f6d75892c722342fcfe7b8a1097bcc4edb93680dc3fd6f4e` | 321643 |
+| `eval/data/realistic_dev/hard_negatives.jsonl` | `b745f700b0fd80fb8abd6d07da411d1bd1f5691f350faa627ddf7100b2ddd42f` | 55730 |
 
-## Reports (first-run outputs)
 
-| Path | Role |
+## v1.3 first-run harness (hashed BEFORE run)
+
+| Path | SHA-256 | Bytes |
+|---|---|---:|
+| `eval/sealed_first_run_v13.py` (SEED=42) | `310c2c562e0390eb39853b2888065bf67098dda1037fb38bd492a66f55cd634d` | 7794 |
+
+## Policy (post-fit, hashed)
+
+| Path | SHA-256 |
 |---|---|
-| `eval/reports/leave_one_layer_out.json` | LOLO + R4 attribution |
-| `eval/reports/needle_v12.json` | Needle-in-haystack |
-| `eval/reports/realistic_fp_analysis_v12.json` | Realistic FP + cluster bootstrap |
-| `eval/reports/tool_firewall_v6_breakdown.json` | TF v6 subtype / dual ASR |
-| `eval/reports/sealed_per_type_v1.json` | Sealed-only per-type table |
+| `apps/api/src/promptshield/policies/default.yml` | `44a1043a98c8b9384c0eec87540152f75dda7cfb2bd943a1a357d22cd6713e75` |
 
-## Policy
-
-- REPORT-ONLY for v1.2: no detector / rule / weight / policy / threshold edits
-- Never tune on sealed / realistic / needle / test
+- Tune only on train+dev (+ new Part B **dev** realistic corpora built for fitting)
 - Do **not** move or delete prior tags; corrections → `docs/ERRATA.md`
-- Tag: `v1.2-evidence` (immutable once pushed)
+- Tag: **`v1.3-evidence`** (tip SHA recorded after tag; do not self-refer inside the tagged blob)
+
+## First-run outcome (measured once)
+
+| Cell | Result |
+|---|---|
+| F | **F1** (0 types ACTED≥0.80 n≥10) |
+| D | **below_D1** (pooled ACTED 0.364) |
+| Staging benign ACTED FPR | 0.073 — NOT MET ≤2% |
+| Dev fit FPR | 0.0045 — MET on fit set |
 
 ## Verify
 
 ```bash
-shasum -a 256 eval/data/needle/needle_v12.jsonl eval/leave_one_layer_out.py eval/synth/build_needle_v12.py
+shasum -a 256 eval/data/redteam/batch_a_attacks.jsonl \
+  eval/data/redteam/batch_b_hard_negatives.jsonl \
+  eval/data/redteam/batch_c_benign.jsonl
 ```

@@ -1,4 +1,4 @@
-# Submission pack — PromptShield v1.1-evidence
+# Submission pack — PromptShield v1.3-evidence
 
 ## Architecture
 
@@ -10,7 +10,7 @@ flowchart LR
   subgraph detect
     N --> S[Signatures]
     N --> H[Heuristics]
-    S --> C[TF-IDF logreg gated]
+    S --> C[TF-IDF logreg sliding windows]
     H --> C
     C --> J[Judge gray-zone offline/live]
     S --> F[Fusion + Policy]
@@ -25,7 +25,7 @@ flowchart LR
   Agent --> OG[Output / canary / egress]
 ```
 
-Adapters cover text, HTML, PDF, DOCX, email/MIME, Markdown, JSON/API, source code, image-OCR. Defence in depth: signatures + heuristics + classifier + optional judge + session risk + tool/output guards. Offsets preserved through transforms.
+Adapters cover text, HTML, PDF, DOCX, email/MIME, Markdown, JSON/API, source code, image-OCR. Defence in depth: signatures + heuristics + classifier + optional judge + session risk + tool/output guards. Offsets preserved through transforms. Classifier findings use max-scoring window character spans (512 tokens, stride 128).
 
 ## Model-usage table
 
@@ -33,10 +33,10 @@ Adapters cover text, HTML, PDF, DOCX, email/MIME, Markdown, JSON/API, source cod
 |---|---|---|---|
 | Signatures | YAML regex rules (294+) | Deterministic, explainable | N/A |
 | Heuristics | Feature scores (+ discourse) | Cheap structure cues | N/A |
-| Classifier | TF-IDF + logistic regression (`calibration.json`) | CI-friendly, no GPU | Skip layer; `degraded:["classifier"]` |
+| Classifier | TF-IDF + logistic regression + sliding windows | CI-friendly, localised spans | Skip layer; `degraded:["classifier"]` |
 | Judge | Offline deterministic JSON; optional live LLM | Gray-zone only | Unknown → never allow alone; **not evaluated** |
 | Aria | Scripted GullibleAgent | Offline demo/ASR | LLM mode if `LLM_API_KEY` (**not run**) |
-| Fusion | Hand-set logistic + signature floor | Combine layers; `max_sev≥0.75→risk≥0.8` | Policy thresholds |
+| Fusion | Hand-set logistic + signature floor + `clf_graded` | Combine layers; graded clf decisions | Policy thresholds |
 
 ## Demo script (~6 min)
 
@@ -49,7 +49,7 @@ Adapters cover text, HTML, PDF, DOCX, email/MIME, Markdown, JSON/API, source cod
 | 3:00 | Hard-negative F18 (security article) |
 | 3:45 | Multi-turn F12 |
 | 4:30 | Disable text scanning → `Tool call denied — TOOL_DOMAIN_DENY` |
-| 5:15 | Coverage + Eval + claim ledger (D1 / F3 counts) |
+| 5:15 | Coverage + Eval + claim ledger (F1 / below_D1) |
 
 Full text: `docs/DEMO_BACKUP.md`.
 
@@ -69,9 +69,9 @@ Verified against README § commands / `docs/FRESH_CLONE.md`. Compose Redis not r
 
 ## Declared 3×3 position
 
-- **F3** — **1 type supported, 7 demonstrated**; **tool_abuse weak** (sealed-only; see CLAIMS).
-- **D1** — **D2 in progress** (round-4 LCI 0.819 < 0.85). **No D3.**
-- Disruption reported as measured FPR only (sealed HN first-run **4/110**; realistic benign **0.027**, README ≤2% **NOT MET**).
+- **F1** under ACTED (0/9 staging types meet ACTED≥0.80 n≥10).
+- **below_D1** — pooled independent staging ACTED **0.364 < 0.5**. **No D2/D3.**
+- Disruption: staging benign ACTED FPR **0.073** (≤2% **NOT MET**). Dev fit FPR **0.0045** (fit set only).
 - Arena disable-scan: protected lane **`Tool call denied — TOOL_DOMAIN_DENY`**.
 
 **Note:** Demo gallery fixtures are in classifier **training** data.
@@ -86,4 +86,4 @@ No real API keys or credentials in tree. Demo secrets are **canaries only** (`CA
 
 ## Freeze / tag
 
-Tag **`v1.1-evidence`** (prior tags untouched). Hashes in `docs/FREEZE.md`.
+Tag **`v1.3-evidence`** (prior tags untouched). Hashes in `docs/FREEZE.md`.

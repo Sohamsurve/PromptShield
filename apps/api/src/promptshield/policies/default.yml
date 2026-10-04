@@ -1,4 +1,4 @@
-version: 2
+version: 3
 sources:
   user_message:
     trust: T1
@@ -126,3 +126,7 @@ fusion:
     T2: 0.4
     T3: 0.6
   w_sess: 1.5
+clf_graded:
+  sanitize: 0.85
+  quarantine: 0.92
+  block: 0.98

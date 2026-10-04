@@ -116,21 +116,24 @@ class Classifier:
             backend="tfidf_logreg",
         )
 
-    def predict_proba(self, text: str) -> float:
+    # Sliding-window defaults (tokens ≈ whitespace/alnum pieces; README §5.6)
+    WINDOW_TOKENS: int = 512
+    WINDOW_STRIDE: int = 128
+
+    def _score_tokens(self, tokens: list[str]) -> float:
         import math
-        import re
 
         assert self.vocabulary is not None and self.coef is not None
-        tokens = re.findall(r"[a-z0-9_]+", text.lower())
+        if not tokens:
+            return _temperature_scale(1 / (1 + math.exp(-max(-50, min(50, self.intercept)))), self.temperature)
         tf: dict[int, float] = {}
         for tok in tokens:
             idx = self.vocabulary.get(tok)
             if idx is None:
                 continue
             tf[idx] = tf.get(idx, 0.0) + 1.0
-        if tokens:
-            for k in list(tf):
-                tf[k] /= len(tokens)
+        for k in list(tf):
+            tf[k] /= len(tokens)
         score = self.intercept
         for idx, val in tf.items():
             idf = self.idf[idx] if self.idf and idx < len(self.idf) else 1.0
@@ -138,6 +141,59 @@ class Classifier:
                 score += self.coef[idx] * val * idf
         prob = 1 / (1 + math.exp(-max(-50, min(50, score))))
         return _temperature_scale(prob, self.temperature)
+
+    def predict_proba(self, text: str) -> float:
+        """Full-text score (compat). Prefer predict_span for localised findings."""
+        import re
+
+        tokens = re.findall(r"[a-z0-9_]+", (text or "").lower())
+        return self._score_tokens(tokens)
+
+    @staticmethod
+    def tokenize_with_spans(text: str) -> list[tuple[str, int, int]]:
+        """Alnum tokens with [start, end) character offsets into `text`."""
+        import re
+
+        return [(m.group(0).lower(), m.start(), m.end()) for m in re.finditer(r"[A-Za-z0-9_]+", text or "")]
+
+    def predict_span(
+        self,
+        text: str,
+        *,
+        window_tokens: int | None = None,
+        stride: int | None = None,
+    ) -> tuple[float, tuple[int, int]]:
+        """Score sliding windows; return (max_prob, char_span of best window).
+
+        Window = 512 tokens, stride = 128 (defaults). Span is inclusive-exclusive
+        character offsets into the original `text`. Short texts → one window.
+        """
+        win = int(window_tokens or self.WINDOW_TOKENS)
+        step = int(stride or self.WINDOW_STRIDE)
+        pieces = self.tokenize_with_spans(text or "")
+        if not pieces:
+            return self.predict_proba(text or ""), (0, 0)
+        if len(pieces) <= win:
+            prob = self._score_tokens([t for t, _, _ in pieces])
+            return prob, (pieces[0][1], pieces[-1][2])
+
+        best_p = -1.0
+        best_span = (pieces[0][1], pieces[-1][2])
+        for start in range(0, len(pieces) - win + 1, step):
+            chunk = pieces[start : start + win]
+            p = self._score_tokens([t for t, _, _ in chunk])
+            if p > best_p:
+                best_p = p
+                best_span = (chunk[0][1], chunk[-1][2])
+        # Tail window if stride skipped the end
+        last_start = len(pieces) - win
+        if last_start % step != 0:
+            chunk = pieces[last_start:]
+            p = self._score_tokens([t for t, _, _ in chunk])
+            if p > best_p:
+                best_p = p
+                best_span = (chunk[0][1], chunk[-1][2])
+        return best_p, best_span
 
 
 _UNSET = object()

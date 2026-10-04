@@ -247,14 +247,22 @@ def scan(
             )
             if not run:
                 continue
-            p = clf.predict_proba(seg.canonical or seg.text)
+            # Score on original segment text so finding spans keep character offsets.
+            raw = seg.text or seg.canonical or ""
+            p, win_span = clf.predict_span(raw)
             clf_prob = max(clf_prob, p)
             if p >= 0.55:
+                lo, hi = win_span
+                # Localised if window is a proper subset of the segment
+                localised = hi > lo and (hi - lo) < max(1, int(0.85 * len(raw)))
+                if not localised and len(raw) > 0:
+                    # Still emit a span for the best window (may be near-full text)
+                    lo, hi = win_span if hi > lo else (0, min(len(raw), 200))
                 findings.append(
                     Finding(
                         id=f"c_{uuid.uuid4().hex[:8]}",
                         segment_id=seg.id,
-                        span=(0, min(len(seg.text), 200)),
+                        span=(int(lo), int(hi)),
                         attack_types=[AttackType.instruction_override]
                         + (
                             [AttackType.indirect_injection]
@@ -264,8 +272,8 @@ def scan(
                         detector="classifier",
                         rule_id=None,
                         score=float(p),
-                        reason_code="CLF_INJECTION",
-                        evidence=(seg.text or "")[:200],
+                        reason_code="CLF_INJECTION" if localised else "CLF_INJECTION_UNLOCALISED",
+                        evidence=(raw[lo:hi] if hi > lo else raw)[:200],
                     )
                 )
     clf_ms = (time.perf_counter() - t_clf) * 1000
@@ -359,13 +367,16 @@ def scan(
     if judge_quote:
         # Quotation dampening must not lower T2/T3 content below sanitize/block
         # when signatures fire or the text addresses an agent.
-        agent_directed = disc.ai_agent_score_raw >= 0.35 or (
+        # Use damped ai score when discourse says specimen/education; raw only if not dampened
+        ai_for_live = disc.ai_agent_score if disc.dampen else disc.ai_agent_score_raw
+        agent_directed = ai_for_live >= 0.35 or (
             disc.attackish_present
-            and disc.ai_agent_score_raw >= max(disc.human_reader_score, 0.01)
+            and ai_for_live >= max(disc.human_reader_score, 0.01)
+            and not disc.dampen
         )
         t2t3_live = request.trust.value >= TrustLevel.T2 and (
             (agent_directed and (max_sev >= 0.5 or clf_prob >= 0.55))
-            or max_sev >= 0.75
+            or (max_sev >= 0.75 and not disc.dampen)
         )
         if t2t3_live:
             risk = fuse_risk(

@@ -11,25 +11,28 @@ from dataclasses import dataclass
 # Meta / educational discourse (discussion *about* attacks, not issuing them).
 _FRAME_RES = [
     re.compile(r"(?i)\b(?:security\s+article|blog\s+post|tutorial|textbook|paper|lecture|course|syllabus)\b"),
+    re.compile(r"(?i)\b(?:security\s+tutorial|incident\s+write-?up|hardening\s+guide|conference\s+notes|rfc-?style\s+advisory)\b"),
     re.compile(r"(?i)\b(?:attackers?\s+(?:sometimes|often|may|will)|adversaries?\s+may|malware\s+sometimes)\b"),
     re.compile(r"(?i)\b(?:quoting|quoted|quotation|for\s+example|e\.g\.|such\s+as|historical\s+lure)\b"),
-    re.compile(r"(?i)\b(?:defenders?\s+should|treat\s+(?:that|this|it)\s+as\s+data)\b"),
+    re.compile(r"(?i)\b(?:defenders?\s+should|treat\s+(?:that|this|it)\s+as\s+data|normative\s+for\s+defenders)\b"),
     re.compile(r"(?i)\b(?:educational|illustrative|hypothetical\s+example|inert\s+strings?)\b"),
     re.compile(r"(?i)\b(?:discussion\s+of|analysis\s+of|taxonomy|catalogu(?:e|ing))\s*(?:of\s+)?(?:prompt\s+)?injection?\b"),
     re.compile(r"(?i)\b(?:phrases?\s+like|strings?\s+like|pattern\s+like|front\s+shows|reads?\s+the\s+phrase)\b"),
     re.compile(
-        r"(?i)\b(?:do\s+not\s+follow|should\s+not\s+obey|must\s+not\s+execute|do\s+not\s+command|"
-        r"not\s+an?\s+(?:agent\s+)?(?:command|jailbreak)|not\s+a\s+live\s+tool)\b"
+        r"(?i)\b(?:do\s+not\s+follow|should\s+not\s+obey|must\s+not\s+execute|do\s+not\s+(?:command|execute)|"
+        r"not\s+an?\s+(?:agent\s+)?(?:command|jailbreak)|not\s+a\s+live\s+tool|"
+        r"sandboxed\s+review|without\s+following\s+it)\b"
     ),
     re.compile(
         r"(?i)\b(?:flashcard|placard|transcript|workshop\s+packet|handout|exhibit|postmortem|"
         r"spaced-?repetition|journalism|presenter\s+says|blue-?team|analyst\s+brief|"
-        r"sandbox\s+dump|specimen\s+string|ops\s+newsletter|style\s+guide|podcast\s+show)\b"
+        r"sandbox\s+dump|specimen\s+string|ops\s+newsletter|style\s+guide|podcast\s+show|playbook)\b"
     ),
     re.compile(
         r"(?i)\b(?:hard\s+negative|evidence\s+handling|classroom\s+examples?|lab\s+partners?|"
         r"catalogu(?:e|ing)\s+it|not\s+an\s+instruction\s+to\s+an\s+assistant)\b"
     ),
+    re.compile(r"(?i)\b(?:students?\s+should\s+recognise|audience\s+discussion|citation\s*\[)"),
 ]
 
 # Surface forms often *quoted* when discussing attacks (broader than detector YAML).
@@ -94,6 +97,9 @@ class DiscourseFeatures:
             and self.quote_marked
         ):
             return True
+        # Quoted educational specimens: high quotation+edu beats raw AI-address hits inside quotes
+        if self.quotation_score >= 0.55 and self.educational_score >= 0.4 and self.quote_marked:
+            return True
         # Thin wrappers around live agent imperatives are not dampened
         if (
             self.ai_agent_score_raw >= 0.5
@@ -102,6 +108,8 @@ class DiscourseFeatures:
         ):
             return False
         if self.quotation_score >= 0.55 and self.ai_agent_score_raw < 0.45:
+            return True
+        if self.quotation_score >= 0.55 and self.educational_score >= 0.35 and self.ai_agent_score < 0.4:
             return True
         # Human-directed discourse with citation markers + attack specimen
         if (
