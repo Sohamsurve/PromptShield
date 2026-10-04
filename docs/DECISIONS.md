@@ -74,3 +74,8 @@ Format: date · decision · reason.
 - **Part B fit pool:** train+dev+**dev_redteam**; operating curve on that pool. Independent staging still sealed/unread until hashed.
 - **Empty LLM_BASE_URL:** treat as default `https://api.openai.com/v1` (empty env var is not missing).
 - **Dotenv scope:** judge loader imports only LLM/JUDGE/ARIA keys — never `CLASSIFIER_PATH` (would break tfidf_logreg CI).
+- **v1.4 length confound:** Unmatched `dev_redteam` excluded from claimed fit. Build length-matched attacks (payload-in-host ≈ benign length) + long benign; report curves A (before redteam), B (unmatched), C (length-matched). Claimed operating point = C.
+- **v1.4 judge-driven action (pre-registered before code):** confirmed+verbatim span→sanitize; confirmed without span→quarantine; judge never blocks alone; never overrides strong signature (`max_sev≥0.75`) or high clf (`≥clf_block`); `is_quotation_or_discussion` lowers risk only when not agent-addressed.
+- **v1.4 judge timeout:** clamp policy/env to 3–5 s; `ThreadPoolExecutor` wall clock around `judge_segment` so a slow LLM cannot hang `/v1/scan` UI.
+- **v1.4 judge eval:** ≥40 new manipulation cases (distinct from v1.3’s 12); Wilson CIs; effort none vs low; cheaper tier only with manipulation results (mini manip 0.446 → no downgrade).
+- **v1.4 tag:** `v1.4-evidence`. Independent staging still unread until hashed.

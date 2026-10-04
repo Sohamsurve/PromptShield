@@ -1,4 +1,4 @@
-version: 4
+version: 6
 sources:
   user_message:
     trust: T1
@@ -75,7 +75,7 @@ max_removal_ratio: 0.4
 judge:
   lo: 0.35
   hi: 0.8
-  timeout_ms: 1500
+  timeout_ms: 5000
 classifier_gate: 0.1
 session:
   lambda: 0.7
@@ -113,10 +113,10 @@ tools:
     side_effect: external
     block_if_tainted: true
 fusion:
-  b: -5.1085
+  b: -6.5
   w_sig: 6.7068
   w_h: 1.5
-  w_ml: 5.0838
+  w_ml: 3.5
   w_j: 2.0
   w_hid: 0.2318
   w_enc: 0.0318

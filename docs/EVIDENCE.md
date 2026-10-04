@@ -1,6 +1,6 @@
-# Evidence (measured) — v1.3-evidence
+# Evidence (measured) — v1.4-evidence
 
-Corrections: `docs/ERRATA.md`. Hashes / rules: `docs/FREEZE.md`.
+Corrections: `docs/ERRATA.md`. Hashes / pre-registered rules: `docs/FREEZE.md`.
 
 ## Metrics
 
@@ -9,73 +9,62 @@ Corrections: `docs/ERRATA.md`. Hashes / rules: `docs/FREEZE.md`.
 | **FLAGGED** | any finding |
 | **ACTED** | decision ∈ {sanitize, quarantine, block, escalate} — **headline** |
 
-## Pre-registered rules
+## v1.3 unmatched baseline (context)
 
-- **D1** iff pooled **new independent sealed** ACTED ≥ 0.5  
-- **F3** iff ≥7 types ACTED ≥0.80 n≥10; **F2** iff ≥5; else **F1**  
-- **Operating point:** max ACTED s.t. train+dev+dev_redteam benign+HN ACTED FPR ≤ 2%
+ACTED **0.417** (50/120) / FPR **0.0938** (30/320) on synth `dev` + **unmatched** `dev_redteam` (attacks n=120; neg n=320). Length separates that set (acc **0.924**).
 
-## dev_redteam redesignation + leakage audit
+## Length-matched operating curves (dev only)
 
-Batches A/B/C are **repo-generated** (`build_redteam_batches.py`) → **dev_redteam** (tuning OK, **no claims**).
+Length-matched attacks: p50 len **524** vs benign p50 **560**; length-threshold acc **0.717** (was 0.924 unmatched).
 
-| Check | Result |
-|---|---|
-| n | 514 |
-| distinct normalised | 422 (dup rate 0.179) |
-| id string in text | 0 |
-| label string in text | 0 |
-| counter markers in text | 6 |
-| within-batch NN Jaccard p50 / p95 / max | 0.507 / 0.981 / 0.983 |
-| source docs | attacks 110 · HN 17 · benign 80 |
-| length p50 attack / benign | 882 / 560 |
-| best length-threshold acc | **0.924** (thr=728, attack_ge) |
-| hist overlap | 0.261 |
-| Length alone separates classes? | **YES** (`LENGTH_SEPARATES_CLASSES`) |
+| Condition | n_atk | n_neg | ACTED | FPR |
+|---|---:|---:|---:|---:|
+| A before dev_redteam | 80 | 210 | **1.000** (80) | **0.043** (9) |
+| B + unmatched redteam | 120 | 320 | **0.675** (81) | **0.116** (37) |
+| C + length-matched (claimed fit) | 120 | 320 | **0.533** (64) | **0.116** (37) |
 
-Report: `eval/reports/leakage_audit_dev_redteam.json`.
+FPR ≤ 2%: **NOT MET** on A/B/C. Claimed fit = **C** (no unmatched redteam).
 
-## Part B operating curve (train+dev+dev_redteam)
+Classifier length proxy: pearson(len, clf) **−0.485**; no explicit length feature; digit/token-like vocab tokens present (indirect). Report: `eval/reports/fit_length_curves_v14.json`.
+
+## Judge-driven action (dev, offline heuristic path)
+
+Pre-registered: confirmed+verbatim span→sanitize; confirmed w/o span→quarantine; never block alone; never override strong sig / high clf; quotation dampens only if not agent-addressed.
 
 | | |
 |---|---|
-| Dev ACTED | **0.417** (50/120) |
-| Dev benign+HN ACTED FPR | **0.0938** (30/320) |
-| FPR ≤ 2% | **NOT MET** on fit pool (no grid point ≤2%; chose min-FPR max-ACTED) |
-| Fusion / clf_graded | prior weights + sanitize 0.85 / quarantine 0.92 / block 0.98 |
-| Curve | `eval/reports/fit_fusion_acted_v13.json` |
+| ACTED | **0.513** (41/80) |
+| FPR benign+HN | **0.200** (40/200) |
+| preserve mean | **0.837** |
+| localise rate | **0.463** (37/80) |
 
-Classifier: sliding windows 512/128; finding span = max-scoring window.
+## Judge evaluation (dev gray-zone only)
 
-## Judge (dev gray-zone only)
+n=**119** (base 63 + manip 56). Definitions: judge accuracy = `is_injection` matches label (unknown=incorrect); FLAGGED/ACTED = pipeline. Timeout **5000** ms → unknown. Invocation rate **1.0** on this set.
 
-n=75 (63 base + 12 manipulation). Invocation rate 1.0 on this set. Tests/CI: mocked client + `JUDGE_FORCE_OFFLINE=1`.
+| Setting | acc (Wilson) | manip acc | unknown | p50/p95 ms | $/1k scans | FLAGGED | ACTED |
+|---|---|---|---|---|---:|---|---|
+| gpt-5.6-sol effort=none | **1.000** [0.969,1.00] | **1.000** (56/56) | 0.000 | 2391 / 3206 | 1.733 | 0.529 | 0.504 |
+| gpt-5.6-sol effort=low | **1.000** [0.969,1.00] | **1.000** (56/56) | 0.000 | 2366 / 3126 | 1.733 | 0.529 | 0.504 |
+| gpt-4o-mini | **0.681** [0.592,0.758] | **0.446** (25/56) | 0.008 | 1742 / 3203 | 0.055 | 0.529 | 0.504 |
 
-| Model | accuracy | manip acc | unknown | p50 / p95 ms | cost est USD | pipeline FLAGGED | pipeline ACTED |
-|---|---:|---:|---:|---|---:|---:|---:|
-| gpt-5.6-sol | **1.000** | **1.000** | 0.000 | 2429 / 3355 | 0.138 | 0.467 | 0.440 |
-| gpt-4o-mini | **0.800** | **0.333** | 0.000 | 1840 / 2536 | 0.004 | 0.480 | 0.453 |
+Do **not** downgrade to mini: manipulation accuracy **0.446** vs Sol **1.000**.
 
-Live `/v1/healthz` (after restart): `judge_mode=live`, `judge_model=gpt-5.6-sol`, `llm_provider=openai`, `api_key_configured=true`, `judge_timeout_ms=30000`, `judge_reasoning_effort=low` (key never returned).
+Judge evaluated on **dev only** — **not** on independent data.
 
-## Independent sealed first-run
+## Independent sealed
 
-**Not evaluated** — external staging sets not arrived / not hashed.
+**Not evaluated** — staging not arrived / not hashed.
 
-## Needle (prior v1.3 measurement; windows)
+## README §0.4
 
-detect ACTED **0.767** · localise **0.313** · preserve **0.312** · whole-doc drop **0.66**
+| Target | Status |
+|---|---|
+| Benign FPR ≤ 2% (independent sealed) | **NOT MET** |
+| Held-out ACTED ≥ 0.85 | **NOT MET** |
+| Dev fit FPR ≤ 2% (claimed C) | **NOT MET** (0.116) |
+| pytest | **391 passed**, 1 skipped |
 
-## README §0.4 targets (ACTED headline)
+## Ops
 
-| Target | Measured | Status |
-|---|---|---|
-| Benign FPR ≤ 2% (independent sealed) | — | **NOT MET** (no independent sealed) |
-| Held-out / paraphrased recall ≥ 0.85 | — | **NOT MET** (no independent sealed) |
-| Dev fit FPR ≤ 2% | 0.0938 | **NOT MET** |
-| Latency p95 no-judge ≤ ~150 ms | (harness) | not re-gated here |
-| pytest | 387 passed, 1 skipped | — |
-
-## Tests
-
-`make test`: **387 passed**, 1 skipped. Judge unit tests use mocked HTTP client; live smoke only if `JUDGE_LIVE_SMOKE=1`.
+Single uvicorn on `:8000`. Judge hard timeout 3–5 s (policy/env **5000**); wall-clock thread timeout in pipeline so a slow judge cannot hang the UI.

@@ -1,26 +1,18 @@
 # Limitations (current)
 
-## Detection / fusion
+## Length / fusion
 
-- Fit pool (train+dev+dev_redteam) ACTED **0.417**, FPR **0.0938** — operating point **≤2% NOT MET** (no grid point satisfied the constraint).
-- **dev_redteam** attack vs benign is **separable by length alone** (threshold acc 0.924) — treat transfer claims carefully.
-- Needle localise **0.313**; whole-doc drop **0.66**.
+- Unmatched `dev_redteam` is length-confounded (threshold acc 0.924). Claimed fit uses length-matched C: ACTED **0.533**, FPR **0.116** (≤2% NOT MET).
+- Classifier has no explicit length feature; len↔score pearson **−0.485** on the C slice.
 
 ## Judge
 
-- Live judge requires `JUDGE_TIMEOUT_MS` ≫ 1.5s for Sol-class models (measured p50 ~2.4s).
-- Empty `LLM_BASE_URL` must fall back to `https://api.openai.com/v1`.
-- `reasoning_effort` only on reasoning models; non-reasoning uses `temperature=0`.
-- Offline without key / errors → **unknown** (never allows via judge). CI uses heuristic via `JUDGE_FORCE_OFFLINE=1`.
-- Judge accuracy reported on **dev** gray-zone only; not an independent sealed claim.
+- Dev-only eval (n=119). Independent sealed **not evaluated**.
+- Sol acc 1.000 on this gray-zone set may not transfer; mini manip **0.446**.
+- Offline judge-action path: FPR **0.200**, localise **0.463**.
+- 5 s timeout can yield unknown under load (none observed on Sol in this run).
+
+## Claims
+
+- F/D on independent sealed: **not evaluated**.
 - Aria LLM agent: **not evaluated**.
-
-## Claims / data
-
-- Independent sealed first-run: **not evaluated** (staging not arrived).
-- Prior use of repo redteam as “independent” is **withdrawn** (ERRATA).
-
-## Ops
-
-- ASR/utility on scripted GullibleAgent.  
-- Session state in-memory unless Redis configured.

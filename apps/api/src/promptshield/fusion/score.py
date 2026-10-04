@@ -78,7 +78,16 @@ def decide(
     high_impact: bool = False,
     policy: dict[str, Any] | None = None,
     residual_risk: float | None = None,
+    max_signature_severity: float = 0.0,
+    judge_action: str | None = None,
 ) -> Decision:
+    """Policy decision.
+
+    judge_action (pre-registered v1.4):
+      - \"sanitize\" — judge confirmed + verbatim span
+      - \"quarantine\" — judge confirmed without usable span
+    Judge alone never blocks; never overrides strong signature or high clf.
+    """
     policy = policy or {}
     sources = policy.get("sources") or {}
     p = sources.get(source_type) or sources.get("text") or {
@@ -100,20 +109,37 @@ def decide(
     clf_block = float(graded.get("block", 0.95))
 
     clf_findings = [f for f in findings if f.detector == "classifier"]
+    sig_findings = [f for f in findings if f.detector == "signature"]
     max_clf = max((f.score for f in clf_findings), default=0.0)
+    max_sev = max(
+        max_signature_severity,
+        max((f.score for f in sig_findings), default=0.0),
+    )
     local_clf = [f for f in clf_findings if _span_localised(f, text_len)]
     unlocal_clf = [f for f in clf_findings if f not in local_clf]
+    strong_sig = max_sev >= 0.75
+    high_clf = max_clf >= clf_block
 
-    # Block only on high confidence (fused risk or very high clf)
-    if risk >= block or max_clf >= clf_block:
+    # Block on fused risk or high classifier — never from judge alone
+    if risk >= block or high_clf:
         return Decision.block
 
-    # Sanitise localised spans (signature/heuristic/classifier) under removal budget
-    spans = [f for f in findings if f.span and f.score >= sanitize_span]
-    # Also allow classifier localised spans at clf_sanitize threshold
+    # Judge-driven action cannot override strong signature or high classifier
+    judge_may_act = judge_action in {"sanitize", "quarantine"} and not strong_sig and not high_clf
+
+    # Judge confirmed without usable verbatim span → quarantine (before sanitize path)
+    if judge_may_act and judge_action == "quarantine":
+        return Decision.quarantine
+
+    # Sanitise localised spans (signature/heuristic/classifier/judge) under removal budget
+    spans = [f for f in findings if f.span and f.score >= sanitize_span and f.detector != "judge"]
     for f in local_clf:
         if f.score >= clf_sanitize and f not in spans:
             spans.append(f)
+    if judge_may_act and judge_action == "sanitize":
+        for f in findings:
+            if f.detector == "judge" and f.span and f not in spans:
+                spans.append(f)
     if spans and text_len > 0:
         covered = sum(max(0, (f.span[1] - f.span[0])) for f in spans if f.span)
         ratio = covered / text_len

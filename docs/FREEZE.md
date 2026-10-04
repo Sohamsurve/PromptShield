@@ -1,4 +1,4 @@
-# Freeze — v1.3-evidence
+# Freeze — v1.4-evidence
 
 ## Prior seals (spent)
 
@@ -8,7 +8,7 @@
 | `3e566ad` / `v1.0-submission` | TF v5 STOP |
 | `a28f442` / `v1.1-evidence` | realistic / quote-bypass / TF v6 |
 | `a3700fe` / `v1.2-evidence` | LOLO / needle / realistic FP / TF v6 breakdown |
-| `5d13a9f` / `v1.3-evidence` (superseded tip) | incorrectly treated repo redteam as independent — see ERRATA |
+| `da7674b` / `v1.3-evidence` | dev_redteam honesty + judge wiring |
 
 | Path | SHA-256 | Bytes |
 |---|---|---:|
@@ -18,7 +18,7 @@
 | `eval/data/realistic/benign.jsonl` | `25fd4cfc61fedc792bb7e6f6e850a2a17d2f45d92e640ce4935ce081c2af35e6` | 590153 |
 | `eval/data/sealed/tool_firewall_attacks_v6.jsonl` | `6fd25685397daa581149cd971d5fba508f493f58faf4007df44593944f7fb078` | 10521 |
 
-## Pre-registered success rules (BEFORE Part B code)
+## Pre-registered rules (BEFORE v1.4 code)
 
 | Cell / rule | Definition |
 |---|---|
@@ -28,47 +28,50 @@
 | **F3** | iff ≥7 types ACTED ≥0.80 and n≥10 |
 | **F2** | iff ≥5 such types |
 | **F1** | otherwise |
-| **Operating point** | maximise ACTED on train+dev(+dev_redteam) subject to **dev benign+HN ACTED FPR ≤ 2%** |
+| **Operating point** | maximise ACTED subject to **dev benign+HN ACTED FPR ≤ 2%** |
+| **Length confound** | Unmatched `dev_redteam` must **not** be used for the claimed fit; report curves for (A) train+dev only, (B) +unmatched redteam, (C) +length-matched only |
+| **Judge-driven action** | (1) judge confirmed injection **and** verbatim `offending_span` ⊆ text → **sanitize** that span; (2) confirmed **without** usable span → **quarantine**; (3) judge alone **never blocks**; (4) judge **never overrides** strong signature (`max_sev≥0.75`) or high classifier (`clf≥clf_block` graded); (5) `is_quotation_or_discussion` may lower risk **only** when content is **not** agent-addressed |
+| **Judge timeout** | 3–5 s hard timeout → `unknown`, never allow via judge |
 
 Never tune on spent / inspected / sealed / external-independent sets.
 
-## dev_redteam (NOT independent — tuning allowed, NO claims)
+## v1.3 measured baseline (context — unmatched redteam)
 
-Repo script `eval/synth/build_redteam_batches.py` generated these batches. Path: `eval/data/dev_redteam/` (renamed from `redteam/`).
+Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit pool:
+- attacks: synth `dev` + unmatched `dev_redteam` batch_a (n_atk=120)
+- neg: synth `dev` benign+HN + unmatched batch_b+c + realistic_dev subsample (n_neg=320)
 
-| Path | SHA-256 | Lines |
-|---|---|---:|
-| `eval/data/dev_redteam/batch_a_attacks.jsonl` | `a09252aaa831da8102743a1cea873dcd408ebc4fb7e787bb859a461f55240cb9` | 110 |
-| `eval/data/dev_redteam/batch_b_hard_negatives.jsonl` | `f04a790a7986d1f21b1a72530c813588c59e4755ebd2a8e7f192316ae26decdf` | 104 |
-| `eval/data/dev_redteam/batch_c_benign.jsonl` | `3654e40f8cd38ecf3ee56487aed255f4796554bd66a62bc8f61b5b062a704903` | 300 |
-| `eval/data/dev_redteam/judge_grayzone.jsonl` | `2869fffc630a33c6735a4228a2b3815a8f726bc5b98e9ccbd21dfffd1d1860df` | 75 |
-
-```bash
-shasum -a 256 eval/data/dev_redteam/batch_*.jsonl
-```
-
-## Independent staging (external) — DO NOT READ until hashed
-
-Awaiting sets authored outside this repo. Hash in this file **before** first ingest; run once; report FLAGGED/ACTED + cluster-bootstrap CIs.
+## Independent staging — DO NOT READ until hashed
 
 **Status:** not arrived. Independent sealed first-run **not evaluated**.
 
-## Construction / eval scripts (hashed)
+## Scripts / seeds hashed BEFORE run
+
+| Path | SHA-256 | SEED |
+|---|---|---|
+| `eval/synth/build_length_matched_v14.py` | `3c6c0f08aa897ba2393a9fc3151f5891af5e45089d0ef74e36293cbacd852a44` | 42 |
+| `eval/fit_length_curves_v14.py` | `ff29025f66598bb1f1eb475119fa03477f8b2845dbd4e24f3d3db688996fe3d5` | 42 |
+| `eval/synth/build_judge_manip_v14.py` | `0d75f65a7bcbc5ffb3c25893875044dbd76fc5483d4d05ce5441c766e3294504` | 42 |
+| `eval/judge_eval_v14.py` | `f0a258297e07a6f782799fa37074699f0b786c806527e95a60b392ee85df2b78` | 42 |
+| `eval/judge_action_dev_eval_v14.py` | `de099aa06962e9e58f80bdaf31a670add59c45c86a2f42c73774aec3376b0725` | 42 |
+
+## Length-matched + judge grayzone v14 (hashed)
 
 | Path | SHA-256 |
 |---|---|
-| `eval/synth/build_realistic_dev_v13.py` | `da1c37a717eea035a83822b722f81f591f554a3f829761cee99e8277016ab056` |
-| `eval/fit_fusion_acted_v13.py` (SEED=42) | `7c41da409f90a1c4defbcb5c420837daf1fbeccbb1165dcc1196a20479af0616` |
-| `eval/audit_leakage.py` | `aad292037aa5e98307a566dabf9c57cc864c300837075c8318d4aab8f44f729b` |
-| `eval/synth/build_judge_grayzone_v13.py` | `b027dc99f88e17edc40440c3e2041d5e6ed41377beae6c184136197778fe0b93` |
-| `eval/judge_eval_v13.py` | `7aa7fc22820973567114ebcce2097e75b7afe921ccf549d3d5526731fc4ddfa4` |
+| `eval/data/length_matched/attacks.jsonl` | `728e77f9f6f5185a6b9ba52322addb517503d1672cc3e4498629ff2ec41a0ade` |
+| `eval/data/length_matched/benign.jsonl` | `61c6e2312a6657eda473100d86ceef72cc06968d1d5431f442c7ea111c0a99f5` |
+| `eval/data/length_matched/hard_negatives.jsonl` | `12d9c329a0de2f70153f475402e1efbb3b7b17d707ec2aa56ba3d77a88ddf827` |
+| `eval/data/length_matched/long_benign.jsonl` | `afa7f4d53636ccd79e510b5119628e9944e88a7126fcbc0a27bcb8aae8b10570` |
+| `eval/data/dev_redteam/judge_grayzone_v14.jsonl` | `fc67a6227a7a2306ff74bb353704015550859f56f13fb8d222973f8a34c9c434` |
+| `eval/data/dev_redteam/judge_manip_v14.jsonl` | `1c81323982e4c7e49fb747ebccf7d67e21635dbb622eba54f13a9228bad50950` |
 
-## Policy (post-fit)
+## Policy (post v1.4 fit)
 
 | Path | SHA-256 |
 |---|---|
-| `apps/api/src/promptshield/policies/default.yml` | `c970692d5b43b504fef6757263dd9d6882b312e1d134392f8d23abf7a457ed89` |
+| `apps/api/src/promptshield/policies/default.yml` | `f6ae7761b6c61bb1736cb6dbc75abcb9611eaf2c8a04c6f63706326ef11e3b55` |
 
 ## Tag
 
-**`v1.3-evidence`** → commit `da7674b` (docs tip pointer commit follows; not retagged).
+**`v1.4-evidence`** (tip recorded after tag without self-referential SHA in the tagged blob).

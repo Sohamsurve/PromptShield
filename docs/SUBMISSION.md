@@ -1,56 +1,28 @@
-# Submission pack — PromptShield v1.3-evidence
-
-## Architecture
-
-```mermaid
-flowchart LR
-  subgraph ingest
-    A[Adapters] --> N[Canonicalise + Decode]
-  end
-  subgraph detect
-    N --> S[Signatures]
-    N --> H[Heuristics]
-    S --> C[TF-IDF logreg sliding windows]
-    H --> C
-    C --> J[Judge gray-zone]
-    S --> F[Fusion + Policy]
-    H --> F
-    C --> F
-    J --> F
-    Sess[Session analyser] --> F
-  end
-  F --> Neu[Redact / Spotlight / Quarantine]
-  Neu --> Agent[Aria / host agent]
-  Agent --> TG[Tool firewall]
-  Agent --> OG[Output guard]
-```
-
-## Model-usage table
-
-| Component | Model / algorithm | Why | Fallback |
-|---|---|---|---|
-| Signatures | YAML regex | Deterministic | N/A |
-| Heuristics | Features + discourse | Cheap cues | N/A |
-| Classifier | TF-IDF logreg + windows | CI-friendly spans | `degraded:["classifier"]` |
-| Judge | `LLM_MODEL_JUDGE` (Sol) / cheap tier | Gray-zone only | unknown; never allow alone; CI offline heuristic via `JUDGE_FORCE_OFFLINE` |
-| Aria | Scripted GullibleAgent | Offline demo | LLM mode not evaluated |
-| Fusion | Logistic + floor + clf_graded | Combine layers | Policy thresholds |
+# Submission pack — PromptShield v1.4-evidence
 
 ## Declared position
 
-- **F/D on independent sealed:** **not evaluated** (external staging not arrived).
-- Prior redteam-as-independent claim **withdrawn** (repo-generated → **dev_redteam**).
-- Dev fit: ACTED **0.417**, FPR **0.0938** (≤2% **NOT MET**).
-- Judge (dev): Sol acc **1.000**; mini **0.800**.
+- **Independent sealed F/D:** not evaluated (staging not arrived).
+- **Dev claimed fit (length-matched, no unmatched redteam):** ACTED **0.533**, FPR **0.116** (≤2% **NOT MET**).
+- **Judge evaluated on dev only (n=119, manip 56/56 on Sol), not on independent data.**
+- Cheaper `gpt-4o-mini` manip acc **0.446** — not used as downgrade.
 
-## Claim ledger
+## Model usage
 
-See `docs/CLAIMS.md`, `docs/CLAIM_LEDGER.md`, `docs/ERRATA.md`. Evidence: `docs/EVIDENCE.md`. Freeze: `docs/FREEZE.md`.
+| Component | Notes |
+|---|---|
+| Classifier | TF-IDF logreg + sliding windows; no explicit length feature (len↔score corr −0.485) |
+| Judge | Sol effort none≈low on this set; 5 s timeout; CI mocked / `JUDGE_FORCE_OFFLINE` |
+| Aria LLM | not evaluated |
 
-## Secrets
+## README §0.4
 
-No API keys in git. `.env.example` has empty LLM fields. Healthz exposes `api_key_configured` boolean only.
+| Target | Status |
+|---|---|
+| Benign FPR ≤ 2% (independent) | **NOT MET** |
+| Held-out ACTED ≥ 0.85 | **NOT MET** |
+| Dev fit FPR ≤ 2% | **NOT MET** |
 
 ## Tag
 
-**`v1.3-evidence`**.
+**`v1.4-evidence`**. Evidence: `docs/EVIDENCE.md`. Freeze: `docs/FREEZE.md`. Errata: `docs/ERRATA.md`.

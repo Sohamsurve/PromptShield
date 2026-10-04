@@ -100,8 +100,8 @@ def judge_config() -> dict[str, Any]:
     else:
         mode = "live"
     effort = (os.getenv("JUDGE_REASONING_EFFORT") or "").strip() or None
-    # Default 30s for live/reasoning; README's 1.5s is too short for Sol-class models.
-    timeout_ms = int(os.getenv("JUDGE_TIMEOUT_MS") or os.getenv("JUDGE_TIMEOUT") or "30000")
+    # v1.4 ops: 3–5 s hard budget for UI; override via JUDGE_TIMEOUT_MS if needed for eval.
+    timeout_ms = int(os.getenv("JUDGE_TIMEOUT_MS") or os.getenv("JUDGE_TIMEOUT") or "5000")
     return {
         "judge_mode": mode,
         "judge_model": model,

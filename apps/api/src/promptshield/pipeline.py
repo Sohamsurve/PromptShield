@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -298,26 +299,49 @@ def scan(
     quote_score = disc.quotation_score
     structural_quote = disc.dampen
 
-    # Judge gray zone
+    # Judge gray zone (hard timeout so a slow LLM cannot hang the UI)
     t_j = time.perf_counter()
     judge_lo = float((policy.get("judge") or {}).get("lo", 0.35))
     judge_hi = float((policy.get("judge") or {}).get("hi", 0.80))
-    timeout_ms = int((policy.get("judge") or {}).get("timeout_ms", 1500))
+    # v1.4: 3–5 s hard timeout (default 5000); timeout → unknown, never allow
+    timeout_ms = int((policy.get("judge") or {}).get("timeout_ms", 5000))
+    timeout_ms = max(3000, min(5000, timeout_ms))
     judge_conf = 0.0
     judge_inj = False
-    judge_quote = structural_quote
-    # Also consult judge for hard-negative-like text even outside gray zone when signatures fire on T1
+    judge_action: str | None = None
+    # Agent-addressed? quotation dampening only applies when NOT agent-directed
+    ai_for_live = disc.ai_agent_score if disc.dampen else disc.ai_agent_score_raw
+    agent_directed = ai_for_live >= 0.35 or (
+        disc.attackish_present
+        and ai_for_live >= max(disc.human_reader_score, 0.01)
+        and not disc.dampen
+    )
+    judge_quote = bool(structural_quote) and not agent_directed
     consult_judge = judge_lo <= pre_risk <= judge_hi or (
         request.trust.value <= TrustLevel.T1 and max_sev >= 0.75 and hidden == 0.0
     ) or (structural_quote and max_sev >= 0.5)
     if consult_judge:
         target = max(segments, key=lambda s: len(s.text or ""), default=None)
         if target and (target.text or "").strip():
-            jr = judge_segment(
-                target.text,
-                source_type=request.source_type.value,
-                timeout_ms=timeout_ms,
-            )
+            jr = None
+            try:
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    fut = pool.submit(
+                        judge_segment,
+                        target.text,
+                        source_type=request.source_type.value,
+                        timeout_ms=timeout_ms,
+                    )
+                    jr = fut.result(timeout=timeout_ms / 1000.0 + 0.25)
+            except (FuturesTimeout, Exception):
+                from promptshield.detect.judge import JudgeResult
+
+                jr = JudgeResult(
+                    is_injection=False,
+                    confidence=0.0,
+                    unknown=True,
+                    rationale="Judge timeout or error.",
+                )
             if jr.unknown:
                 if pre_risk >= float(
                     (policy.get("sources") or {}).get(request.source_type.value, {}).get("quarantine", 0.7)
@@ -325,14 +349,28 @@ def scan(
                     pre_risk = max(pre_risk, 0.7)
             else:
                 judge_conf = jr.confidence
-                judge_quote = judge_quote or bool(jr.is_quotation_or_discussion)
-                judge_inj = bool(jr.is_injection) and not judge_quote
+                # Quotation from judge lowers risk only for non-agent-addressed content
+                if bool(jr.is_quotation_or_discussion) and not agent_directed:
+                    judge_quote = True
+                judge_inj = bool(jr.is_injection) and not (
+                    bool(jr.is_quotation_or_discussion) and not agent_directed
+                )
                 if judge_inj:
+                    span_text = jr.offending_span if jr.offending_span and jr.offending_span in target.text else None
+                    if span_text:
+                        start = target.text.find(span_text)
+                        span = (start, start + len(span_text))
+                        judge_action = "sanitize"
+                        reason = "JUDGE_INJECTION_SPAN"
+                    else:
+                        span = (0, min(len(target.text), 200))
+                        judge_action = "quarantine"
+                        reason = "JUDGE_INJECTION_NO_SPAN"
                     findings.append(
                         Finding(
                             id=f"j_{uuid.uuid4().hex[:8]}",
                             segment_id=target.id,
-                            span=(0, min(len(target.text), 200)),
+                            span=span,
                             attack_types=[
                                 AttackType(a)
                                 for a in jr.attack_types
@@ -342,8 +380,8 @@ def scan(
                             detector="judge",
                             rule_id=None,
                             score=jr.confidence,
-                            reason_code="JUDGE_INJECTION",
-                            evidence=(jr.offending_span or target.text)[:200],
+                            reason_code=reason,
+                            evidence=(span_text or target.text)[:200],
                         )
                     )
     judge_ms = (time.perf_counter() - t_j) * 1000
@@ -364,42 +402,27 @@ def scan(
         risk = max(risk, 0.8)
     if "adapter" in degraded and request.trust.value >= TrustLevel.T3:
         risk = max(risk, 0.55)
-    if judge_quote:
-        # Quotation dampening must not lower T2/T3 content below sanitize/block
-        # when signatures fire or the text addresses an agent.
-        # Use damped ai score when discourse says specimen/education; raw only if not dampened
-        ai_for_live = disc.ai_agent_score if disc.dampen else disc.ai_agent_score_raw
-        agent_directed = ai_for_live >= 0.35 or (
-            disc.attackish_present
-            and ai_for_live >= max(disc.human_reader_score, 0.01)
-            and not disc.dampen
+    if judge_quote and not agent_directed:
+        # Lower risk for quotation/discussion only when not agent-addressed
+        risk = min(risk, 0.2 if hidden == 0.0 and encoded == 0.0 else 0.45)
+        if hidden == 0.0 and encoded == 0.0:
+            findings = [f for f in findings if f.detector == "judge"]
+    elif agent_directed and (max_sev >= 0.5 or clf_prob >= 0.55 or judge_inj):
+        # Agent-addressed live path: do not let quotation collapse signals
+        risk = fuse_risk(
+            max_signature_severity=max_sev,
+            heuristic_score=heur,
+            classifier_prob=clf_prob,
+            judge_confidence=judge_conf,
+            judge_says_injection=judge_inj,
+            hidden=hidden,
+            encoded=encoded,
+            trust=request.trust,
+            session_risk=min(session_risk, 2.0) / 2.0,
+            fusion=fusion_cfg,
         )
-        t2t3_live = request.trust.value >= TrustLevel.T2 and (
-            (agent_directed and (max_sev >= 0.5 or clf_prob >= 0.55))
-            or (max_sev >= 0.75 and not disc.dampen)
-        )
-        if t2t3_live:
-            risk = fuse_risk(
-                max_signature_severity=max_sev,
-                heuristic_score=heur,
-                classifier_prob=clf_prob,
-                judge_confidence=judge_conf,
-                judge_says_injection=True,
-                hidden=hidden,
-                encoded=encoded,
-                trust=request.trust,
-                session_risk=min(session_risk, 2.0) / 2.0,
-                fusion=fusion_cfg,
-            )
-            if max_sev >= 0.75 or clf_prob >= 0.7:
-                risk = max(risk, 0.8)
-            # Keep findings (do not strip)
-        else:
-            # Judge never sole-decides safe alone: small floor if hidden/encoded
-            risk = min(risk, 0.2 if hidden == 0.0 and encoded == 0.0 else 0.45)
-            if hidden == 0.0 and encoded == 0.0:
-                findings = [f for f in findings if f.detector == "judge"]
-
+        if max_sev >= 0.75 or clf_prob >= 0.7:
+            risk = max(risk, 0.8)
 
     high_impact = bool(request.agent_context and request.agent_context.high_impact)
 
@@ -416,6 +439,8 @@ def scan(
         text_len=len(redact_base),
         high_impact=high_impact,
         policy=policy,
+        max_signature_severity=max_sev,
+        judge_action=judge_action,
     )
     if provisional in {Decision.sanitize, Decision.quarantine, Decision.block} and findings:
         primary_findings = [f for f in findings if f.span and f.span[0] < len(redact_base)]
@@ -445,6 +470,8 @@ def scan(
                 high_impact=high_impact,
                 policy=policy,
                 residual_risk=residual_risk,
+                max_signature_severity=max_sev,
+                judge_action=judge_action,
             )
         spotlighted, reminder = spotlight(
             scan_id, request.source_type.value, request.trust.name, sanitized

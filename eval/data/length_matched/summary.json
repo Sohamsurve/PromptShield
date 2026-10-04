@@ -1,0 +1,31 @@
+{
+  "seed": 42,
+  "files": {
+    "attacks.jsonl": {
+      "n": 110,
+      "len_p50": 524,
+      "len_mean": 520.9,
+      "path": "eval/data/length_matched/attacks.jsonl"
+    },
+    "benign.jsonl": {
+      "n": 300,
+      "len_p50": 560,
+      "len_mean": 523.4,
+      "path": "eval/data/length_matched/benign.jsonl"
+    },
+    "hard_negatives.jsonl": {
+      "n": 104,
+      "len_p50": 587,
+      "len_mean": 579.7,
+      "path": "eval/data/length_matched/hard_negatives.jsonl"
+    },
+    "long_benign.jsonl": {
+      "n": 50,
+      "len_p50": 873,
+      "len_mean": 889.5,
+      "path": "eval/data/length_matched/long_benign.jsonl"
+    }
+  },
+  "length_threshold_acc_matched": 0.7171,
+  "unmatched_dev_redteam_length_acc_ref": 0.9244
+}
