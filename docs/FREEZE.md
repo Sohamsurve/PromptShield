@@ -116,4 +116,4 @@ Fit-time edit (v1.4→v2.0-rc2): clf_graded + fusion for length-matched C; added
 
 ## Tag
 
-**`v2.0-rc2`** → tip after accept (docs tip pointer follows; not retagged).
+**`v2.0-rc2`** → `8fdb5ac` (docs tip pointer follows; not retagged).
