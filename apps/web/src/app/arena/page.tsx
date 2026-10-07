@@ -85,11 +85,11 @@ export default function ArenaPage() {
           <p className="text-slate text-sm mt-1 max-w-prose">
             Same gallery attack, unprotected vs protected agent. Fixtures F01–F20 only — no free-text
             upload here. To paste a prompt or drop a file, use{" "}
-            <Link href="/redteam" className="text-uv hover:underline">
+            <Link href="/redteam" className="text-uv underline">
               Red team
             </Link>{" "}
             or{" "}
-            <Link href="/scans" className="text-uv hover:underline">
+            <Link href="/scans" className="text-uv underline">
               Scans
             </Link>
             . Gallery fixtures are <span className="font-mono">in-sample</span> (not independent sealed).

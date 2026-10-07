@@ -158,7 +158,7 @@ export default function ScansPage() {
         {!filtered.length ? (
           <li className="text-sm text-slate">
             No matching scans. Paste content above, drop a file, or run a fixture in the{" "}
-            <Link href="/arena" className="text-uv hover:underline">
+            <Link href="/arena" className="text-uv underline">
               Arena
             </Link>
             .

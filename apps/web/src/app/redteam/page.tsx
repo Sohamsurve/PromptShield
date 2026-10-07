@@ -154,7 +154,7 @@ export default function RedTeamPage() {
         <p className="text-slate text-sm mt-1 max-w-prose">
           Paste attack text or drop a file. All input is hostile data — never executed. For side-by-side
           gallery demos use the{" "}
-          <Link href="/arena" className="text-uv hover:underline">
+          <Link href="/arena" className="text-uv underline">
             Arena
           </Link>
           .
