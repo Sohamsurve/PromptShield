@@ -81,6 +81,12 @@ def _start_stack(clone: Path, env: dict) -> tuple[subprocess.Popen, subprocess.P
     # Host VIRTUAL_ENV breaks `uv run` inside the fresh clone
     e.pop("VIRTUAL_ENV", None)
     e.pop("PYTHONHOME", None)
+    # Never write into the developer's active_policy.yml / history
+    pol = clone / "apps" / "api" / "data" / "accept_policy"
+    pol.mkdir(parents=True, exist_ok=True)
+    e["PROMPTSHIELD_POLICY_DIR"] = str(pol)
+    e["DATABASE_URL"] = f"sqlite:///{clone / 'apps' / 'api' / 'data' / 'accept.db'}"
+    e["INTERNAL_API_URL"] = "http://127.0.0.1:8000"
     api_p = subprocess.Popen(
         ["uv", "run", "uvicorn", "promptshield.api.app:app", "--host", "127.0.0.1", "--port", "8000"],
         cwd=str(api),
@@ -104,7 +110,7 @@ def _start_stack(clone: Path, env: dict) -> tuple[subprocess.Popen, subprocess.P
     web_p = subprocess.Popen(
         ["pnpm", "dev", "--port", "3000"],
         cwd=str(web),
-        env={**e, "NEXT_PUBLIC_API_BASE": "http://127.0.0.1:8000"},
+        env={**e, "NEXT_PUBLIC_API_BASE": "http://127.0.0.1:8000", "INTERNAL_API_URL": "http://127.0.0.1:8000"},
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

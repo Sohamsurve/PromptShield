@@ -327,22 +327,48 @@ def scan(
     casc = (policy.get("judge") or {}).get("cascade") or {}
     cascade_env = (os.getenv("JUDGE_CASCADE") or "").strip() in {"1", "true", "yes"}
     cascade_on = cascade_env or bool(casc.get("enabled"))
+    gray_only = (os.getenv("JUDGE_GRAY_ZONE_ONLY") or "").strip() in {"1", "true", "yes"}
+    judge_disabled = (os.getenv("JUDGE_DISABLE") or "").strip() in {"1", "true", "yes"}
     pref = prefilter_score(max_sev=max_sev, heur=heur, clf_prob=clf_prob)
     pref_thr = float(casc.get("prefilter_threshold", 0.15))
     pref_hi = float(casc.get("prefilter_hi", 0.55))
 
-    consult_judge = judge_lo <= pre_risk <= judge_hi or (
+    long_doc = sum(len(s.text or "") for s in segments) >= 1500
+    in_gray_band = judge_lo <= pre_risk <= judge_hi
+    consult_judge = in_gray_band or (
         request.trust.value <= TrustLevel.T1 and max_sev >= 0.75 and hidden == 0.0
     ) or (structural_quote and max_sev >= 0.5)
+    if gray_only:
+        consult_judge = in_gray_band
+        cascade_on = False
     if cascade_on:
         # Full cascade: anything above prefilter (or long text) goes to chunked judge
-        long_doc = sum(len(s.text or "") for s in segments) >= 1500
         consult_judge = pref >= pref_thr or long_doc or consult_judge
+    if judge_disabled:
+        consult_judge = False
+        cascade_on = False
+
+    judge_calls = 0
+    judge_chunks = 0
+    consult_reason = "none"
+    if consult_judge:
+        if cascade_on and (pref >= pref_thr or long_doc):
+            consult_reason = "cascade_prefilter" if pref >= pref_thr else "cascade_long_doc"
+        elif in_gray_band:
+            consult_reason = "gray_band"
+        elif structural_quote and max_sev >= 0.5:
+            consult_reason = "structural_quote"
+        else:
+            consult_reason = "high_sig_t1"
 
     if consult_judge:
         target = max(segments, key=lambda s: len(s.text or ""), default=None)
         if target and (target.text or "").strip():
             if cascade_on and max_sev < 0.75:
+                from promptshield.detect.cascade import chunk_offsets
+
+                judge_chunks = len(chunk_offsets(target.text))
+                judge_calls += judge_chunks
                 action, spans, _unk = run_chunked_judge(
                     target.text,
                     source_type=request.source_type.value,
@@ -387,6 +413,7 @@ def scan(
                         )
                     )
             else:
+                judge_calls += 1
                 jr = None
                 try:
                     with ThreadPoolExecutor(max_workers=1) as pool:
@@ -559,6 +586,21 @@ def scan(
 
     attack_types = sorted({a for f in findings for a in f.attack_types}, key=lambda x: x.value)
     total_ms = (time.perf_counter() - t0) * 1000
+    from promptshield import scan_telemetry
+
+    scan_telemetry.record(
+        consult_judge=consult_judge,
+        consult_reason=consult_reason,
+        cascade_on=cascade_on,
+        judge_disabled=judge_disabled,
+        gray_zone_only=gray_only,
+        pre_risk=round(pre_risk, 4),
+        pref=round(pref, 4),
+        judge_calls=judge_calls,
+        judge_chunks=judge_chunks,
+        long_doc=long_doc,
+        in_gray_band=in_gray_band,
+    )
     return ScanResult(
         scan_id=scan_id,
         decision=decision,

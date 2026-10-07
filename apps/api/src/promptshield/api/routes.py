@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 
 from promptshield.agent.aria import run_fixture
 from promptshield.agent.fixtures import list_fixtures, load_fixture_text
-from promptshield.api import policy_store
+from promptshield.api import persist, policy_store
 from promptshield.domain import (
     OutputGuardRequest,
     OutputGuardResult,
@@ -28,14 +28,17 @@ from promptshield.pipeline import scan, scan_file_bytes
 
 router = APIRouter()
 
-# In-memory store (demo); policy versions are durable on disk
-_SCANS: dict[str, ScanResult] = {}
-_RUNS: dict[str, dict[str, Any]] = {}
+# Red-team / eval-run ledgers stay process-local; scans/runs/tools go to SQLite (persist).
 _REDTEAM: list[dict[str, Any]] = []
 _EVAL_RUNS: list[dict[str, Any]] = []
 _REPO_ROOT = Path(__file__).resolve().parents[5]
 _EVAL_LATEST = _REPO_ROOT / "eval" / "reports" / "latest"
 _EVAL_REPORTS = _REPO_ROOT / "eval" / "reports"
+
+
+def _store_scan(result: ScanResult) -> ScanResult:
+    persist.save_scan(result)
+    return result
 
 
 @router.get("/healthz")
@@ -58,12 +61,12 @@ def healthz() -> dict[str, Any]:
 def metrics() -> PlainTextResponse:
     """Prometheus-style text exposition (README §6)."""
     payload = {
-        "scans_total": len(_SCANS),
-        "runs_total": len(_RUNS),
+        "scans_total": persist.scans_count(),
+        "runs_total": persist.runs_count(),
         "redteam_attempts_total": len(_REDTEAM),
     }
     lines = [
-        "# HELP promptshield_scans_total Scans stored in process memory",
+        "# HELP promptshield_scans_total Scans stored (SQLite)",
         "# TYPE promptshield_scans_total counter",
         f"promptshield_scans_total {payload['scans_total']}",
         "# HELP promptshield_runs_total Demo/arena runs stored",
@@ -79,17 +82,15 @@ def metrics() -> PlainTextResponse:
 @router.get("/metrics.json")
 def metrics_json() -> dict[str, Any]:
     return {
-        "scans_total": len(_SCANS),
-        "runs_total": len(_RUNS),
+        "scans_total": persist.scans_count(),
+        "runs_total": persist.runs_count(),
         "redteam_attempts_total": len(_REDTEAM),
     }
 
 
 @router.post("/scan", response_model=ScanResult)
 def post_scan(req: ScanRequest) -> ScanResult:
-    result = scan(req, noop=False)
-    _SCANS[result.scan_id] = result
-    return result
+    return _store_scan(scan(req, noop=False))
 
 
 def _infer_source_type(filename: str | None, declared: str | None) -> SourceType:
@@ -125,9 +126,7 @@ async def post_scan_file(
     if len(data) > 10 * 1024 * 1024:
         raise HTTPException(413, "file too large")
     st = _infer_source_type(file.filename, source_type)
-    result = scan_file_bytes(data, st, trust=TrustLevel(trust))
-    _SCANS[result.scan_id] = result
-    return result
+    return _store_scan(scan_file_bytes(data, st, trust=TrustLevel(trust)))
 
 
 @router.get("/scans")
@@ -139,12 +138,10 @@ def list_scans(
     attack_type: str | None = None,
     q: str | None = None,
 ) -> dict[str, Any]:
-    items = list(_SCANS.values())
-    items.reverse()
+    items = persist.list_scans(limit=500)
     if decision:
         items = [s for s in items if s.decision.value == decision]
     if source_type:
-        # ScanResult may not store source_type on root — filter via findings/evidence text
         items = [s for s in items if source_type in json.dumps(s.model_dump())]
     if attack_type:
         items = [
@@ -175,17 +172,18 @@ def list_scans(
 
 @router.get("/scans/{scan_id}")
 def get_scan(scan_id: str) -> ScanResult:
-    if scan_id not in _SCANS:
-        raise HTTPException(404, "scan not found")
-    return _SCANS[scan_id]
+    s = persist.get_scan(scan_id)
+    if s is None:
+        raise HTTPException(404, "scan not found; the server may have restarted")
+    return s
 
 
 @router.get("/scans/{scan_id}/xray")
 def get_xray(scan_id: str) -> dict[str, Any]:
     """X-ray model (README §6.2) — derived from ScanResult segments/findings."""
-    if scan_id not in _SCANS:
-        raise HTTPException(404, "scan not found")
-    s = _SCANS[scan_id]
+    s = persist.get_scan(scan_id)
+    if s is None:
+        raise HTTPException(404, "scan not found; the server may have restarted")
     layers = []
     for f in s.findings:
         layers.append(
@@ -233,8 +231,8 @@ def get_xray(scan_id: str) -> dict[str, Any]:
 @router.get("/scans/{scan_id}/pages/{page}.png")
 def get_page_image(scan_id: str, page: int) -> FileResponse:
     """Placeholder page image for X-ray (1×1 PNG) when OCR/page render unavailable."""
-    if scan_id not in _SCANS:
-        raise HTTPException(404, "scan not found")
+    if persist.get_scan(scan_id) is None:
+        raise HTTPException(404, "scan not found; the server may have restarted")
     # Minimal valid 1x1 PNG
     png = bytes.fromhex(
         "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
@@ -251,7 +249,12 @@ def get_page_image(scan_id: str, page: int) -> FileResponse:
 def post_guard_tool_call(req: ToolCallRequest) -> ToolDecision:
     from promptshield.guard.tool_firewall import guard_tool_call as _guard
 
-    return _guard(req)
+    decision = _guard(req)
+    try:
+        persist.save_tool_decision(decision)
+    except Exception:
+        pass
+    return decision
 
 
 @router.post("/guard/output", response_model=OutputGuardResult)
@@ -341,9 +344,9 @@ def eval_run(body: dict[str, Any] | None = None) -> dict[str, Any]:
 @router.get("/policy")
 def get_policy() -> dict[str, Any]:
     pol = policy_store.current_policy()
-    # Top-level policy fields for existing clients; versions for durable history UI
     out = dict(pol)
     out["_versions"] = policy_store.list_versions()[:20]
+    out["_meta"] = policy_store.policy_meta()
     return out
 
 
@@ -356,7 +359,22 @@ def put_policy(body: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(pol, dict) or not pol:
         raise HTTPException(400, "policy object required")
     meta = policy_store.save_policy(pol, note=note)
-    return {"ok": True, **meta, "versions": policy_store.list_versions()[:10]}
+    return {"ok": True, **meta, "versions": policy_store.list_versions()[:10], "meta": policy_store.policy_meta()}
+
+
+@router.post("/policy/reset")
+def policy_reset() -> dict[str, Any]:
+    """Reset active policy to the FREEZE-hashed shipped template."""
+    meta = policy_store.reset_to_template(note="reset to shipped template")
+    return {"ok": True, **meta, "meta": policy_store.policy_meta(), "policy": policy_store.current_policy()}
+
+
+@router.post("/policy/preset/{name}")
+def policy_preset(name: str) -> dict[str, Any]:
+    if name not in {"balanced", "low_false_alarms"}:
+        raise HTTPException(400, "name must be balanced|low_false_alarms")
+    meta = policy_store.apply_preset(name)
+    return {"ok": True, **meta, "meta": policy_store.policy_meta(), "policy": policy_store.current_policy()}
 
 
 @router.get("/policy/versions/{version}")
@@ -388,8 +406,7 @@ def policy_test(body: dict[str, Any]) -> ScanResult:
         ScanRequest(source_type=st, content=content, trust=trust, session_id=body.get("session_id")),
         noop=False,
     )
-    _SCANS[result.scan_id] = result
-    return result
+    return _store_scan(result)
 
 
 @router.post("/policy/replay")
@@ -399,7 +416,8 @@ def policy_simulate(body: dict[str, Any]) -> dict[str, Any]:
     sources = body.get("sources") or {}
     deltas = {"allow": 0, "sanitize": 0, "quarantine": 0, "block": 0, "escalate": 0}
     changed = 0
-    for s in list(_SCANS.values())[-500:]:
+    recent = persist.list_scans(limit=500)
+    for s in recent:
         cfg = sources.get("text") or sources.get("user_message") or {}
         block = float(cfg.get("block", 0.92))
         quarantine = float(cfg.get("quarantine", 0.70))
@@ -415,7 +433,7 @@ def policy_simulate(body: dict[str, Any]) -> dict[str, Any]:
         if new != old:
             changed += 1
             deltas[new] = deltas.get(new, 0) + 1
-    return {"n": min(len(_SCANS), 500), "changed": changed, "deltas": deltas}
+    return {"n": min(len(recent), 500), "changed": changed, "deltas": deltas}
 
 
 @router.get("/demo/fixtures")
@@ -441,7 +459,7 @@ def demo_run(body: dict[str, Any]) -> dict[str, Any]:
     else:
         results.append(run_fixture(fixture_id, firewall=firewall, text_scanning=text_scanning))
     payload = {"run_id": run_id, "results": results}
-    _RUNS[run_id] = payload
+    persist.save_run(run_id, payload)
     return payload
 
 
@@ -499,11 +517,12 @@ def redteam_attempt(body: dict[str, Any]) -> dict[str, Any]:
         raise HTTPException(400, "text or fixture_id required")
     if len(text) > 100_000:
         raise HTTPException(413, "content too large")
-    result = scan(
-        ScanRequest(source_type=SourceType.text, content=text, trust=TrustLevel.T3),
-        noop=False,
+    result = _store_scan(
+        scan(
+            ScanRequest(source_type=SourceType.text, content=text, trust=TrustLevel.T3),
+            noop=False,
+        )
     )
-    _SCANS[result.scan_id] = result
     is_attack = _redteam_is_attack(text, body)
     acted = result.decision.value in _ACTED_DECISIONS
     # Bypass = attack input that was not acted on (allow). Benign allow is never a bypass.
@@ -553,7 +572,7 @@ async def ws_stream(ws: WebSocket) -> None:
         await ws.send_json(
             {
                 "type": "degraded" if False else "scan.completed",
-                "payload": {"scans_total": len(_SCANS)},
+                "payload": {"scans_total": persist.scans_count()},
             }
         )
         while True:
@@ -566,7 +585,7 @@ async def ws_stream(ws: WebSocket) -> None:
 async def ws_runs(ws: WebSocket, run_id: str) -> None:
     await ws.accept()
     try:
-        payload = _RUNS.get(run_id)
+        payload = persist.get_run(run_id)
         if payload is None:
             await ws.send_json({"type": "run.completed", "run_id": run_id, "lane": None, "payload": {"results": []}})
         else:

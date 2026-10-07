@@ -28,5 +28,10 @@ Do not silently rewrite history. Prior tags stand; corrections are listed here.
 | 2026-10-07 | Red-team leaderboard counted benign allows as bypasses | Bypass = attack input **and** not ACTED. | Leaderboard honesty |
 | 2026-10-07 | CONFORMANCE marked make targets / routes PASS from presence alone | v2.0-rc2 audit executes proofs or marks PARTIAL with reason; screens require png evidence. | Conformance honesty |
 | 2026-10-07 | “Sealed default.yml” wording | Template is FREEZE-hashed; runtime uses `active_policy.yml`. Fit-time edit logged: clf_graded + fusion for length-matched C; `demo_config: true` because no FPR≤2% point. | Policy wording |
+| 2026-10-07 | `operating_curve_v20` headline ACTED/FPR vs fit C | Script used **length-matched-only** slice (n_atk=110), not curve-C pool (120 synth+LM mix). Re-run uses `PROMPTSHIELD_POLICY=template` + shared pool; legacy slice reported as `legacy_lm_only_slice`. | Regression honesty |
+| 2026-10-07 | Cascade eval `no_judge` vs `gray_zone` identical | `no_judge` did not set `JUDGE_DISABLE`; offline gray-zone judge often no-ops → identical decisions. Fixed with explicit env modes + telemetry (`cascade_eval_v23`). | Cascade honesty |
+| 2026-10-07 | X-ray UI stuck on “Loading scan…” | CSP `script-src` lacked `'unsafe-eval'`; Next/React Fast Refresh threw EvalError → no client hydration → no fetch. Trace: `pageError` CSP. Fixed in `next.config.ts`. | CSP / hydration |
+| 2026-10-07 | Scans lost on API restart | In-memory `_SCANS` only. SQLite `persist.py` via `DATABASE_URL`. | Persistence |
+| 2026-10-07 | `default.yml` f6ae7761… → f294359a… | Added demo_config note + cascade block (`enabled: false`); fusion/clf_graded unchanged from fit C. No spent-set retune. | Policy honesty |
 
 Further measured numbers live in `docs/EVIDENCE.md` / `docs/CLAIMS.md`.

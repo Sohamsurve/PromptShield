@@ -3,7 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { VerdictBadge } from "@/components/verdict-badge";
-import { apiBase, fetchPolicy, fetchPolicyDiff, policyReplay, policyTest, savePolicy } from "@/lib/api";
+import {
+  apiBase,
+  applyPolicyPreset,
+  fetchPolicy,
+  fetchPolicyDiff,
+  policyReplay,
+  policyTest,
+  resetPolicy,
+  savePolicy,
+} from "@/lib/api";
 import type { Decision } from "@promptshield/shared-types";
 
 type SourceCfg = {
@@ -33,14 +42,22 @@ export default function PolicyPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saveNote, setSaveNote] = useState("");
+  const [meta, setMeta] = useState<{
+    differs_from_template?: boolean;
+    active_version?: number;
+    template_version?: number;
+    presets?: Record<string, { label?: string; dev_acted?: number; dev_fpr?: number; note?: string }>;
+  } | null>(null);
 
   function applyPolicy(p: Record<string, unknown>) {
     setSources((p.sources as Record<string, SourceCfg>) ?? {});
     setTools((p.tools as Record<string, unknown>) ?? {});
     setVersion(String(p.version ?? "—"));
     setVersions((p._versions as VersionMeta[]) ?? []);
-    const { _versions: _v, ...rest } = p;
+    setMeta((p._meta as typeof meta) ?? null);
+    const { _versions: _v, _meta: _m, ...rest } = p;
     void _v;
+    void _m;
     setFullPolicy(rest);
   }
 
@@ -116,7 +133,10 @@ export default function PolicyPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Policy</h1>
         <p className="text-slate text-sm mt-1">
-          Thresholds and tool policies · version {version}. Save writes a durable demo-local version (active_policy.yml + history).
+          Thresholds and tool policies · active v{version}
+          {meta?.template_version != null ? ` · template v${meta.template_version}` : ""}
+          {meta?.differs_from_template ? " · differs from shipped template" : " · matches template body (excl. version)"}
+          . Save writes a durable demo-local version.
         </p>
       </div>
 
@@ -201,6 +221,75 @@ export default function PolicyPage() {
               })}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section className="rounded-panel border border-rule bg-surface p-4 space-y-3">
+        <h2 className="text-sm font-medium">Presets (dev-measured) &amp; reset</h2>
+        <p className="text-xs text-slate max-w-prose">
+          Numbers are from the length-matched curve-C <em>dev</em> sweep — not independent/sealed.
+          Balanced: ACTED {meta?.presets?.balanced?.dev_acted ?? 0.575} / FPR {meta?.presets?.balanced?.dev_fpr ?? 0.106}.
+          Low false alarms: ACTED {meta?.presets?.low_false_alarms?.dev_acted ?? 0.25} / FPR{" "}
+          {meta?.presets?.low_false_alarms?.dev_fpr ?? 0.0156} (risk thr 0.9 proxy).
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              setError(null);
+              try {
+                await applyPolicyPreset("balanced");
+                applyPolicy(await fetchPolicy());
+              } catch (e) {
+                setError(String(e));
+              } finally {
+                setBusy(false);
+              }
+            }}
+            className="rounded-panel border border-rule px-3 py-1.5 text-sm disabled:opacity-50"
+          >
+            Balanced
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              setError(null);
+              try {
+                await applyPolicyPreset("low_false_alarms");
+                applyPolicy(await fetchPolicy());
+              } catch (e) {
+                setError(String(e));
+              } finally {
+                setBusy(false);
+              }
+            }}
+            className="rounded-panel border border-rule px-3 py-1.5 text-sm disabled:opacity-50"
+          >
+            Low false alarms
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              setError(null);
+              try {
+                await resetPolicy();
+                applyPolicy(await fetchPolicy());
+              } catch (e) {
+                setError(String(e));
+              } finally {
+                setBusy(false);
+              }
+            }}
+            className="rounded-panel bg-ink text-paper px-3 py-1.5 text-sm disabled:opacity-50"
+          >
+            Reset to shipped template
+          </button>
         </div>
       </section>
 

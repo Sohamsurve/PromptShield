@@ -25,6 +25,11 @@ SEED = 42
 os.environ.setdefault("JUDGE_FORCE_OFFLINE", "1")
 os.environ["CLASSIFIER_PATH"] = ""
 os.environ["PYTHONPATH"] = f"{API / 'src'}:{ROOT}"
+# Isolate policy + DB from the developer tree
+_CONF_TMP = ROOT / "apps" / "api" / "data" / "conformance_tmp"
+_CONF_TMP.mkdir(parents=True, exist_ok=True)
+os.environ["PROMPTSHIELD_POLICY_DIR"] = str(_CONF_TMP / "policy")
+os.environ["DATABASE_URL"] = f"sqlite:///{_CONF_TMP / 'conformance.db'}"
 
 sys.path.insert(0, str(API / "src"))
 
@@ -473,36 +478,62 @@ def _cover_unaudited() -> None:
         section="unaudited",
     )
 
-    # UI behaviours — source + component presence (Playwright deep UI may be PARTIAL)
-    xray = (WEB / "src/app/scans/[id]/page.tsx").read_text(encoding="utf-8")
+    # UI behaviours — X-ray client + measured Playwright e2e
+    xray_page = (WEB / "src/app/scans/[id]/page.tsx").read_text(encoding="utf-8")
+    xray = xray_page
+    xray_client = WEB / "src/app/scans/[id]/xray-client.tsx"
+    if xray_client.exists():
+        xray = xray_client.read_text(encoding="utf-8")
     uv = (WEB / "src/components/uv-sweep.tsx").exists()
-    row("UI UV sweep component", "PASS" if uv and "UVSweep" in xray else "FAIL", "uv-sweep.tsx + xray page", f"uv={uv}", section="unaudited")
+    row("UI UV sweep component", "PASS" if uv and "UVSweep" in xray else "FAIL", "uv-sweep.tsx + xray-client", f"uv={uv}", section="unaudited")
     row(
         "UI invisible-character chips",
         "PASS" if "renderWithInvisibleChips" in xray or "U+" in xray else "FAIL",
-        "scans/[id]/page.tsx",
+        "xray-client.tsx",
         "chips helper present" if "U+" in xray else "missing",
         section="unaudited",
     )
     row(
         "UI view switch (original/revealed/sanitised)",
         "PASS" if "setView" in xray and "sanitised" in xray else "FAIL",
-        "scans/[id]/page.tsx",
+        "xray-client.tsx",
         "view state present",
         section="unaudited",
     )
     row(
         "UI finding-to-span linking",
-        "PASS" if "activeFinding" in xray or "span" in xray else "PARTIAL",
-        "scans/[id]/page.tsx",
-        "activeFinding/span wiring",
+        "PASS" if "activeFinding" in xray and "mark" in xray else "FAIL",
+        "xray-client.tsx",
+        "activeFinding + mark highlight",
         section="unaudited",
     )
     row(
         "UI hidden-span tint",
-        "PASS" if "hidden" in xray.lower() or "bg-" in xray else "PARTIAL",
-        "scans/[id]/page.tsx",
-        "tint classes / hidden handling — visual not pixel-asserted",
+        "PASS" if "hiddenRanges" in xray or "Hidden / metadata" in xray else "FAIL",
+        "xray-client.tsx",
+        "hiddenRanges tint",
+        section="unaudited",
+    )
+    # Measured X-ray e2e (CSP unsafe-eval fix); PASS only with green output
+    xray_e2e = _run(
+        ["pnpm", "exec", "playwright", "test", "e2e/xray.spec.ts", "--reporter=list"],
+        cwd=WEB,
+        timeout=180,
+        env={**os.environ, "CI": "1"},
+    )
+    xray_full = (xray_e2e.stdout or "") + (xray_e2e.stderr or "")
+    xray_ok = xray_e2e.returncode == 0 and "failed" not in xray_full.lower().split("running ")[-1]
+    # Prefer the summary line (e.g. "2 passed")
+    summary = ""
+    for line in xray_full.splitlines()[::-1]:
+        if "passed" in line.lower() or "failed" in line.lower():
+            summary = line.strip()
+            break
+    row(
+        "UI X-ray Playwright e2e",
+        "PASS" if xray_ok else "FAIL",
+        "e2e/xray.spec.ts",
+        (summary or xray_full[-400:]).replace("\n", " ")[:500],
         section="unaudited",
     )
     shell = (WEB / "src/components/app-shell.tsx").read_text(encoding="utf-8")

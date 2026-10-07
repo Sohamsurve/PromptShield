@@ -89,3 +89,15 @@ Format: date · decision · reason.
 - **v2.0-rc2 F/D:** declare **F1 / D1 provisional** under pre-registered rules without independent sealed.
 - **v2.0-rc2 X-ray Playwright:** PARTIAL when API returns scan but UI still “Loading” (Next client race); not marked PASS from presence.
 - **dev_redteam v15 batches:** Regenerated `batch_{a,b,c}_*.jsonl` via `eval/synth/build_redteam_batches_v15.py` with explicit `source_doc`, ≥120 attacks (≥14/type), diverse hosts (not a single filler), ≥15 non-English, multi-turn lists, hard-negatives from ≥15 docs, benign from ≥60 docs with median length matched to attacks (~1060 chars). Still tuning-only / no F/D claims. Prior length-matched FREEZE hashes unchanged until a deliberate rebuild.
+
+## 2026-10-07 (v2.0-rc3)
+
+- **Eval policy path:** `PROMPTSHIELD_POLICY=template` forces FREEZE-hashed `default.yml` (ignores demo `active_policy.yml` drift). Reason: regression honesty.
+- **Judge eval modes:** `JUDGE_DISABLE=1` (no_judge), `JUDGE_GRAY_ZONE_ONLY=1` (band only, no cascade widen), `JUDGE_CASCADE=1` (full cascade). Reason: cascade_eval was comparing identical paths.
+- **Operating curve pool:** Shared `eval/pools/curve_c_v14.py` matches `fit_length_curves_v14` curve C (n_atk=120, n_neg=320). Reason: fix 0.191/0.205 vs 0.533/0.116 mismatch.
+- **FPR≤2% on dev C:** No grid point met pre-registered rule; shipped template remains min-FPR max-ACTED (`demo_config: true`). Reason: measured, not retuned on spent/sealed.
+- **Batch A independence:** `source_doc` cardinality audit — not treated as independent documents for bootstrap.
+- **X-ray UI:** explicit loading/error/empty; finding→span `mark`; hidden segment tint; Playwright `e2e/xray.spec.ts` gates CONFORMANCE PASS.
+- **CSP:** `script-src` includes `'unsafe-eval'` so Next.js client hydration works in dev (root cause of X-ray Loading race).
+- **Persistence:** SQLite via `DATABASE_URL` for scans / tool decisions / runs; retention days+max; restart survival tested.
+- **Policy isolation:** `PROMPTSHIELD_POLICY_DIR` for tests/conformance/accept; UI Reset to shipped template + Balanced / Low false alarms presets (dev-measured).
