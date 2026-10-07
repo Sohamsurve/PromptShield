@@ -73,6 +73,12 @@ Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit po
 | `eval/cascade_eval_v20.py` | `fd936a88889288b4222d3884334ad038c6a7e0548bebb94fc644191fec7ee3c4` | 42 |
 | `eval/synth/build_realistic_dev_v20.py` | `54b838f7f2ffe4ef8efcfa57141be62e92f667ad9c0859f2de542562ae21f545` | 42 |
 | `apps/api/src/promptshield/detect/cascade.py` | `8e6098bd91bec535089f20726107f0bdce6f41553efb06a5afe514a93539d540` | — |
+| `eval/live_grayzone_lm_v24.py` | `475c43e718574e7489b0057618e0543bc0f10d6c542798cef1785d029e4d3b51` | 42 |
+| `apps/api/src/promptshield/api/upload_guard.py` | `7e8269c283b9fc309079d2a5aa4f887f719878c1b24ddc94277ba39e2d18e16e` | — |
+| `apps/api/tests/test_upload_hardening.py` | `faf7536bd9604b00d7dfe777454e0d2642a7fb4308a2592fe4b595871b7a236e` | — |
+| `apps/web/e2e/ui-requirements.spec.ts` | `e042e51eafeb53dd75f2733b7aee5f5eab2b7476cd2ec05985e9f26b06e74e9b` | — |
+| `apps/api/src/promptshield/api/routes.py` (v2.0-rc4) | `0cd7ac792ecc396830b36b952bf076c5eb4c26b3a2edc545880aa4f964603988` | — |
+| `apps/api/src/promptshield/api/policy_store.py` (v2.0-rc4) | `235c9678dccb1d71d1bf1a428e50805321c9d6aeedebc418375ae69ba1f3c35a` | — |
 
 ## v2.0-rc pre-registered (Part A–C)
 

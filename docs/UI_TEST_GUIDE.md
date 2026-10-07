@@ -26,9 +26,12 @@ Record exit code and pass count in the results log below.
 | 4 | X-ray views | Switch Original → Revealed → Sanitised → Spotlighted | Document text updates; empty state if no text |
 | 5 | X-ray link | Click a finding | Finding row highlighted; span `mark` in document when span present |
 | 6 | `/redteam` | “Try an example” dropdown | Inert string fills textarea; Attack shows verdict |
+| 6b | `/redteam` | Drop or choose a `.txt` / `.md` / `.html` file | Verdict + Open X-ray link (file drop zone visible) |
+| 6c | `/scans` | Paste text → Scan text, or drop a file | New row appears; Open X-ray works |
 | 7 | `/policy` | Edit note, save | Version increments |
 | 8 | `/eval` | Load | ACTED headline visible |
 | 9 | A11y | Tab through verdict controls | Icon + word + colour (not colour-only) |
+| 10 | `/arena` | Confirm copy points to Red team / Scans for custom input | No free-text upload on Arena (by design) |
 
 ## Results log template
 

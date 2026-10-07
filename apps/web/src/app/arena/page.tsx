@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ArenaLane, type ArenaResult } from "@/components/arena-lane";
 import { apiBase, fetchFixtures, runDemo } from "@/lib/api";
 
@@ -82,8 +83,16 @@ export default function ArenaPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">A/B Arena</h1>
           <p className="text-slate text-sm mt-1 max-w-prose">
-            Same attack, unprotected vs protected agent. Gallery fixtures are{" "}
-            <span className="font-mono">in-sample</span> (not independent sealed).
+            Same gallery attack, unprotected vs protected agent. Fixtures F01–F20 only — no free-text
+            upload here. To paste a prompt or drop a file, use{" "}
+            <Link href="/redteam" className="text-uv hover:underline">
+              Red team
+            </Link>{" "}
+            or{" "}
+            <Link href="/scans" className="text-uv hover:underline">
+              Scans
+            </Link>
+            . Gallery fixtures are <span className="font-mono">in-sample</span> (not independent sealed).
           </p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">

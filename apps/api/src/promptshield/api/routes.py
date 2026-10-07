@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from pathlib import Path
 from typing import Any
 
@@ -13,8 +14,9 @@ from fastapi.responses import FileResponse, PlainTextResponse
 
 from promptshield.agent.aria import run_fixture
 from promptshield.agent.fixtures import list_fixtures, load_fixture_text
-from promptshield.api import persist, policy_store
+from promptshield.api import persist, policy_store, upload_guard
 from promptshield.domain import (
+    Decision,
     OutputGuardRequest,
     OutputGuardResult,
     ScanRequest,
@@ -25,6 +27,8 @@ from promptshield.domain import (
     TrustLevel,
 )
 from promptshield.pipeline import scan, scan_file_bytes
+
+_UPLOAD_POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix="upload-scan")
 
 router = APIRouter()
 
@@ -122,11 +126,43 @@ async def post_scan_file(
     source_type: str | None = Form(default=None),
     trust: int = Form(default=3),
 ) -> ScanResult:
+    """Hostile upload path — size/type sniff, no archives, time-capped parse (§12.2)."""
     data = await file.read()
-    if len(data) > 10 * 1024 * 1024:
-        raise HTTPException(413, "file too large")
-    st = _infer_source_type(file.filename, source_type)
-    return _store_scan(scan_file_bytes(data, st, trust=TrustLevel(trust)))
+    checked = upload_guard.validate_upload(filename=file.filename, data=data)
+    if isinstance(checked, upload_guard.UploadReject):
+        raise HTTPException(status_code=checked.status, detail=checked.detail)
+    st = _infer_source_type(checked.filename, source_type)
+    try:
+        fut = _UPLOAD_POOL.submit(
+            scan_file_bytes,
+            checked.data,
+            st,
+            trust=TrustLevel(trust),
+        )
+        result = fut.result(timeout=upload_guard.MAX_PARSE_SECONDS)
+    except FuturesTimeout:
+        result = ScanResult(
+            scan_id=f"scn_{uuid.uuid4().hex[:8]}",
+            decision=Decision.quarantine,
+            risk=1.0,
+            attack_types=[],
+            findings=[],
+            segments=[],
+            degraded=["upload_timeout"],
+            system_reminder="Upload parse exceeded time cap; quarantined.",
+        )
+    except Exception:
+        result = ScanResult(
+            scan_id=f"scn_{uuid.uuid4().hex[:8]}",
+            decision=Decision.quarantine,
+            risk=1.0,
+            attack_types=[],
+            findings=[],
+            segments=[],
+            degraded=["upload_parse_error"],
+            system_reminder="Upload parse failed safely; quarantined (no script execution).",
+        )
+    return _store_scan(result)
 
 
 @router.get("/scans")
@@ -341,6 +377,14 @@ def eval_run(body: dict[str, Any] | None = None) -> dict[str, Any]:
     return {"eval_run_id": eval_run_id, "status": "running", "mode": mode}
 
 
+@router.get("/eval/runs/{eval_run_id}")
+def eval_run_status(eval_run_id: str) -> dict[str, Any]:
+    for rec in _EVAL_RUNS:
+        if rec.get("eval_run_id") == eval_run_id:
+            return rec
+    raise HTTPException(404, "eval run not found")
+
+
 @router.get("/policy")
 def get_policy() -> dict[str, Any]:
     pol = policy_store.current_policy()
@@ -541,6 +585,29 @@ def redteam_attempt(body: dict[str, Any]) -> dict[str, Any]:
     }
     _REDTEAM.insert(0, entry)
     return {"attempt": entry, "scan": result.model_dump()}
+
+
+@router.post("/redteam/regression")
+def redteam_add_regression(body: dict[str, Any]) -> dict[str, Any]:
+    """Add-only local regression queue (not sealed / not eval/data labels)."""
+    content = str(body.get("content") or "").strip()
+    if not content:
+        raise HTTPException(400, "content required")
+    if len(content) > 100_000:
+        raise HTTPException(413, "content too large")
+    row = {
+        "id": f"reg_{uuid.uuid4().hex[:8]}",
+        "label": str(body.get("label") or "attack"),
+        "content": content[:100_000],
+        "scan_id": body.get("scan_id"),
+        "decision": body.get("decision"),
+        "source": "redteam_ui",
+    }
+    path = policy_store.data_dir() / "regression_queue.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    return {"ok": True, "id": row["id"], "path": str(path)}
 
 
 @router.get("/redteam/leaderboard")

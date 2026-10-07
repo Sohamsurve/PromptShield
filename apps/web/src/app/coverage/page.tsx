@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CoverageHeatmap } from "@/components/coverage-heatmap";
-import { apiBase, fetchEvalLatest, fetchHealthz } from "@/lib/api";
+import { apiBase, fetchEvalLatest, fetchEvalRuns, fetchHealthz } from "@/lib/api";
 
 type Cell = { n?: number; recall?: number; ci?: [number, number] };
 type Heatmap = { rows: string[]; cols: string[]; cells: Record<string, Record<string, Cell>> };
@@ -22,13 +22,13 @@ export default function CoveragePage() {
   const [selected, setSelected] = useState<{ row: string; col: string; cell: Cell } | null>(null);
   const [metric, setMetric] = useState<"acted" | "flagged">("acted");
   const [judgeMode, setJudgeMode] = useState<string>("—");
+  const [runs, setRuns] = useState<Array<{ id: string; path: string }>>([]);
+  const [runId, setRunId] = useState("latest");
 
   useEffect(() => {
     fetchEvalLatest()
       .then((data: Report) => {
         setHeatmap(data.heatmap ?? null);
-        const useActed = true; // initial; toggled below via report fields
-        void useActed;
         setFpr({
           benign: data.acted?.fpr ?? data.text_phase1?.acted_fpr ?? data.text_phase1?.fpr,
           hard: data.phase3?.hard_negative_fpr ?? data.text_phase1?.hard_negative_fpr,
@@ -38,7 +38,30 @@ export default function CoveragePage() {
     fetchHealthz()
       .then((h) => setJudgeMode(h.judge_mode ?? "—"))
       .catch(() => setJudgeMode("—"));
+    fetchEvalRuns()
+      .then((d) => setRuns(d.on_disk ?? []))
+      .catch(() => setRuns([]));
   }, []);
+
+  function exportCsv() {
+    if (!heatmap) return;
+    const cols = heatmap.cols.length ? heatmap.cols : ["text"];
+    const lines = [["type", ...cols].join(",")];
+    for (const row of heatmap.rows) {
+      const cells = cols.map((c) => {
+        const cell = heatmap.cells?.[row]?.[c];
+        return cell?.recall != null ? `${cell.recall.toFixed(3)} (n=${cell.n ?? 0})` : "";
+      });
+      lines.push([row, ...cells].join(","));
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `coverage-${runId}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   useEffect(() => {
     fetchEvalLatest()
@@ -78,6 +101,30 @@ export default function CoveragePage() {
               <option value="flagged">FLAGGED</option>
             </select>
           </label>
+          <label className="flex items-center gap-2 border border-rule rounded-panel px-2 py-1.5 bg-surface">
+            <span className="text-slate">Eval run</span>
+            <select
+              data-testid="coverage-run-select"
+              className="bg-transparent font-mono"
+              value={runId}
+              onChange={(e) => setRunId(e.target.value)}
+            >
+              <option value="latest">latest</option>
+              {runs.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.id}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            data-testid="coverage-export-csv"
+            onClick={exportCsv}
+            className="rounded-panel border border-rule bg-surface px-2 py-1.5 text-sm"
+          >
+            Export CSV
+          </button>
           <span className="font-mono text-xs border border-rule rounded-panel px-2 py-1.5 bg-surface">
             judge: {judgeMode}
           </span>
@@ -119,7 +166,7 @@ export default function CoveragePage() {
             <p className="text-sm text-slate p-4">Loading heatmap…</p>
           )}
         </div>
-        <aside className="rounded-panel border border-rule bg-surface p-4 space-y-3">
+        <aside className="rounded-panel border border-rule bg-surface p-4 space-y-3" data-testid="coverage-cell-detail">
           <h2 className="text-sm font-medium">Cell detail</h2>
           {selected ? (
             <div className="text-xs font-mono space-y-1">

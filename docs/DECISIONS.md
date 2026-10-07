@@ -101,3 +101,12 @@ Format: date · decision · reason.
 - **CSP:** `script-src` includes `'unsafe-eval'` so Next.js client hydration works in dev (root cause of X-ray Loading race).
 - **Persistence:** SQLite via `DATABASE_URL` for scans / tool decisions / runs; retention days+max; restart survival tested.
 - **Policy isolation:** `PROMPTSHIELD_POLICY_DIR` for tests/conformance/accept; UI Reset to shipped template + Balanced / Low false alarms presets (dev-measured).
+- **Custom prompt/file UX:** Arena stays gallery A/B only (README §9.5.2). Free-text + file drop live on Red team (§9.5.6) and Scans (“Scan content”); both call `POST /v1/scan` / `/scan/file`. Reason: user confusion from Arena having no upload — by design, not incomplete Arena.
+
+## 2026-10-07 (v2.0-rc4)
+
+- **Upload guard:** `upload_guard.py` enforces size/type sniff, archive deny (except real DOCX), fake PDF/DOCX reject, binary-garbage reject, rate limit, parse time cap → quarantine degraded (never 500). Reason: README §9.5.6 / §12.2.
+- **UI matrix:** `docs/UI_REQUIREMENTS.md` replaces completeness-from-memory; route existence ≠ PASS.
+- **Regression queue:** `POST /v1/redteam/regression` appends to local `regression_queue.jsonl` under policy data dir (add-only; not sealed `eval/data`).
+- **Console feed:** plain scrollable table + CSS sparkline (not TanStack Virtual / Recharts) — recorded PARTIAL for C10.
+- **Tag:** `v2.0-rc3` already existed → ship **`v2.0-rc4`**.

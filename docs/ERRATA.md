@@ -33,5 +33,7 @@ Do not silently rewrite history. Prior tags stand; corrections are listed here.
 | 2026-10-07 | X-ray UI stuck on “Loading scan…” | CSP `script-src` lacked `'unsafe-eval'`; Next/React Fast Refresh threw EvalError → no client hydration → no fetch. Trace: `pageError` CSP. Fixed in `next.config.ts`. | CSP / hydration |
 | 2026-10-07 | Scans lost on API restart | In-memory `_SCANS` only. SQLite `persist.py` via `DATABASE_URL`. | Persistence |
 | 2026-10-07 | `default.yml` f6ae7761… → f294359a… | Added demo_config note + cascade block (`enabled: false`); fusion/clf_graded unchanged from fit C. No spent-set retune. | Policy honesty |
+| 2026-10-07 | UI “complete” from route presence / memory | Replaced by `docs/UI_REQUIREMENTS.md` matrix + Playwright ids; Arena has no upload by design (§9.5.2). | UI honesty |
+| 2026-10-07 | Tag `v2.0-rc3` already at `a69d9da` | Upload hardening + UI matrix ship as **`v2.0-rc4`**. | Tag |
 
 Further measured numbers live in `docs/EVIDENCE.md` / `docs/CLAIMS.md`.

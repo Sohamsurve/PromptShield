@@ -350,6 +350,7 @@ export default function PolicyPage() {
           <button
             type="button"
             disabled={busy}
+            data-testid="policy-replay"
             onClick={onReplay}
             className="rounded-panel border border-rule px-3 py-1.5 text-sm disabled:opacity-50"
           >

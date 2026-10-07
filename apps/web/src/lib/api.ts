@@ -72,9 +72,74 @@ export async function postScan(content: string, sourceType = "text") {
   return r.json();
 }
 
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+/** Upload a hostile specimen via POST /v1/scan/file (multipart). */
+export async function postScanFile(file: File, sourceType?: string) {
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error("file too large (10 MB max)");
+  }
+  const body = new FormData();
+  // Sanitize display name for the upload field only; server re-infers type from filename.
+  const safeName = (file.name || "upload.bin").replace(/[^\w.\-()+ ]+/g, "_").slice(0, 180);
+  body.append("file", file, safeName);
+  if (sourceType) body.append("source_type", sourceType);
+  body.append("trust", "3");
+  const r = await fetch(v1("/scan/file"), { method: "POST", body });
+  if (!r.ok) {
+    let detail = `scan/file ${r.status}`;
+    try {
+      const j = await r.json();
+      if (j?.detail) detail = String(j.detail);
+    } catch {
+      /* keep status */
+    }
+    throw new Error(detail);
+  }
+  return r.json();
+}
+
+/** Append a labelled bypass case to the local regression queue (add-only; not sealed). */
+export async function addRegressionCase(body: {
+  content: string;
+  label?: string;
+  scan_id?: string;
+  decision?: string;
+}) {
+  const r = await fetch(v1("/redteam/regression"), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(`regression ${r.status}`);
+  return r.json();
+}
+
 export async function fetchEvalLatest() {
   const r = await fetch(v1("/eval/latest"), { cache: "no-store" });
   if (!r.ok) throw new Error(`eval/latest ${r.status}`);
+  return r.json();
+}
+
+export async function fetchEvalRuns() {
+  const r = await fetch(v1("/eval/runs"), { cache: "no-store" });
+  if (!r.ok) throw new Error(`eval/runs ${r.status}`);
+  return r.json() as Promise<{ on_disk?: Array<{ id: string; path: string }>; in_memory?: unknown[] }>;
+}
+
+export async function startEvalRun(mode: "fast" | "full" = "fast") {
+  const r = await fetch(v1("/eval/run"), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ mode }),
+  });
+  if (!r.ok) throw new Error(`eval/run ${r.status}`);
+  return r.json() as Promise<{ eval_run_id: string; status?: string }>;
+}
+
+export async function fetchEvalRun(id: string) {
+  const r = await fetch(v1(`/eval/runs/${encodeURIComponent(id)}`), { cache: "no-store" });
+  if (!r.ok) throw new Error(`eval/run ${r.status}`);
   return r.json();
 }
 

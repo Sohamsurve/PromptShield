@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/metric-card";
-import { apiBase, fetchEvalLatest, fetchHealthz } from "@/lib/api";
+import { apiBase, fetchEvalLatest, fetchEvalRun, fetchHealthz, startEvalRun } from "@/lib/api";
 
 type Report = {
   mode?: string;
@@ -41,6 +41,8 @@ export default function EvalPage() {
   const [health, setHealth] = useState<Health | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [metric, setMetric] = useState<"acted" | "flagged">("acted");
+  const [evalBusy, setEvalBusy] = useState(false);
+  const [evalStatus, setEvalStatus] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEvalLatest()
@@ -50,6 +52,31 @@ export default function EvalPage() {
       .then(setHealth)
       .catch(() => setHealth(null));
   }, []);
+
+  async function onRunEval() {
+    setEvalBusy(true);
+    setEvalStatus("starting…");
+    try {
+      const started = await startEvalRun("fast");
+      setEvalStatus(`${started.eval_run_id}: ${started.status ?? "running"}`);
+      for (let i = 0; i < 30; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        try {
+          const st = await fetchEvalRun(started.eval_run_id);
+          setEvalStatus(`${started.eval_run_id}: ${st.status ?? "…"}`);
+          if (st.status && st.status !== "running") break;
+        } catch {
+          break;
+        }
+      }
+      const latest = await fetchEvalLatest();
+      setReport(latest);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setEvalBusy(false);
+    }
+  }
 
   const useActed = metric === "acted";
   const recall =
@@ -150,11 +177,25 @@ export default function EvalPage() {
               <option value="flagged">FLAGGED</option>
             </select>
           </label>
+          <button
+            type="button"
+            data-testid="eval-run"
+            disabled={evalBusy}
+            onClick={onRunEval}
+            className="rounded-panel bg-ink text-paper px-3 py-1.5 text-sm disabled:opacity-50"
+          >
+            Run evaluation
+          </button>
           <span className="font-mono text-xs border border-rule rounded-panel px-2 py-1.5 bg-surface">
             judge: {judgeMode}
           </span>
         </div>
       </div>
+      {evalStatus ? (
+        <p className="text-xs font-mono text-slate" data-testid="eval-progress">
+          {evalStatus}
+        </p>
+      ) : null}
 
       {error ? (
         <p className="text-sm text-block">
@@ -162,7 +203,7 @@ export default function EvalPage() {
         </p>
       ) : null}
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="eval-metrics">
         {targets.map((t) => (
           <MetricCard
             key={t.label}
@@ -175,6 +216,30 @@ export default function EvalPage() {
           />
         ))}
       </div>
+
+      <section className="rounded-panel border border-rule bg-surface p-4 space-y-3" data-testid="eval-asr-bars">
+        <h2 className="text-sm font-medium">ASR off vs on</h2>
+        <div className="space-y-2 text-xs font-mono">
+          <div>
+            <div className="flex justify-between text-slate mb-1">
+              <span>ASR off</span>
+              <span>{asrOff == null ? "—" : asrOff.toFixed(2)}</span>
+            </div>
+            <div className="h-2 bg-rule/40 rounded-chip overflow-hidden">
+              <div className="h-full bg-block" style={{ width: `${Math.min(100, (asrOff ?? 0) * 100)}%` }} />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-slate mb-1">
+              <span>ASR on</span>
+              <span>{asrOn == null ? "—" : asrOn.toFixed(2)}</span>
+            </div>
+            <div className="h-2 bg-rule/40 rounded-chip overflow-hidden">
+              <div className="h-full bg-allow" style={{ width: `${Math.min(100, (asrOn ?? 0) * 100)}%` }} />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {report?.phase4 ? (
         <section className="rounded-panel border border-rule bg-surface p-4">

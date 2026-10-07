@@ -4,10 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { VerdictBadge } from "@/components/verdict-badge";
 import { OutcomeBanner } from "@/components/outcome-banner";
-import { apiBase, policyTest, runDemo } from "@/lib/api";
+import { FileDrop } from "@/components/file-drop";
+import { addRegressionCase, apiBase, policyTest, postScanFile, runDemo } from "@/lib/api";
 import type { Decision } from "@promptshield/shared-types";
 
 type Bypass = { id: string; content: string; decision: Decision; harmed: boolean | null };
+type Target = "aria_scripted" | "aria_llm";
 
 /** Inert labelled strings — educational / test only; never executed. */
 const EXAMPLE_ATTACKS: Array<{ label: string; text: string }> = [
@@ -41,6 +43,8 @@ export default function RedTeamPage() {
   } | null>(null);
   const [agentHarmed, setAgentHarmed] = useState<boolean | null>(null);
   const [bypasses, setBypasses] = useState<Bypass[]>([]);
+  const [target, setTarget] = useState<Target>("aria_scripted");
+  const [regNote, setRegNote] = useState<string | null>(null);
 
   async function onAttack() {
     if (!content.trim()) return;
@@ -66,6 +70,37 @@ export default function RedTeamPage() {
           {
             id: r.scan_id,
             content: content.slice(0, 200),
+            decision: r.decision,
+            harmed: null,
+          },
+          ...prev,
+        ]);
+      }
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onFile(file: File) {
+    setBusy(true);
+    setError(null);
+    setAgentHarmed(null);
+    try {
+      const r = await postScanFile(file);
+      setScan({
+        scan_id: r.scan_id,
+        decision: r.decision,
+        risk: r.risk,
+        findings: r.findings ?? [],
+      });
+      const safeLabel = (file.name || "upload").replace(/[^\w.\-()+ ]+/g, "_").slice(0, 80);
+      if (r.decision === "allow") {
+        setBypasses((prev) => [
+          {
+            id: r.scan_id,
+            content: `[file] ${safeLabel}`,
             decision: r.decision,
             harmed: null,
           },
@@ -117,7 +152,12 @@ export default function RedTeamPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Red-team playground</h1>
         <p className="text-slate text-sm mt-1 max-w-prose">
-          Try to break it. All input is hostile data — never executed.
+          Paste attack text or drop a file. All input is hostile data — never executed. For side-by-side
+          gallery demos use the{" "}
+          <Link href="/arena" className="text-uv hover:underline">
+            Arena
+          </Link>
+          .
         </p>
       </div>
 
@@ -157,9 +197,23 @@ export default function RedTeamPage() {
               className="mt-2 w-full rounded-panel border border-rule bg-paper px-3 py-2 text-sm font-mono"
             />
           </label>
+          <FileDrop disabled={busy} onFile={onFile} label="Drop a prompt file here, or click to choose" />
+          <label className="text-sm font-medium block">
+            Target
+            <select
+              data-testid="redteam-target"
+              className="mt-2 w-full rounded-panel border border-rule bg-paper px-3 py-2 text-sm"
+              value={target}
+              onChange={(e) => setTarget(e.target.value as Target)}
+            >
+              <option value="aria_scripted">Aria scripted</option>
+              <option value="aria_llm">Aria LLM</option>
+            </select>
+          </label>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              data-testid="redteam-attack"
               disabled={busy || !content.trim()}
               onClick={onAttack}
               className="rounded-panel bg-ink text-paper px-3 py-1.5 text-sm disabled:opacity-50"
@@ -177,8 +231,9 @@ export default function RedTeamPage() {
           </div>
         </section>
 
-        <section className="rounded-panel border border-rule bg-surface p-4 space-y-3">
+        <section className="rounded-panel border border-rule bg-surface p-4 space-y-3" data-testid="redteam-result">
           <h2 className="text-sm font-medium">Result</h2>
+          <p className="text-xs text-slate font-mono">target={target}</p>
           {scan ? (
             <>
               <div className="flex flex-wrap items-center gap-3">
@@ -202,9 +257,35 @@ export default function RedTeamPage() {
                 />
               ) : null}
               {scan.decision === "allow" ? (
-                <p className="text-sm text-sanitize">
-                  Possible bypass — logged below. Add to regression set manually in eval/data (add-only).
-                </p>
+                <div className="space-y-2">
+                  <p className="text-sm text-sanitize">Possible bypass — logged below.</p>
+                  <button
+                    type="button"
+                    data-testid="redteam-add-regression"
+                    disabled={busy}
+                    className="rounded-panel border border-rule px-3 py-1.5 text-sm"
+                    onClick={async () => {
+                      setBusy(true);
+                      setRegNote(null);
+                      try {
+                        const r = await addRegressionCase({
+                          content: content || `[file] ${scan.scan_id}`,
+                          label: "attack",
+                          scan_id: scan.scan_id,
+                          decision: scan.decision,
+                        });
+                        setRegNote(`Added ${r.id} to local regression queue`);
+                      } catch (e) {
+                        setError(String(e));
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                  >
+                    Add to regression set
+                  </button>
+                  {regNote ? <p className="text-xs text-allow">{regNote}</p> : null}
+                </div>
               ) : null}
             </>
           ) : (

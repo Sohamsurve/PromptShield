@@ -30,6 +30,11 @@ def _data_dir() -> Path:
     return _REPO / "apps" / "api" / "data"
 
 
+def data_dir() -> Path:
+    """Public data directory (policy + local queues). Honours PROMPTSHIELD_POLICY_DIR."""
+    return _data_dir()
+
+
 def _active_path() -> Path:
     return _data_dir() / "active_policy.yml"
 
