@@ -8,9 +8,12 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse, PlainTextResponse
+
 from promptshield.agent.aria import run_fixture
 from promptshield.agent.fixtures import list_fixtures, load_fixture_text
+from promptshield.api import policy_store
 from promptshield.domain import (
     OutputGuardRequest,
     OutputGuardResult,
@@ -21,15 +24,18 @@ from promptshield.domain import (
     ToolDecision,
     TrustLevel,
 )
-from promptshield.pipeline import POLICY_PATH, scan, scan_file_bytes
+from promptshield.pipeline import scan, scan_file_bytes
 
 router = APIRouter()
 
-# In-memory store
+# In-memory store (demo); policy versions are durable on disk
 _SCANS: dict[str, ScanResult] = {}
 _RUNS: dict[str, dict[str, Any]] = {}
+_REDTEAM: list[dict[str, Any]] = []
+_EVAL_RUNS: list[dict[str, Any]] = []
 _REPO_ROOT = Path(__file__).resolve().parents[5]
 _EVAL_LATEST = _REPO_ROOT / "eval" / "reports" / "latest"
+_EVAL_REPORTS = _REPO_ROOT / "eval" / "reports"
 
 
 @router.get("/healthz")
@@ -47,9 +53,36 @@ def healthz() -> dict[str, Any]:
         "judge_reasoning_effort": cfg["reasoning_effort"] or "",
     }
 
+
 @router.get("/metrics")
-def metrics() -> dict[str, Any]:
-    return {"scans_total": len(_SCANS), "runs_total": len(_RUNS)}
+def metrics() -> PlainTextResponse:
+    """Prometheus-style text exposition (README §6)."""
+    payload = {
+        "scans_total": len(_SCANS),
+        "runs_total": len(_RUNS),
+        "redteam_attempts_total": len(_REDTEAM),
+    }
+    lines = [
+        "# HELP promptshield_scans_total Scans stored in process memory",
+        "# TYPE promptshield_scans_total counter",
+        f"promptshield_scans_total {payload['scans_total']}",
+        "# HELP promptshield_runs_total Demo/arena runs stored",
+        "# TYPE promptshield_runs_total counter",
+        f"promptshield_runs_total {payload['runs_total']}",
+        "# HELP promptshield_redteam_attempts_total Red-team attempts logged",
+        "# TYPE promptshield_redteam_attempts_total counter",
+        f"promptshield_redteam_attempts_total {payload['redteam_attempts_total']}",
+    ]
+    return PlainTextResponse("\n".join(lines) + "\n", media_type="text/plain; version=0.0.4")
+
+
+@router.get("/metrics.json")
+def metrics_json() -> dict[str, Any]:
+    return {
+        "scans_total": len(_SCANS),
+        "runs_total": len(_RUNS),
+        "redteam_attempts_total": len(_REDTEAM),
+    }
 
 
 @router.post("/scan", response_model=ScanResult)
@@ -69,7 +102,7 @@ def _infer_source_type(filename: str | None, declared: str | None) -> SourceType
         return SourceType.pdf
     if name.endswith(".docx"):
         return SourceType.docx
-    if name.endswith((".eml", ".mime")):
+    if name.endswith((".eml", ".mime", ".ics")):
         return SourceType.email
     if name.endswith((".md", ".markdown")):
         return SourceType.markdown
@@ -89,7 +122,6 @@ async def post_scan_file(
     trust: int = Form(default=3),
 ) -> ScanResult:
     data = await file.read()
-    # Size cap — educational demo (10 MB)
     if len(data) > 10 * 1024 * 1024:
         raise HTTPException(413, "file too large")
     st = _infer_source_type(file.filename, source_type)
@@ -99,10 +131,46 @@ async def post_scan_file(
 
 
 @router.get("/scans")
-def list_scans(limit: int = 50) -> dict[str, Any]:
-    items = list(_SCANS.values())[-limit:]
+def list_scans(
+    limit: int = Query(default=50, ge=1, le=500),
+    cursor: str | None = None,
+    decision: str | None = None,
+    source_type: str | None = None,
+    attack_type: str | None = None,
+    q: str | None = None,
+) -> dict[str, Any]:
+    items = list(_SCANS.values())
     items.reverse()
-    return {"items": [s.model_dump() for s in items], "next_cursor": None}
+    if decision:
+        items = [s for s in items if s.decision.value == decision]
+    if source_type:
+        # ScanResult may not store source_type on root — filter via findings/evidence text
+        items = [s for s in items if source_type in json.dumps(s.model_dump())]
+    if attack_type:
+        items = [
+            s
+            for s in items
+            if any(attack_type == a.value for a in s.attack_types)
+            or any(attack_type in [x.value for x in f.attack_types] for f in s.findings)
+        ]
+    if q:
+        ql = q.lower()
+        items = [
+            s
+            for s in items
+            if ql in s.scan_id.lower()
+            or ql in (s.sanitized_text or "").lower()
+            or any(ql in (f.evidence or "").lower() for f in s.findings)
+        ]
+    start = 0
+    if cursor:
+        try:
+            start = next(i for i, s in enumerate(items) if s.scan_id == cursor) + 1
+        except StopIteration:
+            start = 0
+    page = items[start : start + limit]
+    next_cursor = page[-1].scan_id if len(page) == limit and start + limit < len(items) else None
+    return {"items": [s.model_dump() for s in page], "next_cursor": next_cursor}
 
 
 @router.get("/scans/{scan_id}")
@@ -110,6 +178,73 @@ def get_scan(scan_id: str) -> ScanResult:
     if scan_id not in _SCANS:
         raise HTTPException(404, "scan not found")
     return _SCANS[scan_id]
+
+
+@router.get("/scans/{scan_id}/xray")
+def get_xray(scan_id: str) -> dict[str, Any]:
+    """X-ray model (README §6.2) — derived from ScanResult segments/findings."""
+    if scan_id not in _SCANS:
+        raise HTTPException(404, "scan not found")
+    s = _SCANS[scan_id]
+    layers = []
+    for f in s.findings:
+        layers.append(
+            {
+                "detector": f.detector,
+                "rule_id": f.rule_id,
+                "reason_code": f.reason_code,
+                "score": f.score,
+                "span": list(f.span) if f.span else None,
+                "segment_id": f.segment_id,
+                "evidence": f.evidence,
+            }
+        )
+    invisible = []
+    for seg in s.segments:
+        text = ""  # summaries only; chips from reason codes
+        if any(ch in (seg.hidden_reason or "") for ch in ("zero_width", "bidi", "tag")):
+            invisible.append({"segment": seg.id, "kind": seg.hidden_reason})
+    pages = [
+        {
+            "page": 1,
+            "image_url": f"/v1/scans/{scan_id}/pages/1.png",
+            "boxes": [
+                {"segment": f.segment_id, "span": list(f.span) if f.span else None}
+                for f in s.findings
+                if f.span
+            ],
+        }
+    ]
+    return {
+        "scan_id": scan_id,
+        "decision": s.decision.value,
+        "risk": s.risk,
+        "layers": layers,
+        "decode_tree": [],
+        "segments": [seg.model_dump() for seg in s.segments],
+        "findings": [f.model_dump() for f in s.findings],
+        "pages": pages,
+        "invisible_chars": invisible,
+        "sanitized_text": s.sanitized_text,
+        "degraded": s.degraded,
+    }
+
+
+@router.get("/scans/{scan_id}/pages/{page}.png")
+def get_page_image(scan_id: str, page: int) -> FileResponse:
+    """Placeholder page image for X-ray (1×1 PNG) when OCR/page render unavailable."""
+    if scan_id not in _SCANS:
+        raise HTTPException(404, "scan not found")
+    # Minimal valid 1x1 PNG
+    png = bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
+        "0000000a49444154789c63000100000500010d0a2db40000000049454e44ae426082"
+    )
+    path = _REPO_ROOT / "apps" / "api" / "data" / "xray_pages" / f"{scan_id}_{page}.png"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        path.write_bytes(png)
+    return FileResponse(path, media_type="image/png")
 
 
 @router.post("/guard/tool-call", response_model=ToolDecision)
@@ -128,7 +263,6 @@ def post_guard_output(req: OutputGuardRequest) -> OutputGuardResult:
 
 @router.post("/guard/ingest", response_model=ScanResult)
 def post_guard_ingest(body: dict[str, Any]) -> ScanResult:
-    """RAG/document ingest scan (Phase 4)."""
     from promptshield.guard.ingest import ingest_scan
 
     content = body.get("content")
@@ -141,7 +275,6 @@ def post_guard_ingest(body: dict[str, Any]) -> ScanResult:
 
 @router.get("/eval/latest")
 def eval_latest() -> dict[str, Any]:
-    """Latest eval report + heatmap for dashboard Coverage/Eval screens."""
     report_path = _EVAL_LATEST / "report.json"
     heat_path = _EVAL_LATEST / "heatmap.json"
     if not report_path.exists():
@@ -152,14 +285,98 @@ def eval_latest() -> dict[str, Any]:
     return payload
 
 
+@router.get("/eval/heatmap")
+def eval_heatmap() -> dict[str, Any]:
+    heat_path = _EVAL_LATEST / "heatmap.json"
+    if not heat_path.exists():
+        raise HTTPException(404, "No heatmap yet. Run make eval-fast.")
+    return json.loads(heat_path.read_text(encoding="utf-8"))
+
+
+@router.get("/eval/runs")
+def eval_runs() -> dict[str, Any]:
+    runs = list(_EVAL_RUNS)
+    # Also surface on-disk report directories
+    disk = []
+    if _EVAL_REPORTS.exists():
+        for p in sorted(_EVAL_REPORTS.iterdir(), reverse=True):
+            if p.is_dir() and (p / "report.json").exists():
+                disk.append({"id": p.name, "path": str(p.relative_to(_REPO_ROOT))})
+    return {"in_memory": runs, "on_disk": disk[:20]}
+
+
+@router.post("/eval/run")
+def eval_run(body: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Start a fast eval asynchronously (subprocess); returns eval_run_id."""
+    import subprocess
+    import threading
+
+    body = body or {}
+    mode = body.get("mode", "fast")
+    eval_run_id = f"eval_{uuid.uuid4().hex[:8]}"
+    rec = {"eval_run_id": eval_run_id, "mode": mode, "status": "running"}
+    _EVAL_RUNS.insert(0, rec)
+
+    def _job() -> None:
+        try:
+            cmd = [
+                "uv",
+                "--directory",
+                str(_REPO_ROOT / "apps" / "api"),
+                "run",
+                "python",
+                str(_REPO_ROOT / "eval" / "run_eval.py"),
+                "--fast" if mode != "full" else "--full",
+            ]
+            subprocess.run(cmd, cwd=str(_REPO_ROOT), check=False, capture_output=True)
+            rec["status"] = "completed"
+        except Exception as e:  # noqa: BLE001
+            rec["status"] = "failed"
+            rec["error"] = type(e).__name__
+
+    threading.Thread(target=_job, daemon=True).start()
+    return {"eval_run_id": eval_run_id, "status": "running", "mode": mode}
+
+
 @router.get("/policy")
 def get_policy() -> dict[str, Any]:
-    return yaml.safe_load(POLICY_PATH.read_text(encoding="utf-8")) or {}
+    pol = policy_store.current_policy()
+    # Top-level policy fields for existing clients; versions for durable history UI
+    out = dict(pol)
+    out["_versions"] = policy_store.list_versions()[:20]
+    return out
+
+
+@router.put("/policy")
+def put_policy(body: dict[str, Any]) -> dict[str, Any]:
+    """Durable policy save with version history (demo-local disk)."""
+    note = str(body.pop("note", "") or "")
+    # Accept either wrapped {policy: {...}} or raw policy body
+    pol = body.get("policy") if isinstance(body.get("policy"), dict) else body
+    if not isinstance(pol, dict) or not pol:
+        raise HTTPException(400, "policy object required")
+    meta = policy_store.save_policy(pol, note=note)
+    return {"ok": True, **meta, "versions": policy_store.list_versions()[:10]}
+
+
+@router.get("/policy/versions/{version}")
+def policy_version(version: int) -> dict[str, Any]:
+    try:
+        return policy_store.get_version(version)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e)) from e
+
+
+@router.get("/policy/diff")
+def policy_diff(a: int = Query(...), b: int = Query(...)) -> dict[str, Any]:
+    try:
+        return policy_store.diff_versions(a, b)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e)) from e
 
 
 @router.post("/policy/test")
 def policy_test(body: dict[str, Any]) -> ScanResult:
-    """Scan arbitrary text with current pipeline (hostile data — never execute)."""
     content = body.get("content") or ""
     if not content.strip():
         raise HTTPException(400, "content required")
@@ -176,15 +393,14 @@ def policy_test(body: dict[str, Any]) -> ScanResult:
 
 
 @router.post("/policy/replay")
-def policy_replay(body: dict[str, Any]) -> dict[str, Any]:
-    """Estimate decision deltas for threshold tweaks against recent in-memory scans."""
+@router.post("/policy/simulate")
+def policy_simulate(body: dict[str, Any]) -> dict[str, Any]:
+    """Replay recent scans under draft source thresholds → decision deltas."""
     sources = body.get("sources") or {}
     deltas = {"allow": 0, "sanitize": 0, "quarantine": 0, "block": 0, "escalate": 0}
     changed = 0
     for s in list(_SCANS.values())[-500:]:
-        st = "text"
-        # Approximate: compare risk to proposed source thresholds
-        cfg = sources.get(st) or sources.get("user_message") or {}
+        cfg = sources.get("text") or sources.get("user_message") or {}
         block = float(cfg.get("block", 0.92))
         quarantine = float(cfg.get("quarantine", 0.70))
         if s.risk >= block:
@@ -239,11 +455,68 @@ def fixture_content(fixture_id: str) -> dict[str, str]:
         raise HTTPException(404, str(e)) from e
 
 
+@router.post("/redteam/attempt")
+def redteam_attempt(body: dict[str, Any]) -> dict[str, Any]:
+    """Scan free-text (or fixture) attack attempt; log for leaderboard."""
+    text = body.get("text") or ""
+    fixture_id = body.get("fixture_id")
+    target = body.get("target", "aria")
+    if fixture_id:
+        try:
+            text = load_fixture_text(fixture_id)
+        except Exception as e:
+            raise HTTPException(404, f"fixture not found: {e}") from e
+    if not text.strip():
+        raise HTTPException(400, "text or fixture_id required")
+    if len(text) > 100_000:
+        raise HTTPException(413, "content too large")
+    result = scan(
+        ScanRequest(source_type=SourceType.text, content=text, trust=TrustLevel.T3),
+        noop=False,
+    )
+    _SCANS[result.scan_id] = result
+    bypass = result.decision.value == "allow" and not result.findings
+    entry = {
+        "id": f"rt_{uuid.uuid4().hex[:8]}",
+        "target": target,
+        "scan_id": result.scan_id,
+        "decision": result.decision.value,
+        "risk": result.risk,
+        "bypass": bypass,
+        "flagged": bool(result.findings),
+        "preview": text[:160],
+    }
+    _REDTEAM.insert(0, entry)
+    return {"attempt": entry, "scan": result.model_dump()}
+
+
+@router.get("/redteam/leaderboard")
+def redteam_leaderboard() -> dict[str, Any]:
+    """De-duplicated bypass attempts (by preview hash)."""
+    seen: set[str] = set()
+    rows = []
+    for e in _REDTEAM:
+        key = e.get("preview") or e["id"]
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append(e)
+    bypasses = [r for r in rows if r.get("bypass")]
+    return {"n": len(rows), "bypasses": len(bypasses), "items": rows[:100]}
+
+
 @router.websocket("/ws/stream")
 async def ws_stream(ws: WebSocket) -> None:
     await ws.accept()
     try:
         await ws.send_json({"type": "connected", "payload": {"channel": "stream"}})
+        # Emit a heartbeat snapshot of recent scan count
+        await ws.send_json(
+            {
+                "type": "degraded" if False else "scan.completed",
+                "payload": {"scans_total": len(_SCANS)},
+            }
+        )
         while True:
             await ws.receive_text()
     except WebSocketDisconnect:
@@ -254,8 +527,28 @@ async def ws_stream(ws: WebSocket) -> None:
 async def ws_runs(ws: WebSocket, run_id: str) -> None:
     await ws.accept()
     try:
-        payload = _RUNS.get(run_id, {"run_id": run_id, "results": []})
-        await ws.send_json({"type": "run.completed", "run_id": run_id, "lane": None, "payload": payload})
+        payload = _RUNS.get(run_id)
+        if payload is None:
+            await ws.send_json({"type": "run.completed", "run_id": run_id, "lane": None, "payload": {"results": []}})
+        else:
+            for res in payload.get("results") or []:
+                lane = res.get("lane")
+                await ws.send_json(
+                    {
+                        "type": "agent.step",
+                        "run_id": run_id,
+                        "lane": lane,
+                        "payload": {"steps": res.get("steps") or []},
+                    }
+                )
+                await ws.send_json(
+                    {
+                        "type": "run.completed",
+                        "run_id": run_id,
+                        "lane": lane,
+                        "payload": res,
+                    }
+                )
         while True:
             await ws.receive_text()
     except WebSocketDisconnect:

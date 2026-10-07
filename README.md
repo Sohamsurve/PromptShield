@@ -555,8 +555,8 @@ An email + web assistant with **mock** tools (nothing real is sent, fetched or r
 Contains fake secrets and **canary tokens** (system prompt contains `CANARY-…`; a fake `.env` contains a canary API key).
 
 **Modes (`ARIA_MODE`):**
-- `scripted` (default for demos/CI): a deterministic **GullibleAgent** that follows any imperative it finds in content (parses "forward … to …", "reveal …", "run …", "remember …" and executes the matching mock tool). Simulates an unprotected LLM, offline and reproducibly.
-- `llm`: a real LLM with tool use through `LLMClient`; used for the credibility run and the red-team page.
+- `scripted` (default for demos/CI): a deterministic **GullibleAgent** that follows any imperative it finds in content (parses "forward … to …", "reveal …", "run …", "remember …" and executes the matching mock tool). Simulates an unprotected LLM, offline and reproducibly. **This is the measured Arena / ASR path.**
+- `llm`: intended real-LLM tool-use path via `LLMClient`. **Not evaluated** in current evidence (see `docs/LIMITATIONS.md`); do not treat as a measured claim.
 
 **Firewall switch:** `firewall=off` → content goes straight to the agent. `firewall=on` → every content item passes `/scan` first; every tool call passes `/guard/tool-call`; every output passes `/guard/output`.
 

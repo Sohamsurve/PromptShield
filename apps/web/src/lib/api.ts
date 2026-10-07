@@ -56,9 +56,36 @@ export async function fetchEvalLatest() {
   return r.json();
 }
 
+export async function fetchHealthz() {
+  const r = await fetch(`${API_BASE}/v1/healthz`, { cache: "no-store" });
+  if (!r.ok) throw new Error(`healthz ${r.status}`);
+  return r.json() as Promise<{
+    judge_mode?: string;
+    api_key_configured?: boolean;
+    model?: string;
+    status?: string;
+  }>;
+}
+
 export async function fetchPolicy() {
   const r = await fetch(`${API_BASE}/v1/policy`, { cache: "no-store" });
   if (!r.ok) throw new Error(`policy ${r.status}`);
+  return r.json();
+}
+
+export async function savePolicy(policy: Record<string, unknown>, note = "") {
+  const r = await fetch(`${API_BASE}/v1/policy`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...policy, note }),
+  });
+  if (!r.ok) throw new Error(`policy PUT ${r.status}`);
+  return r.json();
+}
+
+export async function fetchPolicyDiff(a: number, b: number) {
+  const r = await fetch(`${API_BASE}/v1/policy/diff?a=${a}&b=${b}`, { cache: "no-store" });
+  if (!r.ok) throw new Error(`policy/diff ${r.status}`);
   return r.json();
 }
 

@@ -15,4 +15,7 @@
 ## Claims
 
 - F/D on independent sealed: **not evaluated**.
-- Aria LLM agent: **not evaluated**.
+- Aria LLM agent: **not evaluated** (Arena uses scripted GullibleAgent).
+- Policy PUT is demo-local durable (`active_policy.yml`); not a multi-tenant DB.
+- Part D judge-first cascade: **not run** at `v2.0-rc` (deferred).
+- Playwright `docs/screens/` and axe: captured by `make accept` / e2e when environment allows; may be PARTIAL offline.

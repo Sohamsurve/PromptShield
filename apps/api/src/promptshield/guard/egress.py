@@ -20,7 +20,9 @@ _DATA_URI = re.compile(r"(?i)data:[^;\s]+;base64,")
 
 
 def _policy() -> dict[str, Any]:
-    return yaml.safe_load(POLICY_PATH.read_text(encoding="utf-8")) or {}
+    from promptshield.api.policy_store import resolve_policy_path
+
+    return yaml.safe_load(resolve_policy_path().read_text(encoding="utf-8")) or {}
 
 
 def guard_output(req: OutputGuardRequest) -> OutputGuardResult:

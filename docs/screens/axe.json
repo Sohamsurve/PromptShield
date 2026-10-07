@@ -1,0 +1,28 @@
+[
+  {
+    "route": "/",
+    "critical": []
+  },
+  {
+    "route": "/arena",
+    "critical": []
+  },
+  {
+    "route": "/coverage",
+    "critical": []
+  },
+  {
+    "route": "/eval",
+    "critical": []
+  },
+  {
+    "route": "/policy",
+    "critical": [
+      "label"
+    ]
+  },
+  {
+    "route": "/redteam",
+    "critical": []
+  }
+]

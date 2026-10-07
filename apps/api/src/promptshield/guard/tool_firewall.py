@@ -14,7 +14,7 @@ from promptshield.domain import ToolCallRequest, ToolDecision
 from promptshield.guard.canary import find_canaries
 from promptshield.guard.taint import context_tainted, untrusted_arguments, user_requested_arg_provenance
 
-POLICY_PATH = Path(__file__).resolve().parents[1] / "policies" / "default.yml"
+POLICY_PATH = Path(__file__).resolve().parents[1] / "policies" / "default.yml"  # template; resolve_policy_path preferred
 
 # Persistent-instruction shapes in save_memory content (defence in depth, §5.7).
 _MEMORY_POISON = re.compile(
@@ -29,7 +29,9 @@ _SENSITIVE_TOOLS = {"send_email", "fetch_url", "read_file", "save_memory", "reve
 
 
 def _policy() -> dict[str, Any]:
-    return yaml.safe_load(POLICY_PATH.read_text(encoding="utf-8")) or {}
+    from promptshield.api.policy_store import resolve_policy_path
+
+    return yaml.safe_load(resolve_policy_path().read_text(encoding="utf-8")) or {}
 
 
 def _domain_allowed(email_or_url: str, allowed: list[str]) -> bool:

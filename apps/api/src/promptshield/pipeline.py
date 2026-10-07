@@ -34,11 +34,15 @@ from promptshield.neutralize.redact import redact_spans, spotlight
 from promptshield.normalize.decode import decode_recursive
 from promptshield.normalize.unicode import canonicalize
 
+# Sealed template path (FREEZE-hashed). Runtime may override via active_policy.yml.
 POLICY_PATH = Path(__file__).resolve().parent / "policies" / "default.yml"
 
 
 def _policy() -> dict[str, Any]:
-    return yaml.safe_load(POLICY_PATH.read_text(encoding="utf-8")) or {}
+    from promptshield.api.policy_store import resolve_policy_path
+
+    path = resolve_policy_path()
+    return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
 
 @lru_cache(maxsize=1)

@@ -1,4 +1,4 @@
-.PHONY: setup dev test e2e eval eval-fast train gen-types fixtures scan-mcp-output demo demo-docker _demo-api lint
+.PHONY: setup dev test e2e eval eval-fast train gen-types fixtures scan-mcp-output demo demo-docker _demo-api lint accept conformance
 
 ROOT := $(abspath .)
 API_DIR := $(ROOT)/apps/api
@@ -72,3 +72,11 @@ demo-docker: setup
 
 lint:
 	cd $(API_DIR) && $(UV) run ruff check src tests || true
+
+# Measured README conformance (writes docs/CONFORMANCE.md; non-zero on FAIL).
+conformance:
+	cd $(ROOT) && $(UV) --directory $(API_DIR) run python $(ROOT)/eval/conformance_audit_v20.py
+
+# End-to-end acceptance from host (no Docker). Non-zero on any failure. Writes docs/ACCEPT_RUN.md.
+accept:
+	cd $(ROOT) && $(UV) --directory $(API_DIR) run python $(ROOT)/scripts/accept_v20.py

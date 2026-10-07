@@ -79,3 +79,7 @@ Format: date · decision · reason.
 - **v1.4 judge timeout:** clamp policy/env to 3–5 s; `ThreadPoolExecutor` wall clock around `judge_segment` so a slow LLM cannot hang `/v1/scan` UI.
 - **v1.4 judge eval:** ≥40 new manipulation cases (distinct from v1.3’s 12); Wilson CIs; effort none vs low; cheaper tier only with manipulation results (mini manip 0.446 → no downgrade).
 - **v1.4 tag:** `v1.4-evidence`. Independent staging still unread until hashed.
+- **v2.0-rc durable policy:** PUT `/v1/policy` writes `apps/api/data/active_policy.yml` + `policy_history/` only; sealed `policies/default.yml` stays FREEZE-hashed. Reason: demo durability without mutating the claimed operating-point template.
+- **v2.0-rc conformance:** `eval/conformance_audit_v20.py` (hashed in FREEZE before run) exercises OpenAPI §6, scan/file formats, pytest §5 suites, make targets; writes `docs/CONFORMANCE.md`. Accept harness `scripts/accept_v20.py` + `make accept`.
+- **v2.0-rc UI honesty:** Eval/Coverage headline ACTED with FLAGGED toggle, MET/NOT MET vs §0.4/§1.3, in-sample gallery label, judge_mode from healthz. Part D judge-first cascade deferred (stop after Part C).
+- **v2.0-rc Aria LLM:** remains PARTIAL / not evaluated (scripted GullibleAgent is the measured demo path).

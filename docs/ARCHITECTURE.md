@@ -32,8 +32,9 @@ Session analyser maintains per-`session_id` risk with decay, payload-split resca
 | `fusion/` | Hand-set logistic risk + **signature floor** (`max_sev≥0.75→risk≥0.8`); weights from `fit_fusion` on signature_cases sample |
 | `neutralize/` | Redact, spotlight |
 | `guard/` | Taint, tool firewall, canary/secrets, egress, ingest |
-| `agent/` | Aria + GullibleAgent (scripted demo) |
-| `apps/web/` | Console, Arena, X-ray, Coverage, Policy, Eval, Red-team |
+| `agent/` | Aria + GullibleAgent (scripted demo; LLM Aria not evaluated) |
+| `apps/web/` | Console, Arena, X-ray, Coverage, Policy, Eval, Red-team (ACTED headline) |
+| `api/policy_store.py` | Durable demo-local policy versions (`active_policy.yml`; sealed `default.yml` untouched) |
 
 ## Fail modes
 
@@ -54,5 +55,6 @@ Fixed seeds, `temperature=0` for live judge, scripted GullibleAgent for CI/offli
 
 - `docs/LEARNING_GUIDE.md` — layer map for newcomers
 - `docs/CLAIM_LEDGER.md` — demo claims ↔ evidence
+- `docs/CONFORMANCE.md` — measured README requirements
 - `docs/DEMO_BACKUP.md` — timed demo script
 - `docs/LIMITATIONS.md` — honest gaps

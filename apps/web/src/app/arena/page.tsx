@@ -82,7 +82,8 @@ export default function ArenaPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">A/B Arena</h1>
           <p className="text-slate text-sm mt-1 max-w-prose">
-            Same attack, unprotected vs protected agent.
+            Same attack, unprotected vs protected agent. Gallery fixtures are{" "}
+            <span className="font-mono">in-sample</span> (not independent sealed).
           </p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">

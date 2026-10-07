@@ -46,6 +46,9 @@ apps/web/test-results/
 apps/web/playwright-report/
 apps/api/.venv/
 .venv/
+apps/api/data/active_policy.yml
+apps/api/data/policy_history/
+apps/api/data/xray_pages/
 
 # UV / tooling
 .python-version

@@ -1,6 +1,7 @@
-# Claims (measured only) — v1.4-evidence
+# Claims (measured only) — v2.0-rc
 
-Numbers from `docs/EVIDENCE.md`. Corrections: `docs/ERRATA.md`.
+Numbers from `docs/EVIDENCE.md` / v1.4 curves. Corrections: `docs/ERRATA.md`.
+Conformance: `docs/CONFORMANCE.md`. Accept: `docs/ACCEPT_RUN.md`.
 
 ## Metrics
 
@@ -20,10 +21,13 @@ Numbers from `docs/EVIDENCE.md`. Corrections: `docs/ERRATA.md`.
 |---|---|---|
 | Fidelity / Data | **not evaluated** on independent sealed | staging empty |
 | Disruption (dev claimed fit C) | ACTED FPR **0.116** | ≤2% **NOT MET** |
+| Conformance (measured) | PASS=52 · PARTIAL=1 · FAIL=0 | `docs/CONFORMANCE.md` |
+| Accept | FAILS=0 | `docs/ACCEPT_RUN.md` + `docs/screens/` |
 
 Judge evaluated on **dev only** (n=119, manip 56/56 Sol), **not on independent data**.
+Part D judge-first cascade: **not run** at this tag.
 
-## Headline (dev)
+## Headline (dev, unchanged from v1.4)
 
 | Item | Value |
 |---|---|
@@ -33,4 +37,7 @@ Judge evaluated on **dev only** (n=119, manip 56/56 Sol), **not on independent d
 | Judge Sol acc / manip | **1.000** / **1.000** |
 | Judge mini acc / manip | **0.681** / **0.446** |
 | Independent sealed | **not evaluated** |
-| pytest | **391 passed** |
+
+## Tag
+
+**`v2.0-rc`**

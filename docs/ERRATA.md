@@ -25,3 +25,5 @@ Further measured numbers for v1.1 live in `docs/EVIDENCE.md` / `docs/CLAIMS.md`.
 | 2026-10-04 | Part B ACTED 0.417 / FPR 0.0938 presented without stating unmatched redteam length confound | Those n were train/dev+**unmatched** dev_redteam (120/320). Length alone separated classes at 0.924. v1.4 reports curves A/B/C; claimed fit is length-matched C only. | Length confound |
 | 2026-10-04 | Judge timeout default 30s in v1.3 ops | v1.4 hard budget **3–5 s** (5000 ms) with pipeline thread timeout so UI cannot hang. | Ops |
 | 2026-10-04 | CLAIMS said judge n=75 manip 12 | v1.4 gray-zone n=**119**, manip **56** (12 old + 44 new). | Eval expansion |
+| 2026-10-07 | LIMITATIONS / UI implied policy edits were ephemeral only | v2.0-rc: durable demo-local versions via `active_policy.yml` + history; sealed `default.yml` unchanged. | Policy honesty |
+| 2026-10-07 | Eval/Coverage pages showed undifferentiated “recall” | Headline is **ACTED** with FLAGGED toggle; independent F/D remain not evaluated. | Metric honesty |

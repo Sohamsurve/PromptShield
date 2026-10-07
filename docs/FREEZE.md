@@ -1,4 +1,4 @@
-# Freeze — v1.4-evidence
+# Freeze — v2.0-rc
 
 ## Prior seals (spent)
 
@@ -54,6 +54,18 @@ Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit po
 | `eval/synth/build_judge_manip_v14.py` | `0d75f65a7bcbc5ffb3c25893875044dbd76fc5483d4d05ce5441c766e3294504` | 42 |
 | `eval/judge_eval_v14.py` | `f0a258297e07a6f782799fa37074699f0b786c806527e95a60b392ee85df2b78` | 42 |
 | `eval/judge_action_dev_eval_v14.py` | `de099aa06962e9e58f80bdaf31a670add59c45c86a2f42c73774aec3376b0725` | 42 |
+| `eval/conformance_audit_v20.py` | `e9a5dc6127597c4fdd88842841ab99b5b7ee922ded890b8245b2787d7d8e25d3` | 42 |
+| `scripts/accept_v20.py` | `1438f41e1b02caf2e6ff479f2c1ab7986019f1057c9a8fee705fa6f4f461b76b` | — |
+
+## v2.0-rc pre-registered (Part A–C; Part D cascade deferred)
+
+| Rule | Definition |
+|---|---|
+| Conformance | Measured rows in `docs/CONFORMANCE.md` only; never PASS from memory |
+| Accept | `make accept` non-zero on any failure; works offline-judge / no Docker |
+| UI honesty | Eval/Coverage headline **ACTED** with FLAGGED toggle; F/D stay not evaluated |
+| Policy durable | PUT `/v1/policy` writes `active_policy.yml` + history; never mutates sealed `default.yml` |
+| Part D cascade | Not run in this tag; pre-register before any cascade eval |
 
 ## Length-matched + judge grayzone v14 (hashed)
 
@@ -74,4 +86,4 @@ Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit po
 
 ## Tag
 
-**** → commit  (docs tip pointer follows; not retagged).
+**`v2.0-rc`** → tip after accept + CONFORMANCE (docs tip pointer follows).
