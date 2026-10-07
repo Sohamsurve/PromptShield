@@ -13,7 +13,8 @@ Last updated: 2026-10-07 · v2.0-rc4
 - dev_redteam counts: batch_a **110** / batch_b **104** / batch_c **300**; source_doc_populated **0** (not independent)
 - `make test`: **422 passed**, 1 skipped
 - `make eval-fast`: exit 0
-- `make accept` (pre-commit, against a69d9da): FAILS=0 three lanes — re-run after commit for rc4 tip
+- `make accept` @ 57cb62e: **FAILS=0** (a_nokey / b_force_offline / c_live)
+- CONFORMANCE: **PASS=60 · PARTIAL=9 · FAIL=0**
 - Tag **`v2.0-rc3`** exists → ship **`v2.0-rc4`**
 - Matrix: `docs/UI_REQUIREMENTS.md`
 

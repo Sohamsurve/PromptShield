@@ -84,7 +84,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Post Scan File */
+        /**
+         * Post Scan File
+         * @description Hostile upload path — size/type sniff, no archives, time-capped parse (§12.2).
+         */
         post: operations["post_scan_file_v1_scan_file_post"];
         delete?: never;
         options?: never;
@@ -282,6 +285,23 @@ export interface paths {
          * @description Start a fast eval asynchronously (subprocess); returns eval_run_id.
          */
         post: operations["eval_run_v1_eval_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/eval/runs/{eval_run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eval Run Status */
+        get: operations["eval_run_status_v1_eval_runs__eval_run_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -502,6 +522,26 @@ export interface paths {
          * @description Scan free-text (or fixture) attack attempt; log for leaderboard.
          */
         post: operations["redteam_attempt_v1_redteam_attempt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/redteam/regression": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redteam Add Regression
+         * @description Add-only local regression queue (not sealed / not eval/data labels).
+         */
+        post: operations["redteam_add_regression_v1_redteam_regression_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1324,6 +1364,39 @@ export interface operations {
             };
         };
     };
+    eval_run_status_v1_eval_runs__eval_run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eval_run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_policy_v1_policy_get: {
         parameters: {
             query?: never;
@@ -1707,6 +1780,43 @@ export interface operations {
         };
     };
     redteam_attempt_v1_redteam_attempt_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    redteam_add_regression_v1_redteam_regression_post: {
         parameters: {
             query?: never;
             header?: never;
