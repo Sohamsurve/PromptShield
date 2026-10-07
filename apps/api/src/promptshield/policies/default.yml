@@ -1,4 +1,10 @@
+# DEMO / OPERATING CONFIG — length-matched claimed fit C does not meet FPR≤2%.
+# This file is the shipped template (FREEZE-hashed). Runtime overrides go to
+# apps/api/data/active_policy.yml and never mutate this template.
+# Fit-time edits (v1.4): clf_graded + fusion weights from length-matched curve C.
 version: 6
+demo_config: true
+operating_point_note: "No FPR≤2% point on length-matched C; demo uses max-ACTED point (see docs/CLAIMS.md)."
 sources:
   user_message:
     trust: T1
@@ -76,6 +82,12 @@ judge:
   lo: 0.35
   hi: 0.8
   timeout_ms: 5000
+  cascade:
+    enabled: false
+    prefilter_threshold: 0.15
+    prefilter_hi: 0.55
+    chunk: 1500
+    overlap: 200
 classifier_gate: 0.1
 session:
   lambda: 0.7

@@ -1,4 +1,4 @@
-# Freeze — v2.0-rc
+# Freeze — v2.0-rc2
 
 ## Prior seals (spent)
 
@@ -54,18 +54,46 @@ Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit po
 | `eval/synth/build_judge_manip_v14.py` | `0d75f65a7bcbc5ffb3c25893875044dbd76fc5483d4d05ce5441c766e3294504` | 42 |
 | `eval/judge_eval_v14.py` | `f0a258297e07a6f782799fa37074699f0b786c806527e95a60b392ee85df2b78` | 42 |
 | `eval/judge_action_dev_eval_v14.py` | `de099aa06962e9e58f80bdaf31a670add59c45c86a2f42c73774aec3376b0725` | 42 |
-| `eval/conformance_audit_v20.py` | `e9a5dc6127597c4fdd88842841ab99b5b7ee922ded890b8245b2787d7d8e25d3` | 42 |
-| `scripts/accept_v20.py` | `1438f41e1b02caf2e6ff479f2c1ab7986019f1057c9a8fee705fa6f4f461b76b` | — |
+| `eval/conformance_audit_v20.py` | `474f9585484d7c82e9bbf97a1bd373bf2f0a30f423a3f46580b9b4b97213c371` | 42 |
+| `scripts/accept_v20.py` | `7fccd14646c7b318c24e06fc6da7e013d9edb80aa0e7bd55f9b34c45f78d41ab` | — |
+| `eval/operating_curve_v20.py` | `2e872c17c692bb102eb95302a46d42a8baf82d4467f001bc10b6f362462478d2` | 42 |
+| `eval/judge_linkage_v20.py` | `33c023eabf1da4fa8d24fff6fcb1c68f01c151ecbc2d439aa46a9fc8a0562847` | 42 |
+| `eval/cascade_eval_v20.py` | `fd936a88889288b4222d3884334ad038c6a7e0548bebb94fc644191fec7ee3c4` | 42 |
+| `eval/synth/build_realistic_dev_v20.py` | `54b838f7f2ffe4ef8efcfa57141be62e92f667ad9c0859f2de542562ae21f545` | 42 |
+| `apps/api/src/promptshield/detect/cascade.py` | `8e6098bd91bec535089f20726107f0bdce6f41553efb06a5afe514a93539d540` | — |
 
-## v2.0-rc pre-registered (Part A–C; Part D cascade deferred)
+## v2.0-rc pre-registered (Part A–C)
 
 | Rule | Definition |
 |---|---|
 | Conformance | Measured rows in `docs/CONFORMANCE.md` only; never PASS from memory |
 | Accept | `make accept` non-zero on any failure; works offline-judge / no Docker |
 | UI honesty | Eval/Coverage headline **ACTED** with FLAGGED toggle; F/D stay not evaluated |
-| Policy durable | PUT `/v1/policy` writes `active_policy.yml` + history; never mutates sealed `default.yml` |
-| Part D cascade | Not run in this tag; pre-register before any cascade eval |
+| Policy durable | PUT `/v1/policy` writes `active_policy.yml` + history; never mutates sealed template `default.yml` |
+| Red-team bypass | Only **attack** inputs that were **not ACTED** count as bypasses; benign allow is never a bypass |
+
+## v2.0-rc2 Part D cascade — pre-registered BEFORE code
+
+| Rule | Definition |
+|---|---|
+| Prefilter | Signatures + heuristics + sliding-window classifier; high-recall threshold chosen on **dev only** |
+| Chunking | ~1500 chars, 200 overlap; concurrency limit 4; 5 s timeout/chunk; backoff; max chunks/doc |
+| Confirm+span | Verbatim offending_span ⊆ chunk → **sanitize** that span (offsets mapped to original) |
+| Confirm no span | → **quarantine** |
+| Error/timeout | `unknown`; **quarantine if prefilter high**; **never allow because of an error** |
+| Authority | Judge alone never blocks; never overrides strong signature (`max_sev≥0.75`) |
+| Quotation | `is_quotation_or_discussion` only when content is not agent-addressed |
+| Eval sets | original synth `dev`; length-matched; **new** `realistic_dev_v20` (≥30 new source docs benign+HN); needle — **no** spent/sealed/independent |
+| Modes | no_judge · gray_zone_only · full_cascade |
+| Metrics | ACTED, FPR + cluster-bootstrap CI, judge calls/doc, $/1k docs, p50/p95 latency |
+| F/D | Per pre-registered F1/F2/F3/D1; if no independent sealed → declare **F1 / D1 provisional** |
+
+## realistic_dev_v20 (hashed after build; SEED=42)
+
+| Path | SHA-256 |
+|---|---|
+| `eval/data/realistic_dev_v20/benign.jsonl` | `e635ff84a22c419c4f2b5529692ad5b84070749e2aa2dd70b92e7bfa799a8e7e` |
+| `eval/data/realistic_dev_v20/hard_negatives.jsonl` | `2c417f33198d8305a7d631001c1d24b5e583558418ba11e628e757e1d611f990` |
 
 ## Length-matched + judge grayzone v14 (hashed)
 
@@ -78,12 +106,14 @@ Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit po
 | `eval/data/dev_redteam/judge_grayzone_v14.jsonl` | `fc67a6227a7a2306ff74bb353704015550859f56f13fb8d222973f8a34c9c434` |
 | `eval/data/dev_redteam/judge_manip_v14.jsonl` | `1c81323982e4c7e49fb747ebccf7d67e21635dbb622eba54f13a9228bad50950` |
 
-## Policy (post v1.4 fit)
+## Policy (template — FREEZE-hashed; runtime override = active_policy.yml)
 
 | Path | SHA-256 |
 |---|---|
-| `apps/api/src/promptshield/policies/default.yml` | `f6ae7761b6c61bb1736cb6dbc75abcb9611eaf2c8a04c6f63706326ef11e3b55` |
+| `apps/api/src/promptshield/policies/default.yml` | `f294359aae437022208e08a5603da41cfc43d1af9ac1acbceac1323385c992d5` |
+
+Fit-time edit (v1.4→v2.0-rc2): clf_graded + fusion for length-matched C; added `demo_config: true` and cascade stanza (`enabled: false`) because **no** operating point on length-matched C meets FPR≤2%.
 
 ## Tag
 
-**`v2.0-rc`** → `8403e15` (docs tip pointer follows; not retagged).
+**`v2.0-rc2`** → tip after measured runs (docs tip pointer follows; not retagged).

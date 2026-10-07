@@ -16,6 +16,7 @@ import {
   Menu,
 } from "lucide-react";
 import { ConnectionDot } from "@/components/connection-dot";
+import { CommandPalette } from "@/components/command-palette";
 
 const NAV = [
   { href: "/", label: "Console", icon: LayoutDashboard },
@@ -83,6 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main id="main" className="flex-1 min-w-0 pb-20 md:pb-0">
         {children}
       </main>
+      <CommandPalette />
 
       <nav
         className="md:hidden fixed bottom-0 inset-x-0 border-t border-rule bg-surface flex justify-around py-2 z-40"

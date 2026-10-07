@@ -455,6 +455,35 @@ def fixture_content(fixture_id: str) -> dict[str, str]:
         raise HTTPException(404, str(e)) from e
 
 
+_ACTED_DECISIONS = {"sanitize", "quarantine", "block", "escalate"}
+
+
+def _redteam_is_attack(text: str, body: dict[str, Any]) -> bool:
+    """Attack inputs only. Benign/HN labels never count as leaderboard bypasses."""
+    if "is_attack" in body and body["is_attack"] is not None:
+        return bool(body["is_attack"])
+    label = str(body.get("label") or "").strip().lower()
+    if label in {"benign", "hard_negative", "negative"}:
+        return False
+    if label == "attack":
+        return True
+    # Unlabeled: signature / cue shaped → attack; otherwise treat as non-attack.
+    from promptshield.detect.signatures import SignatureEngine
+
+    if SignatureEngine().scan(text, segment_id="rt"):
+        return True
+    cues = (
+        r"(?i)ignore.{0,40}(previous|prior|all).{0,30}instructions",
+        r"(?i)reveal.{0,20}system prompt",
+        r"(?i)\b(jailbreak|you are now|act as)\b",
+        r"(?i)forward.{0,30}emails?",
+        r"(?i)from now on|add this to your memory",
+    )
+    import re
+
+    return any(re.search(p, text) for p in cues)
+
+
 @router.post("/redteam/attempt")
 def redteam_attempt(body: dict[str, Any]) -> dict[str, Any]:
     """Scan free-text (or fixture) attack attempt; log for leaderboard."""
@@ -475,13 +504,18 @@ def redteam_attempt(body: dict[str, Any]) -> dict[str, Any]:
         noop=False,
     )
     _SCANS[result.scan_id] = result
-    bypass = result.decision.value == "allow" and not result.findings
+    is_attack = _redteam_is_attack(text, body)
+    acted = result.decision.value in _ACTED_DECISIONS
+    # Bypass = attack input that was not acted on (allow). Benign allow is never a bypass.
+    bypass = bool(is_attack) and not acted
     entry = {
         "id": f"rt_{uuid.uuid4().hex[:8]}",
         "target": target,
         "scan_id": result.scan_id,
         "decision": result.decision.value,
         "risk": result.risk,
+        "is_attack": is_attack,
+        "acted": acted,
         "bypass": bypass,
         "flagged": bool(result.findings),
         "preview": text[:160],
@@ -492,7 +526,7 @@ def redteam_attempt(body: dict[str, Any]) -> dict[str, Any]:
 
 @router.get("/redteam/leaderboard")
 def redteam_leaderboard() -> dict[str, Any]:
-    """De-duplicated bypass attempts (by preview hash)."""
+    """De-duplicated attempts; bypasses = attack inputs not acted on."""
     seen: set[str] = set()
     rows = []
     for e in _REDTEAM:
@@ -502,7 +536,12 @@ def redteam_leaderboard() -> dict[str, Any]:
         seen.add(key)
         rows.append(e)
     bypasses = [r for r in rows if r.get("bypass")]
-    return {"n": len(rows), "bypasses": len(bypasses), "items": rows[:100]}
+    return {
+        "n": len(rows),
+        "bypasses": len(bypasses),
+        "items": rows[:100],
+        "bypass_definition": "attack_input_and_not_acted",
+    }
 
 
 @router.websocket("/ws/stream")

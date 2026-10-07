@@ -1,17 +1,23 @@
-# Claim ledger — v2.0-rc
+# Claim ledger — v2.0-rc2
 
-| Claim | Evidence |
+| Claim / demo beat | Evidence |
 |---|---|
-| Independent F/D | **not evaluated** |
-| Length confound | unmatched length-acc 0.924; matched 0.717; curves A/B/C reported |
-| Claimed fit C | ACTED 0.533 / FPR 0.116 (n_atk=120, n_neg=320) |
-| Judge Sol (dev) | acc 1.000 n=119; manip 56/56; not independent |
-| Judge mini | acc 0.681; manip 0.446 — not a downgrade candidate |
-| Judge-driven action (dev offline) | ACTED 0.513; FPR 0.200; preserve 0.837; localise 0.463 |
-| Conformance | PASS=52 · PARTIAL=1 · FAIL=0 (`docs/CONFORMANCE.md`; Aria LLM PARTIAL) |
-| Accept harness | FAILS=0 · `docs/ACCEPT_RUN.md` · `docs/screens/` (36 png + axe.json) |
-| Part D cascade | **not run** |
+| Independent F/D | **F1 / D1 provisional** (no independent sealed) |
+| Arena F01–F17 off-harmed / on-safe | in-sample accept / demo/run |
+| F18–F20 negatives unharmed | accept + fixtures labels |
+| Tool firewall allowlist deny | `TOOL_DOMAIN_DENY` on evil.invalid |
+| Tool firewall taint confirm/deny | guard/tool-call with tainted context |
+| Output canary block | `CANARY_*` → deny |
+| X-ray UV / chips / views | UI components + CONFORMANCE unaudited rows |
+| Eval/Coverage ACTED + FLAGGED toggle | Playwright body text |
+| Policy durable save | PUT → `active_policy.yml` + history |
+| Red-team bypass ≠ benign allow | `test_redteam_leaderboard.py` |
+| Conformance | PASS=58 · PARTIAL=10 · FAIL=0 |
+| Cascade live | `eval/reports/cascade_eval_v20.json` |
+| Operating point FPR≤2% | **none** on length-matched risk sweep |
+| Judge effort reaches API | `judge_linkage_v20` effort_probe |
+| Part D $/1k | not metered |
 
 ## Tag
 
-**`v2.0-rc`**
+**`v2.0-rc2`**

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
@@ -321,73 +322,140 @@ def scan(
         and not disc.dampen
     )
     judge_quote = bool(structural_quote) and not agent_directed
+    from promptshield.detect.cascade import prefilter_score, run_chunked_judge
+
+    casc = (policy.get("judge") or {}).get("cascade") or {}
+    cascade_env = (os.getenv("JUDGE_CASCADE") or "").strip() in {"1", "true", "yes"}
+    cascade_on = cascade_env or bool(casc.get("enabled"))
+    pref = prefilter_score(max_sev=max_sev, heur=heur, clf_prob=clf_prob)
+    pref_thr = float(casc.get("prefilter_threshold", 0.15))
+    pref_hi = float(casc.get("prefilter_hi", 0.55))
+
     consult_judge = judge_lo <= pre_risk <= judge_hi or (
         request.trust.value <= TrustLevel.T1 and max_sev >= 0.75 and hidden == 0.0
     ) or (structural_quote and max_sev >= 0.5)
+    if cascade_on:
+        # Full cascade: anything above prefilter (or long text) goes to chunked judge
+        long_doc = sum(len(s.text or "") for s in segments) >= 1500
+        consult_judge = pref >= pref_thr or long_doc or consult_judge
+
     if consult_judge:
         target = max(segments, key=lambda s: len(s.text or ""), default=None)
         if target and (target.text or "").strip():
-            jr = None
-            try:
-                with ThreadPoolExecutor(max_workers=1) as pool:
-                    fut = pool.submit(
-                        judge_segment,
-                        target.text,
-                        source_type=request.source_type.value,
-                        timeout_ms=timeout_ms,
-                    )
-                    jr = fut.result(timeout=timeout_ms / 1000.0 + 0.25)
-            except (FuturesTimeout, Exception):
-                from promptshield.detect.judge import JudgeResult
-
-                jr = JudgeResult(
-                    is_injection=False,
-                    confidence=0.0,
-                    unknown=True,
-                    rationale="Judge timeout or error.",
+            if cascade_on and max_sev < 0.75:
+                action, spans, _unk = run_chunked_judge(
+                    target.text,
+                    source_type=request.source_type.value,
+                    judge_fn=judge_segment,
+                    timeout_ms=timeout_ms,
+                    prefilter=pref,
+                    prefilter_hi=pref_hi,
                 )
-            if jr.unknown:
-                if pre_risk >= float(
-                    (policy.get("sources") or {}).get(request.source_type.value, {}).get("quarantine", 0.7)
-                ):
-                    pre_risk = max(pre_risk, 0.7)
-            else:
-                judge_conf = jr.confidence
-                # Quotation from judge lowers risk only for non-agent-addressed content
-                if bool(jr.is_quotation_or_discussion) and not agent_directed:
-                    judge_quote = True
-                judge_inj = bool(jr.is_injection) and not (
-                    bool(jr.is_quotation_or_discussion) and not agent_directed
-                )
-                if judge_inj:
-                    span_text = jr.offending_span if jr.offending_span and jr.offending_span in target.text else None
-                    if span_text:
-                        start = target.text.find(span_text)
-                        span = (start, start + len(span_text))
-                        judge_action = "sanitize"
-                        reason = "JUDGE_INJECTION_SPAN"
-                    else:
-                        span = (0, min(len(target.text), 200))
-                        judge_action = "quarantine"
-                        reason = "JUDGE_INJECTION_NO_SPAN"
+                if action == "sanitize" and spans:
+                    judge_inj = True
+                    judge_conf = max(judge_conf, 0.8)
+                    judge_action = "sanitize"
+                    for lo, hi in spans[:8]:
+                        findings.append(
+                            Finding(
+                                id=f"j_{uuid.uuid4().hex[:8]}",
+                                segment_id=target.id,
+                                span=(lo, hi),
+                                attack_types=[AttackType.instruction_override],
+                                detector="judge",
+                                rule_id=None,
+                                score=0.8,
+                                reason_code="JUDGE_INJECTION_SPAN",
+                                evidence=target.text[lo:hi][:200],
+                            )
+                        )
+                elif action == "quarantine":
+                    judge_inj = True
+                    judge_conf = max(judge_conf, 0.75)
+                    judge_action = "quarantine"
                     findings.append(
                         Finding(
                             id=f"j_{uuid.uuid4().hex[:8]}",
                             segment_id=target.id,
-                            span=span,
-                            attack_types=[
-                                AttackType(a)
-                                for a in jr.attack_types
-                                if a in {x.value for x in AttackType}
-                            ]
-                            or [AttackType.instruction_override],
+                            span=(0, min(len(target.text), 200)),
+                            attack_types=[AttackType.instruction_override],
                             detector="judge",
                             rule_id=None,
-                            score=jr.confidence,
-                            reason_code=reason,
-                            evidence=(span_text or target.text)[:200],
+                            score=0.75,
+                            reason_code="JUDGE_INJECTION_NO_SPAN",
+                            evidence=target.text[:200],
                         )
                     )
+            else:
+                jr = None
+                try:
+                    with ThreadPoolExecutor(max_workers=1) as pool:
+                        fut = pool.submit(
+                            judge_segment,
+                            target.text,
+                            source_type=request.source_type.value,
+                            timeout_ms=timeout_ms,
+                        )
+                        jr = fut.result(timeout=timeout_ms / 1000.0 + 0.25)
+                except (FuturesTimeout, Exception):
+                    from promptshield.detect.judge import JudgeResult
+
+                    jr = JudgeResult(
+                        is_injection=False,
+                        confidence=0.0,
+                        unknown=True,
+                        rationale="Judge timeout or error.",
+                    )
+                if jr.unknown:
+                    # never allow because of an error — quarantine if prefilter high
+                    if pref >= pref_hi or pre_risk >= float(
+                        (policy.get("sources") or {})
+                        .get(request.source_type.value, {})
+                        .get("quarantine", 0.7)
+                    ):
+                        judge_action = "quarantine"
+                        judge_inj = True
+                        pre_risk = max(pre_risk, 0.7)
+                else:
+                    judge_conf = jr.confidence
+                    if bool(jr.is_quotation_or_discussion) and not agent_directed:
+                        judge_quote = True
+                    judge_inj = bool(jr.is_injection) and not (
+                        bool(jr.is_quotation_or_discussion) and not agent_directed
+                    )
+                    if judge_inj:
+                        span_text = (
+                            jr.offending_span
+                            if jr.offending_span and jr.offending_span in target.text
+                            else None
+                        )
+                        if span_text:
+                            start = target.text.find(span_text)
+                            span = (start, start + len(span_text))
+                            judge_action = "sanitize"
+                            reason = "JUDGE_INJECTION_SPAN"
+                        else:
+                            span = (0, min(len(target.text), 200))
+                            judge_action = "quarantine"
+                            reason = "JUDGE_INJECTION_NO_SPAN"
+                        findings.append(
+                            Finding(
+                                id=f"j_{uuid.uuid4().hex[:8]}",
+                                segment_id=target.id,
+                                span=span,
+                                attack_types=[
+                                    AttackType(a)
+                                    for a in jr.attack_types
+                                    if a in {x.value for x in AttackType}
+                                ]
+                                or [AttackType.instruction_override],
+                                detector="judge",
+                                rule_id=None,
+                                score=jr.confidence,
+                                reason_code=reason,
+                                evidence=(span_text or target.text)[:200],
+                            )
+                        )
     judge_ms = (time.perf_counter() - t_j) * 1000
 
     risk = fuse_risk(

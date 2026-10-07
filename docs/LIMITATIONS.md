@@ -17,5 +17,7 @@
 - F/D on independent sealed: **not evaluated**.
 - Aria LLM agent: **not evaluated** (Arena uses scripted GullibleAgent).
 - Policy PUT is demo-local durable (`active_policy.yml`); not a multi-tenant DB.
-- Part D judge-first cascade: **not run** at `v2.0-rc` (deferred).
-- Playwright `docs/screens/` and axe: captured by `make accept` / e2e when environment allows; may be PARTIAL offline.
+- Part D cascade measured at `v2.0-rc2` (live); high FPR on synth/length_matched under full_cascade — not an independent claim.
+- No length-matched operating point with FPR≤2%; shipped template is `demo_config`.
+- X-ray Playwright route may stay PARTIAL if Next client still shows Loading while API has the scan.
+- $/1k documents for cascade not metered in harness.

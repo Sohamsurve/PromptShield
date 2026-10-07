@@ -1,32 +1,15 @@
-# Submission pack — PromptShield v2.0-rc
+# Submission pack — PromptShield v2.0-rc2
 
 ## Declared position
 
-- **Independent sealed F/D:** not evaluated (staging not arrived).
-- **Dev claimed fit (length-matched, no unmatched redteam):** ACTED **0.533**, FPR **0.116** (≤2% **NOT MET**).
-- **Judge evaluated on dev only (n=119, manip 56/56 on Sol), not on independent data.**
-- Cheaper `gpt-4o-mini` manip acc **0.446** — not used as downgrade.
-- **Conformance:** PASS=52 · PARTIAL=1 · FAIL=0 (Aria LLM PARTIAL).
-- **Accept:** FAILS=0 (`make accept`; offline-judge; no Docker; screens in `docs/screens/`).
-- **Part D judge-first cascade:** not run (deferred; stop after Part C).
-
-## Model usage
-
-| Component | Notes |
-|---|---|
-| Classifier | TF-IDF logreg + sliding windows; no explicit length feature (len↔score corr −0.485) |
-| Judge | Sol effort none≈low on this set; 5 s timeout; CI mocked / `JUDGE_FORCE_OFFLINE` |
-| Aria LLM | not evaluated (scripted GullibleAgent measured) |
-
-## README §0.4 / §1.3 (honesty)
-
-| Target | Status |
-|---|---|
-| Benign FPR ≤ 2% (independent) | **not evaluated** |
-| Held-out ACTED ≥ 0.85 (independent) | **not evaluated** |
-| Dev fit FPR ≤ 2% (length-matched C) | **NOT MET** (0.116) |
-| Gallery Arena outcomes | **in-sample** only |
+- **F1 / D1 provisional** — pre-registered cells; independent sealed **not evaluated**.
+- **Dev claimed fit (length-matched C):** ACTED **0.533**, FPR **0.116** (≤2% **NOT MET**).
+- **Operating sweep:** no risk-threshold point with FPR≤2% on length-matched (n_atk=110, n_neg=264); shipped `default.yml` marked `demo_config: true`.
+- **Judge:** Sol/mini/offline disagree on gray-zone sample; effort none/low both reach API.
+- **Cascade (live):** full_cascade lifts ACTED on synth_dev **0.862** (FPR 0.362) and realistic_dev_v20 **0.667** (FPR 0.056) vs no_judge.
+- **Conformance:** PASS=58 · PARTIAL=10 · FAIL=0.
+- **Accept:** three-lane fresh-clone harness (`make accept`).
 
 ## Tag
 
-**`v2.0-rc`**. Evidence: `docs/EVIDENCE.md`. Freeze: `docs/FREEZE.md`. Errata: `docs/ERRATA.md`. Conformance: `docs/CONFORMANCE.md`.
+**`v2.0-rc2`**. Freeze: `docs/FREEZE.md`. Errata: `docs/ERRATA.md`.
