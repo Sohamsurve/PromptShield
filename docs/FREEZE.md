@@ -86,4 +86,4 @@ Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit po
 
 ## Tag
 
-**`v2.0-rc`** → tip after accept + CONFORMANCE (docs tip pointer follows).
+**`v2.0-rc`** → `8403e15` (docs tip pointer follows; not retagged).
