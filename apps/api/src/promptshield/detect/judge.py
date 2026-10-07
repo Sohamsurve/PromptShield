@@ -81,6 +81,12 @@ def _load_dotenv_once() -> None:
                 continue
             key, val = line.split("=", 1)
             key = key.strip()
+            val = val.strip()
+            # Strip inline comments (KEY=value  # note)
+            if " #" in val:
+                val = val.split(" #", 1)[0].rstrip()
+            elif val.startswith("#"):
+                continue
             val = val.strip().strip("'").strip('"')
             if key in _DOTENV_KEYS and key not in os.environ:
                 os.environ[key] = val

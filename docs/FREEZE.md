@@ -55,7 +55,7 @@ Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit po
 | `eval/judge_eval_v14.py` | `f0a258297e07a6f782799fa37074699f0b786c806527e95a60b392ee85df2b78` | 42 |
 | `eval/judge_action_dev_eval_v14.py` | `de099aa06962e9e58f80bdaf31a670add59c45c86a2f42c73774aec3376b0725` | 42 |
 | `eval/conformance_audit_v20.py` | `474f9585484d7c82e9bbf97a1bd373bf2f0a30f423a3f46580b9b4b97213c371` | 42 |
-| `scripts/accept_v20.py` |  | — |
+| `scripts/accept_v20.py` | `2fd00d16c950090fbe1363bbb831fca4b6d18b50df13d2ebfccaa2d084630593` | — |
 | `eval/operating_curve_v20.py` | `2e872c17c692bb102eb95302a46d42a8baf82d4467f001bc10b6f362462478d2` | 42 |
 | `eval/judge_linkage_v20.py` | `33c023eabf1da4fa8d24fff6fcb1c68f01c151ecbc2d439aa46a9fc8a0562847` | 42 |
 | `eval/cascade_eval_v20.py` | `fd936a88889288b4222d3884334ad038c6a7e0548bebb94fc644191fec7ee3c4` | 42 |
