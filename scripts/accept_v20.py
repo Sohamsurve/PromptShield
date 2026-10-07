@@ -78,6 +78,9 @@ def _start_stack(clone: Path, env: dict) -> tuple[subprocess.Popen, subprocess.P
     api = clone / "apps" / "api"
     web = clone / "apps" / "web"
     e = {**os.environ, **env, "PYTHONPATH": f"{api / 'src'}:{clone}", "CLASSIFIER_PATH": ""}
+    # Host VIRTUAL_ENV breaks `uv run` inside the fresh clone
+    e.pop("VIRTUAL_ENV", None)
+    e.pop("PYTHONHOME", None)
     api_p = subprocess.Popen(
         ["uv", "run", "uvicorn", "promptshield.api.app:app", "--host", "127.0.0.1", "--port", "8000"],
         cwd=str(api),
@@ -86,8 +89,18 @@ def _start_stack(clone: Path, env: dict) -> tuple[subprocess.Popen, subprocess.P
         stderr=subprocess.STDOUT,
         text=True,
     )
-    if not _wait_http("http://127.0.0.1:8000/v1/healthz", 45):
-        raise RuntimeError("API healthz timeout")
+    if not _wait_http("http://127.0.0.1:8000/v1/healthz", 90):
+        # Drain a bit of API log for diagnosis (never includes secrets by convention)
+        try:
+            api_p.send_signal(signal.SIGTERM)
+            out, _ = api_p.communicate(timeout=3)
+        except Exception:
+            out = ""
+            try:
+                api_p.kill()
+            except Exception:
+                pass
+        raise RuntimeError(f"API healthz timeout log_tail={(out or '')[-500:]}")
     web_p = subprocess.Popen(
         ["pnpm", "dev", "--port", "3000"],
         cwd=str(web),
