@@ -1,0 +1,12 @@
+{
+  "eval_acted": true,
+  "eval_flagged_toggle": true,
+  "eval_met": true,
+  "eval_insample": true,
+  "cov_acted": true,
+  "cov_flagged": true,
+  "cov_insample": true,
+  "arena_insample": true,
+  "axe_serious_critical": 0,
+  "axe_ids": []
+}
