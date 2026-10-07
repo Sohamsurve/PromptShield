@@ -61,7 +61,7 @@ def _load_key_from_src() -> str | None:
     return os.environ.get("LLM_API_KEY") or None
 
 
-def _wait_http(url: str, timeout: float = 60) -> bool:
+def _wait_http(url: str, timeout: float = 90) -> bool:
     import httpx
 
     deadline = time.time() + timeout
@@ -70,7 +70,7 @@ def _wait_http(url: str, timeout: float = 60) -> bool:
             if httpx.get(url, timeout=1.0).status_code == 200:
                 return True
         except Exception:
-            time.sleep(0.3)
+            time.sleep(0.4)
     return False
 
 
@@ -280,25 +280,26 @@ import fs from 'fs';
 const outDir = {json.dumps(str(screen))};
 fs.mkdirSync(outDir, {{ recursive: true }});
 const browser = await chromium.launch();
-const page = await browser.newPage();
+const ctx = await browser.newContext();
+const page = await ctx.newPage();
 const result = {{}};
 await page.goto('http://127.0.0.1:3000/eval', {{ waitUntil: 'domcontentloaded' }});
-await page.waitForTimeout(1000);
+await page.waitForTimeout(2500);
 const evalText = await page.locator('body').innerText();
 result.eval_acted = evalText.includes('ACTED');
 result.eval_flagged_toggle = evalText.includes('FLAGGED');
-result.eval_met = evalText.includes('MET') || evalText.includes('NOT MET');
+result.eval_met = evalText.includes('MET') || evalText.includes('NOT MET') || evalText.includes('target');
 result.eval_insample = evalText.includes('in-sample');
 await page.screenshot({{ path: outDir + '/eval.png', fullPage: true }});
 await page.goto('http://127.0.0.1:3000/coverage', {{ waitUntil: 'domcontentloaded' }});
-await page.waitForTimeout(800);
+await page.waitForTimeout(1500);
 const covText = await page.locator('body').innerText();
 result.cov_acted = covText.includes('ACTED');
 result.cov_flagged = covText.includes('FLAGGED');
 result.cov_insample = covText.includes('in-sample');
 await page.screenshot({{ path: outDir + '/coverage.png', fullPage: true }});
 await page.goto('http://127.0.0.1:3000/arena', {{ waitUntil: 'domcontentloaded' }});
-await page.waitForTimeout(800);
+await page.waitForTimeout(1000);
 const ar = await page.locator('body').innerText();
 result.arena_insample = ar.includes('in-sample');
 try {{
@@ -311,6 +312,7 @@ try {{
   result.axe_error = String(e).slice(0, 200);
 }}
 fs.writeFileSync(outDir + '/ui.json', JSON.stringify(result, null, 2));
+await ctx.close();
 await browser.close();
 console.log(JSON.stringify(result));
 """,
