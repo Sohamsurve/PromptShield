@@ -11,6 +11,7 @@ Last updated: 2026-10-09 · v2.0-rc5 measurements
 - ROT13 false triggers on `eval/data/realistic_dev/benign.jsonl`: **0 / 350**.
 - Live gray-zone (`eval/live_grayzone_lm_v24.py`, rehashed before the run): n=20/20, ACTED recall **0.05**, FPR **0.0**, judge_calls **1**.
 - Presets through `policy_store` + `scan`, same slice, offline judge: Balanced ACTED **0.05** FPR **0.0**; Low false alarms ACTED **0.05** FPR **0.0**.
+- `make accept` @ `46b090a`: **FAILS=0** (a_nokey / b_force_offline / c_live). An earlier run on `9ca28b6` failed axe color-contrast on the offline banner; the banner now uses ink.
 - `pip-audit`: no known vulnerabilities. `pnpm audit`: 3 high (postcss, braces), recorded in `docs/SECURITY.md`.
 - dev_redteam on disk: A **110**, B **104**, C **300**, grayzone **75**, grayzone_v14 **119**, manip_v14 **44**, manip_v25 **40**. `source_doc` filled only on v25. v15 builder does not reproduce A/B/C.
 
