@@ -1358,3 +1358,15 @@
   context: any
   patterns:
   - regex: 忽略(之前|以上|所有)?(的)?(指令|规则)
+- id: PI-OVR-DEVMSG-001
+  attack_types:
+  - instruction_override
+  severity: 0.82
+  reason_code: OVR_PHRASE
+  langs:
+  - en
+  context: any
+  patterns:
+  - regex: (?i)treat\s+everything\s+after\s+this\s+line
+  - regex: (?i)as\s+a\s+developer\s+message
+  - regex: (?i)override\s+the\s+task\b

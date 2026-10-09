@@ -2,12 +2,35 @@
 
 from __future__ import annotations
 
+import os
 import re
+import shutil
 import struct
 import zlib
 
 from promptshield.adapters.common import make_segment
 from promptshield.domain import Segment, TrustLevel
+
+_TESSERACT_CANDIDATES = (
+    "/usr/local/bin/tesseract",
+    "/opt/homebrew/bin/tesseract",
+    "/usr/bin/tesseract",
+    os.path.expanduser("~/.local/tesseract/bin/tesseract"),
+)
+
+
+def _ocr_engine() -> str:
+    return (os.getenv("OCR_ENGINE") or "tesseract").strip().lower()
+
+
+def resolve_tesseract_cmd() -> str | None:
+    found = shutil.which("tesseract")
+    if found:
+        return found
+    for path in _TESSERACT_CANDIDATES:
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            return path
+    return None
 
 
 def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
@@ -26,22 +49,36 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
     if raw[:8] == b"\x89PNG\r\n\x1a\n":
         segs.extend(_png_text_chunks(raw, source_id, trust))
 
-    # Optional OCR
+    # OCR (README §3.2 / §5.1). OCR_ENGINE=tesseract uses pytesseract + the system binary.
+    engine = _ocr_engine()
     try:
+        if engine in {"off", "none", "disabled"}:
+            raise RuntimeError("ocr disabled")
+        if engine not in {"tesseract", ""}:
+            raise RuntimeError(f"unsupported OCR_ENGINE={engine}")
         import pytesseract  # type: ignore
         from PIL import Image
         import io
 
+        cmd = resolve_tesseract_cmd()
+        if not cmd:
+            raise RuntimeError("tesseract binary not installed")
+        pytesseract.pytesseract.tesseract_cmd = cmd
+
         img = Image.open(io.BytesIO(raw))
-        # variants (best-effort, union)
-        variants = [("original", img)]
+        # README §5.1 variants: original, contrast stretch, inverted, 2×, near-white.
+        variants: list[tuple[str, object]] = [("original", img)]
         try:
+            from PIL import ImageOps
+
             gray = img.convert("L")
-            variants.append(("grayscale", gray))
-            inv = Image.eval(gray, lambda x: 255 - x)
-            variants.append(("inverted", inv))
-            up = gray.resize((gray.width * 2, gray.height * 2))
-            variants.append(("upscale2x", up))
+            variants.append(("autocontrast", ImageOps.autocontrast(gray)))
+            variants.append(("inverted", ImageOps.invert(gray)))
+            variants.append(("upscale2x", gray.resize((gray.width * 2, gray.height * 2))))
+            variants.append(("nearwhite", _near_white_mask(gray)))
+            local = _local_contrast_mask(img)
+            if local is not None:
+                variants.append(("localcontrast", local))
         except Exception:
             pass
 
@@ -56,6 +93,18 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
                 line = line.strip()
                 if len(line) < 3 or line in seen:
                     continue
+                hidden_reason = None
+                if name in {"nearwhite", "localcontrast"}:
+                    hidden_reason = "img:low-contrast"
+                elif name != "original":
+                    # Other variants recover low-contrast attacks. OCR noise on
+                    # already-visible lines is not a second hidden segment.
+                    if not re.search(
+                        r"(?i)\b(?:ignore|instruction|reveal|secret|override|confidential)\b",
+                        line,
+                    ):
+                        continue
+                    hidden_reason = "img:low-contrast"
                 seen.add(line)
                 segs.append(
                     make_segment(
@@ -63,7 +112,7 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
                         text=line,
                         trust=trust,
                         kind="ocr",
-                        hidden_reason="img:low-contrast" if name != "original" else None,
+                        hidden_reason=hidden_reason,
                         path=f"ocr:{name}",
                     )
                 )
@@ -91,6 +140,49 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
             )
         )
     return segs
+
+
+def _near_white_mask(gray):
+    """Turn off-white glyphs (white-on-white attacks) into black on white.
+
+    Exact #FFFFFF text is identical to the page and cannot be recovered.
+    """
+    return gray.point(lambda p: 0 if 220 <= p <= 254 else 255)
+
+
+def _local_contrast_mask(img):
+    """Glyphs a few levels off the dominant background colour, any colour.
+
+    Exact matches to the background are not ink. A mask that covers most of
+    the image is noise and is skipped.
+    """
+    from PIL import Image
+
+    rgb = img.convert("RGB")
+    w, h = rgb.size
+    if w < 8 or h < 8:
+        return None
+    small = rgb.resize((max(1, w // 3), max(1, h // 3)))
+    colors = small.getcolors(maxcolors=500_000) or []
+    if not colors:
+        return None
+    bg = max(colors, key=lambda item: item[0])[1]
+    src = rgb.load()
+    out = Image.new("L", (w, h), 255)
+    op = out.load()
+    ink = 0
+    br, bgc, bb = bg
+    for y in range(h):
+        for x in range(w):
+            r, g, b = src[x, y]
+            delta = max(abs(r - br), abs(g - bgc), abs(b - bb))
+            if 3 <= delta <= 18:
+                op[x, y] = 0
+                ink += 1
+    frac = ink / max(1, w * h)
+    if frac < 0.0004 or frac > 0.08:
+        return None
+    return out
 
 
 def _png_text_chunks(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:

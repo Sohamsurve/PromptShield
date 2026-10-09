@@ -20,6 +20,43 @@ def _f(**kwargs) -> Finding:
     )
 
 
+def test_unlocalised_classifier_does_not_sanitise_short_span() -> None:
+    """A whole-segment classifier window is not a phrase to redact.
+
+    Image sanitize_span is 0.55, so a 0.77 hit on a 24-char title used to
+    sanitise even though the reason code is UNLOCALISED and clf sanitize is 0.85.
+    """
+    findings = [
+        Finding(
+            id="c",
+            segment_id="s",
+            span=(0, 24),
+            attack_types=[AttackType.instruction_override],
+            detector="classifier",
+            rule_id=None,
+            score=0.77,
+            reason_code="CLF_INJECTION_UNLOCALISED",
+            evidence="Quarterly Product Report",
+        )
+    ]
+    d = decide(
+        risk=0.06,
+        findings=findings,
+        trust=TrustLevel.T3,
+        source_type="image",
+        text_len=400,
+        policy={
+            "clf_graded": {"sanitize": 0.85, "quarantine": 0.92, "block": 0.98},
+            "max_removal_ratio": 0.4,
+            "sources": {
+                "image": {"block": 0.85, "quarantine": 0.45, "sanitize_span": 0.55}
+            },
+        },
+        max_signature_severity=0.0,
+    )
+    assert d == Decision.allow
+
+
 def test_judge_with_span_sanitises_not_blocks() -> None:
     findings = [_f(detector="judge", span=(10, 40), score=0.95)]
     d = decide(

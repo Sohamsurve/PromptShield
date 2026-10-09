@@ -21,6 +21,12 @@ def test_rot13_suspicious_short() -> None:
     assert any("ignore" in c.text.lower() for c in children)
 
 
+def test_rot13_benign_english_not_hidden() -> None:
+    text = "Quarterly Product Report"
+    children = decode_recursive(text)
+    assert not any("rot13" in c.decoded_from for c in children)
+
+
 def test_depth_cap() -> None:
     import base64
 

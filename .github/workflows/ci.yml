@@ -27,6 +27,10 @@ jobs:
         run: make train
       - name: Unit tests
         run: make test
+      - name: Install tesseract
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr
+      - name: Security checks
+        run: make security
       - name: Eval fast
         run: make eval-fast
       - name: Install Playwright Chromium

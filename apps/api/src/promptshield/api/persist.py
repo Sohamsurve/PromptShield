@@ -64,6 +64,11 @@ def connect() -> sqlite3.Connection:
         if str(path) != ":memory:":
             path.parent.mkdir(parents=True, exist_ok=True)
         _conn = sqlite3.connect(str(path), check_same_thread=False)
+        if str(path) != ":memory:":
+            try:
+                os.chmod(path, 0o600)
+            except OSError:
+                pass
         _conn.row_factory = sqlite3.Row
         _conn.execute("PRAGMA journal_mode=WAL")
         _init_schema(_conn)
@@ -130,9 +135,40 @@ def _prune(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def purge() -> dict[str, int]:
+    """Delete stored scans, tool decisions, and demo runs."""
+    conn = connect()
+    counts: dict[str, int] = {}
+    with _lock:
+        for table in ("scans", "tool_decisions", "runs"):
+            counts[table] = int(conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])
+            conn.execute(f"DELETE FROM {table}")
+        conn.commit()
+    return counts
+
+
+_SECRET = __import__("re").compile(r"sk-[A-Za-z0-9_\-]{8,}")
+_EMAIL = __import__("re").compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
+
+
+def _mask_text(value: str) -> str:
+    value = _SECRET.sub("[secret]", value)
+    value = _EMAIL.sub("[email]", value)
+    return value[:200]
+
+
+def _mask_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    findings = payload.get("findings")
+    if isinstance(findings, list):
+        for finding in findings:
+            if isinstance(finding, dict) and isinstance(finding.get("evidence"), str):
+                finding["evidence"] = _mask_text(finding["evidence"])
+    return payload
+
+
 def save_scan(result: ScanResult) -> None:
     conn = connect()
-    payload = result.model_dump(mode="json")
+    payload = _mask_payload(result.model_dump(mode="json"))
     with _lock:
         conn.execute(
             "INSERT OR REPLACE INTO scans(scan_id, created_at, decision, risk, payload) VALUES (?,?,?,?,?)",

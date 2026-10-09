@@ -908,10 +908,10 @@ and report INP and long tasks; fix virtualisation or batching until INP < 200 ms
 - **Eval:** `make eval` is a test: thresholds in `eval/thresholds.yml` fail CI if regressions exceed tolerance.
 
 ### 12.2 Security of the product itself
-- Upload limits (size, type sniffing), sandboxed parsing (resource/time caps; no archive expansion), no script execution, no remote fetches from adapters.
-- The LLM judge is itself an attack surface: no tools, schema-only output, short context, never the sole decider.
-- Authentication on the API for non-demo deployments (API key header); rate limiting; audit log tamper-evidence (hash chain optional).
-- Privacy: store minimal evidence (≤ 200 chars per finding); configurable retention; redact PII/secrets in logs.
+- Upload limits (size, type sniffing), no archive expansion, no script execution, no remote fetches from adapters. DOCX entries are size- and ratio-capped; PDF extraction stops at 40 pages. Adapters are still in-process (see `docs/SECURITY.md`).
+- The LLM judge is itself an attack surface: no tools, schema-only output, short context, never the sole decider. A per-minute and per-day budget falls back to the offline judge and records `judge_budget`.
+- The API binds to `127.0.0.1`. CORS is an allow-list. `DEMO_MODE=0` requires `X-API-Key` (constant-time compare) on scan, policy writes, red-team, eval run, and demo run. Rate limits are per IP and global.
+- Privacy: stored finding evidence is masked and kept to 200 characters. `make purge` deletes stored scans. SQLite files are created mode `0600`.
 
 ### 12.3 Responsible AI and honest limitations (document in `docs/LIMITATIONS.md`)
 - No firewall is perfect; adaptive attackers can evade detectors. Defence in depth + least privilege remain essential.
@@ -984,7 +984,7 @@ make demo-docker  # docker compose up -d (requires Docker Desktop unpaused)
 
 ```bash
 # Terminal A — API (Makefile exports PYTHONPATH so the package resolves)
-cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 0.0.0.0 --port 8000
+cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 127.0.0.1 --port 8000
 # Terminal B — web
 cd apps/web && pnpm dev
 # Open http://localhost:3000/arena

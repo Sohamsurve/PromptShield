@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { apiBase } from "@/lib/api";
 
@@ -13,6 +14,8 @@ const MORE_LINKS = [
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-xl">
       <div>
@@ -22,7 +25,7 @@ export default function SettingsPage() {
       <section className="rounded-panel border border-rule bg-surface p-4 space-y-3">
         <div className="text-sm">
           <div className="text-slate text-xs">API base</div>
-          <div className="font-mono text-sm mt-1 break-all">{apiBase()}</div>
+          <div className="font-mono text-sm mt-1 break-all">{mounted ? apiBase() : "—"}</div>
           <p className="text-xs text-slate mt-1">Set via NEXT_PUBLIC_API_BASE.</p>
         </div>
         <div className="text-sm">
@@ -34,7 +37,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setTheme(t)}
                 className={`rounded-panel border px-3 py-1.5 text-sm capitalize ${
-                  theme === t ? "border-uv text-uv" : "border-rule"
+                  mounted && theme === t ? "border-uv text-uv" : "border-rule"
                 }`}
               >
                 {t}

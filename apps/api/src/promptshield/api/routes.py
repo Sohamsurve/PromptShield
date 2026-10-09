@@ -492,6 +492,11 @@ def demo_run(body: dict[str, Any]) -> dict[str, Any]:
         raise HTTPException(400, "fixture_id required")
     firewall = bool(body.get("firewall", True))
     text_scanning = bool(body.get("text_scanning", True))
+    from promptshield.api.security import demo_mode
+
+    # Disabling text scanning is a demo-only switch on this endpoint.
+    if not text_scanning and not demo_mode():
+        text_scanning = True
     lanes = body.get("lanes")
     run_id = f"run_{uuid.uuid4().hex[:8]}"
     results = []

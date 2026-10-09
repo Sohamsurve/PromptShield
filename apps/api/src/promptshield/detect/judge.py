@@ -259,6 +259,38 @@ def _build_payload(model: str, system: str, user: str, effort: str | None) -> di
     return payload
 
 
+_BUDGET_MIN: list[float] = []
+_BUDGET_DAY: list[float] = []
+_PENDING_DEGRADED: list[str] = []
+
+
+def consume_judge_degraded() -> list[str]:
+    out = list(_PENDING_DEGRADED)
+    _PENDING_DEGRADED.clear()
+    return out
+
+
+def _budget_exhausted() -> bool:
+    now = time.time()
+    try:
+        per_min = int(os.getenv("JUDGE_BUDGET_PER_MIN") or "60")
+        per_day = int(os.getenv("JUDGE_BUDGET_PER_DAY") or "2000")
+    except ValueError:
+        per_min, per_day = 60, 2000
+    while _BUDGET_MIN and now - _BUDGET_MIN[0] >= 60:
+        _BUDGET_MIN.pop(0)
+    while _BUDGET_DAY and now - _BUDGET_DAY[0] >= 86400:
+        _BUDGET_DAY.pop(0)
+    return len(_BUDGET_MIN) >= per_min or len(_BUDGET_DAY) >= per_day
+
+
+def _note_spend(tokens: int, cost: float) -> None:
+    now = time.time()
+    _BUDGET_MIN.append(now)
+    _BUDGET_DAY.append(now)
+    log.info("judge spend tokens=%s cost_usd=%.6f", int(tokens), float(cost))
+
+
 def judge_segment(
     text: str,
     *,
@@ -290,6 +322,13 @@ def judge_segment(
         _CACHE[key] = result
         return result
 
+    if _budget_exhausted():
+        _PENDING_DEGRADED.append("judge_budget")
+        result = _offline_heuristic(text, source_type)
+        result.rationale = "Judge budget exhausted; offline judge."
+        _CACHE[key] = result
+        return result
+
     # reasoning_effort only for reasoning models (OpenAI rejects it on gpt-4o-mini etc.)
     if _is_reasoning_model(model):
         effort = cfg["reasoning_effort"] or "low"
@@ -311,7 +350,11 @@ def judge_segment(
         with client_ctx as client:
             resp = client.post(f"{base.rstrip('/')}/chat/completions", headers=headers, json=payload)
             resp.raise_for_status()
-            content = resp.json()["choices"][0]["message"]["content"]
+            body = resp.json()
+            content = body["choices"][0]["message"]["content"]
+            usage = body.get("usage") or {}
+            tokens = int(usage.get("total_tokens") or 0)
+            _note_spend(tokens, tokens * 0.000002)
         parsed = _parse_model_json(content, text)
         if parsed is None:
             result = _unknown("Invalid judge JSON.")

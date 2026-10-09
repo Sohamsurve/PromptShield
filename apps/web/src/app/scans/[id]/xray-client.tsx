@@ -94,29 +94,34 @@ function renderWithHighlights(
 
   const nodes: ReactNode[] = [];
   let cursor = 0;
-  const pushPlain = (end: number) => {
+  const pushPlain = (end: number, i: number) => {
     if (end > cursor) {
       nodes.push(
-        <span key={`p-${cursor}`}>{renderWithInvisibleChips(text.slice(cursor, end))}</span>,
+        <span key={`p-${i}-${cursor}`}>{renderWithInvisibleChips(text.slice(cursor, end))}</span>,
       );
       cursor = end;
     }
   };
-  for (const m of marks) {
+  marks.forEach((m, i) => {
     const lo = Math.max(0, Math.min(m.lo, text.length));
     const hi = Math.max(lo, Math.min(m.hi, text.length));
-    pushPlain(lo);
-    const slice = text.slice(lo, hi);
+    if (hi <= cursor) return;
+    const start = Math.max(lo, cursor);
+    pushPlain(start, i);
+    const slice = text.slice(start, hi);
     if (m.kind === "finding") {
       nodes.push(
-        <mark key={`f-${lo}`} className="bg-[color-mix(in_srgb,var(--uv)_35%,transparent)] rounded-sm">
+        <mark
+          key={`f-${i}-${start}-${hi}`}
+          className="bg-[color-mix(in_srgb,var(--uv)_35%,transparent)] rounded-sm"
+        >
           {renderWithInvisibleChips(slice)}
         </mark>,
       );
     } else {
       nodes.push(
         <span
-          key={`h-${lo}`}
+          key={`h-${i}-${start}-${hi}`}
           className="bg-[color-mix(in_srgb,var(--sanitize)_22%,transparent)] rounded-sm"
           title="Hidden / metadata segment"
         >
@@ -125,8 +130,8 @@ function renderWithHighlights(
       );
     }
     cursor = hi;
-  }
-  pushPlain(text.length);
+  });
+  pushPlain(text.length, marks.length);
   return nodes;
 }
 
@@ -242,6 +247,11 @@ export function XRayClient({ scanId: scanIdProp }: { scanId?: string }) {
             <h1 className="text-xl font-bold font-mono tracking-tight">{scan.scan_id}</h1>
             <VerdictBadge decision={scan.decision} />
             <span className="text-sm text-slate font-mono">risk {scan.risk.toFixed(2)}</span>
+            {scan.decision !== "allow" && scan.findings?.[0] ? (
+              <span className="text-xs text-slate font-mono">
+                via {scan.findings[0].reason_code ?? "finding"} {(scan.findings[0].score ?? 0).toFixed(2)}
+              </span>
+            ) : null}
             <span className="text-xs text-slate">policy v{scan.policy_version ?? "—"}</span>
           </div>
           {(scan.degraded ?? []).length ? (

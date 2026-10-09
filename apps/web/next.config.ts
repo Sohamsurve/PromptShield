@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const internalApi = process.env.INTERNAL_API_URL ?? "http://127.0.0.1:8000";
 
+const isDev = process.env.NODE_ENV !== "production";
+const scriptSrc = isDev ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'" : "script-src 'self'";
+const styleSrc = isDev ? "style-src 'self' 'unsafe-inline'" : "style-src 'self'";
+
 const nextConfig: NextConfig = {
   transpilePackages: ["@promptshield/shared-types"],
   poweredByHeader: false,
@@ -15,11 +19,11 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            // 'unsafe-eval' required for Next.js / React Fast Refresh in development.
-            // Without it, client components never hydrate (X-ray stuck on "Loading scan…").
-            value:
-              "default-src 'self'; connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; font-src 'self' data:;",
+            value: `default-src 'self'; connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; img-src 'self' data:; ${styleSrc}; ${scriptSrc}; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'`,
           },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Frame-Options", value: "DENY" },
         ],
       },
     ];

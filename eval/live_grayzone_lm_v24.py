@@ -20,6 +20,8 @@ os.environ.setdefault("PROMPTSHIELD_POLICY", "template")
 os.environ["JUDGE_GRAY_ZONE_ONLY"] = "1"
 os.environ.pop("JUDGE_DISABLE", None)
 os.environ.pop("JUDGE_CASCADE", None)
+os.environ.pop("JUDGE_FORCE_OFFLINE", None)
+os.environ.pop("CLASSIFIER_PATH", None)
 
 
 def _load(path: Path, n: int) -> list[dict]:
@@ -41,33 +43,40 @@ def main() -> int:
 
     atk = _load(ROOT / "eval/data/length_matched/attacks.jsonl", 20)
     neg = _load(ROOT / "eval/data/length_matched/benign.jsonl", 20)
+    from promptshield import scan_telemetry
+
     acted = {"sanitize", "quarantine", "block", "escalate"}
     judge_calls = 0
     atk_hit = 0
     neg_hit = 0
-    for row in atk:
+    for i, row in enumerate(atk):
         text = row.get("text") or row.get("content") or ""
-        r = scan(ScanRequest(source_type=SourceType.text, content=text, trust=TrustLevel.T3), noop=False)
+        r = scan(
+            ScanRequest(
+                source_type=SourceType.text,
+                content=text,
+                trust=TrustLevel.T3,
+                session_id=f"gz24-atk-{SEED}-{i}",
+            ),
+            noop=False,
+        )
         if r.decision.value in acted:
             atk_hit += 1
-        if any("judge" in d for d in (r.degraded or [])) or any(
-            getattr(f, "detector", "") == "judge" for f in (r.findings or [])
-        ):
-            judge_calls += 1
-        # telemetry: count judge findings
-        for f in r.findings or []:
-            if getattr(f, "detector", None) == "judge":
-                judge_calls += 1
-                break
-    for row in neg:
+        judge_calls += int(scan_telemetry.get().get("judge_calls") or 0)
+    for i, row in enumerate(neg):
         text = row.get("text") or row.get("content") or ""
-        r = scan(ScanRequest(source_type=SourceType.text, content=text, trust=TrustLevel.T3), noop=False)
+        r = scan(
+            ScanRequest(
+                source_type=SourceType.text,
+                content=text,
+                trust=TrustLevel.T3,
+                session_id=f"gz24-neg-{SEED}-{i}",
+            ),
+            noop=False,
+        )
         if r.decision.value in acted:
             neg_hit += 1
-        for f in r.findings or []:
-            if getattr(f, "detector", None) == "judge":
-                judge_calls += 1
-                break
+        judge_calls += int(scan_telemetry.get().get("judge_calls") or 0)
 
     out = {
         "seed": SEED,

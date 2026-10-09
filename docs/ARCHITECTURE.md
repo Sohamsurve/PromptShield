@@ -34,13 +34,16 @@ Session analyser maintains per-`session_id` risk with decay, payload-split resca
 | `guard/` | Taint, tool firewall, canary/secrets, egress, ingest |
 | `agent/` | Aria + GullibleAgent (scripted demo; LLM Aria not evaluated) |
 | `apps/web/` | Console, Arena, X-ray, Coverage, Policy, Eval, Red-team (ACTED headline) |
-| `api/policy_store.py` | Durable demo-local policy versions (`active_policy.yml`; sealed `default.yml` untouched) |
+| `api/policy_store.py` | Durable demo-local policy versions (`active_policy.yml`; sealed `default.yml` untouched). Block thresholds are capped at 0.95. |
+| `api/security.py` | Demo-mode API key (constant-time) and per-IP / global rate limits. Bind `127.0.0.1`. |
+| `agent/aria.py` | Image uploads become spotlighted extracted text. Raw pixels only if `PROMPTSHIELD_PASS_RAW_IMAGE=1`. |
 
 ## Fail modes
 
 - Tool guard errors → **deny** (side effects).
 - Scan errors → quarantine (policy `fail_mode.scan_error`).
-- Judge never sole-decides; fusion always includes other layers.
+- Judge never sole-decides; fusion always includes other layers. A live key enables the cascade unless `JUDGE_CASCADE=0`. Budget exhaustion degrades to the offline judge and records `judge_budget`.
+- Adapters do not fetch URLs. DOCX zip entries are size- and ratio-capped. PDF extraction stops at 40 pages.
 - Tool firewall: provenance may waive **taint only**; never domain allowlist / path deny / canary rules. Ambiguous destinations → `confirm`.
 
 ## Contracts

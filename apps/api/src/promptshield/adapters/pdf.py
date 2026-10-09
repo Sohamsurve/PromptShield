@@ -58,7 +58,9 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
                 )
             )
 
-    for page_index in range(len(doc)):
+    # Cap pages so a hostile PDF cannot pin the parser.
+    page_count = min(len(doc), 40)
+    for page_index in range(page_count):
         page = doc[page_index]
         # annotations
         for annot in page.annots() or []:
@@ -90,12 +92,11 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
                     if size < 2.0:
                         reason = "pdf:font<2pt"
                         kind = "hidden"
-                    # color 16777215 = white
-                    if color in (16777215, 0xFFFFFF) or color == 1:
-                        # white text — treat as hidden when small-ish
-                        if size <= 8:
-                            reason = reason or "pdf:white-on-white"
-                            kind = "hidden"
+                    # color 16777215 = white. Size does not matter: 12 pt white
+                    # text is still invisible on a white page.
+                    if color in (16777215, 0xFFFFFF) or (color == 1 and size <= 8):
+                        reason = reason or "pdf:white-on-white"
+                        kind = "hidden"
                     segs.append(
                         make_segment(
                             source_id=source_id,

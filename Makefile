@@ -1,4 +1,4 @@
-.PHONY: setup dev test e2e eval eval-fast train gen-types fixtures scan-mcp-output demo demo-docker _demo-api lint accept conformance
+.PHONY: setup dev test e2e eval eval-fast train gen-types fixtures scan-mcp-output demo demo-docker _demo-api lint accept conformance security
 
 ROOT := $(abspath .)
 API_DIR := $(ROOT)/apps/api
@@ -22,7 +22,7 @@ setup:
 
 dev:
 	docker compose up -d redis
-	cd $(API_DIR) && $(UV) run uvicorn promptshield.api.app:app --reload --host 0.0.0.0 --port 8000 & \
+	cd $(API_DIR) && $(UV) run uvicorn promptshield.api.app:app --reload --host 127.0.0.1 --port 8000 & \
 	cd $(WEB_DIR) && $(PNPM) dev
 
 test:
@@ -57,14 +57,14 @@ scan-mcp-output:
 # PYTHONPATH is exported above so `uv run uvicorn promptshield…` resolves the package.
 demo: setup
 	@echo "Non-Docker demo path (no Compose required):"
-	@echo "  Terminal A: make -C $(ROOT) _demo-api   # or: cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 0.0.0.0 --port 8000"
+	@echo "  Terminal A: make -C $(ROOT) _demo-api   # or: cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 127.0.0.1 --port 8000"
 	@echo "  Terminal B: cd apps/web && $(PNPM) dev"
 	@echo "  Open http://localhost:3000/arena"
 	@echo "Verified: POST /v1/scan against host API (see docs/FRESH_CLONE.md)."
 	@echo "Docker (when daemon unpaused): make demo-docker"
 
 _demo-api:
-	cd $(API_DIR) && $(UV) run uvicorn promptshield.api.app:app --reload --host 0.0.0.0 --port 8000
+	cd $(API_DIR) && $(UV) run uvicorn promptshield.api.app:app --reload --host 127.0.0.1 --port 8000
 
 demo-docker: setup
 	docker compose up -d
@@ -80,3 +80,10 @@ conformance:
 # End-to-end acceptance from host (no Docker). Non-zero on any failure. Writes docs/ACCEPT_RUN.md.
 accept:
 	cd $(ROOT) && $(UV) --directory $(API_DIR) run python $(ROOT)/scripts/accept_v20.py
+
+purge:
+	cd $(API_DIR) && PYTHONPATH=src $(UV) run python -c "from promptshield.api.persist import purge; print(purge())"
+
+security:
+	cd $(API_DIR) && $(UV) run pytest -q tests/test_product_security.py tests/test_whitetext_pack.py tests/test_image_agent_taint.py
+	cd $(ROOT) && $(UV) --directory $(API_DIR) run python $(ROOT)/scripts/security_scan.py

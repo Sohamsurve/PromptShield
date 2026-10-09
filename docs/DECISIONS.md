@@ -110,3 +110,14 @@ Format: date · decision · reason.
 - **Regression queue:** `POST /v1/redteam/regression` appends to local `regression_queue.jsonl` under policy data dir (add-only; not sealed `eval/data`).
 - **Console feed:** plain scrollable table + CSS sparkline (not TanStack Virtual / Recharts) — recorded PARTIAL for C10.
 - **Tag:** `v2.0-rc3` already existed → ship **`v2.0-rc4`**.
+
+## 2026-10-08
+
+- **OCR dependency:** `pytesseract` is a required API dependency (`apps/api/pyproject.toml`). The Tesseract binary is a system package (Docker `tesseract-ocr`, or `brew install tesseract`). The image adapter reads `OCR_ENGINE` (default `tesseract`) and resolves the binary on PATH plus `/usr/local/bin`, `/opt/homebrew/bin`, and `~/.local/tesseract/bin`. Reason: `.env` set `OCR_ENGINE=tesseract` but neither the wheel nor the binary was installed, so every image degraded to `ocr_unavailable`. On this Intel Mac, Homebrew has no bottles and the source build failed (glib/setuptools); installed conda-forge `tesseract 5.5.3` at `~/.local/tesseract`.
+- **ROT13 children:** emit only when the rotated text contains an instruction cue (`ignore`, `instruction`, `you are`, …). Reason: any short English line passed `_looks_useful` after ROT13, so `PI-014` painted benign report lines as hidden segments.
+- **Unlocalised classifier spans:** `CLF_INJECTION_UNLOCALISED` is not a sanitise span. Reason: fusion treated a whole-segment window as localised against the full document, so image `sanitize_span` 0.55 redacted “Quarterly Product Report” at score 0.77. Quarantine stays at `clf_graded.quarantine`.
+- **White-on-white images:** OCR a near-white mask (luminance 220–254) and mark those lines `img:low-contrast`. A blank gap is not a finding. Reason: quarantining every tall empty band flagged ordinary paragraph spacing (`scn_4adc25fd`) without reading any hidden sentence. Exact `#FFFFFF` text is not in the pixels and stays a limitation.
+- **Any-colour low contrast:** pixels 3–18 levels off the dominant background colour are OCR'd as `img:low-contrast`. Reason: `whitetext_testpack` dark-background and coloured-background images were allowed by the white-only mask.
+- **Displayed risk:** when the decision is not allow, reported risk is at least the highest finding score, and the X-ray header names that finding. Reason: Sanitised at fused risk 0.06 hid the span that caused the action.
+- **Image agent input:** spotlighted extracted text only, context risk floored so side-effect tools confirm. Raw pixels only if `PROMPTSHIELD_PASS_RAW_IMAGE=1`.
+- **API defaults:** bind `127.0.0.1`. `DEMO_MODE=0` requires `X-API-Key`. Live judge key enables the cascade unless `JUDGE_CASCADE=0`.

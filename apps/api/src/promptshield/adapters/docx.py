@@ -11,6 +11,27 @@ from promptshield.adapters.common import make_segment
 from promptshield.domain import Segment, TrustLevel
 
 W_NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+_MAX_DOCX_ENTRY = 8_000_000
+_MAX_DOCX_TOTAL = 20_000_000
+_MAX_DOCX_RATIO = 80
+
+
+def _reject_zip_bomb(zf: zipfile.ZipFile) -> None:
+    total = 0
+    for info in zf.infolist():
+        if info.file_size > _MAX_DOCX_ENTRY or info.file_size < 0:
+            raise ValueError("docx entry too large")
+        if info.compress_size > 0 and info.file_size / info.compress_size > _MAX_DOCX_RATIO:
+            raise ValueError("docx compression ratio")
+        total += info.file_size
+        if total > _MAX_DOCX_TOTAL:
+            raise ValueError("docx uncompressed total")
+
+
+def _xml_root(data: bytes):
+    # stdlib ElementTree does not resolve external entities.
+    parser = ET.XMLParser()
+    return ET.fromstring(data, parser=parser)
 
 
 def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
@@ -35,6 +56,7 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
     segs: list[Segment] = []
     try:
         zf = zipfile.ZipFile(io.BytesIO(raw))
+        _reject_zip_bomb(zf)
     except Exception:
         return [
             make_segment(
@@ -72,7 +94,7 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
     # comments
     if "word/comments.xml" in zf.namelist():
         try:
-            root = ET.fromstring(zf.read("word/comments.xml"))
+            root = _xml_root(zf.read("word/comments.xml"))
             for comment in root.findall(".//w:comment", W_NS):
                 texts = [t.text or "" for t in comment.findall(".//w:t", W_NS)]
                 body = "".join(texts).strip()
@@ -99,7 +121,7 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
 def _extract_document_xml(xml_bytes: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
     segs: list[Segment] = []
     try:
-        root = ET.fromstring(xml_bytes)
+        root = _xml_root(xml_bytes)
     except Exception:
         return segs
 

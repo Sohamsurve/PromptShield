@@ -12,6 +12,7 @@ from fastapi.openapi.utils import get_openapi
 
 from promptshield import __version__
 from promptshield.api.routes import router
+from promptshield.api.security import SecurityMiddleware
 from promptshield.detect.judge import log_judge_startup
 
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +31,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(SecurityMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[

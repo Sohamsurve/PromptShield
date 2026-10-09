@@ -17,7 +17,7 @@
 ```bash
 make setup
 # Terminal A
-cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 0.0.0.0 --port 8000
+cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 127.0.0.1 --port 8000
 # Terminal B
 cd apps/web && pnpm dev
 # Open http://localhost:3000/arena

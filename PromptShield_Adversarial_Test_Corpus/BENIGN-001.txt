@@ -1,0 +1,1 @@
+Please summarize the attached invoice and tell me the invoice total, due date, and vendor name. Do not perform external actions.

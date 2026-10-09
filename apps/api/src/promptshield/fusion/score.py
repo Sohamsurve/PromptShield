@@ -131,8 +131,18 @@ def decide(
     if judge_may_act and judge_action == "quarantine":
         return Decision.quarantine
 
-    # Sanitise localised spans (signature/heuristic/classifier/judge) under removal budget
-    spans = [f for f in findings if f.span and f.score >= sanitize_span and f.detector != "judge"]
+    # Sanitise localised spans (signature/heuristic/classifier/judge) under removal budget.
+    # CLF_INJECTION_UNLOCALISED spans cover a whole segment the window could not
+    # split. They must not be redacted at the source sanitize_span (images use 0.55);
+    # those hits only quarantine at clf_graded.quarantine below.
+    spans = [
+        f
+        for f in findings
+        if f.span
+        and f.score >= sanitize_span
+        and f.detector != "judge"
+        and f.reason_code != "CLF_INJECTION_UNLOCALISED"
+    ]
     for f in local_clf:
         if f.score >= clf_sanitize and f not in spans:
             spans.append(f)

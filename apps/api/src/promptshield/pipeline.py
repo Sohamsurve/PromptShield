@@ -325,8 +325,16 @@ def scan(
     from promptshield.detect.cascade import prefilter_score, run_chunked_judge
 
     casc = (policy.get("judge") or {}).get("cascade") or {}
-    cascade_env = (os.getenv("JUDGE_CASCADE") or "").strip() in {"1", "true", "yes"}
-    cascade_on = cascade_env or bool(casc.get("enabled"))
+    cascade_env = (os.getenv("JUDGE_CASCADE") or "").strip().lower()
+    cascade_forced_off = cascade_env in {"0", "false", "no"}
+    cascade_forced_on = cascade_env in {"1", "true", "yes"}
+    from promptshield.detect.judge import judge_config
+
+    # Live key → full cascade is the default. Offline stays on the policy flag.
+    live_judge = judge_config().get("judge_mode") == "live"
+    cascade_on = False if cascade_forced_off else (
+        cascade_forced_on or bool(casc.get("enabled")) or live_judge
+    )
     gray_only = (os.getenv("JUDGE_GRAY_ZONE_ONLY") or "").strip() in {"1", "true", "yes"}
     judge_disabled = (os.getenv("JUDGE_DISABLE") or "").strip() in {"1", "true", "yes"}
     pref = prefilter_score(max_sev=max_sev, heur=heur, clf_prob=clf_prob)
@@ -580,9 +588,29 @@ def scan(
         if decision == Decision.allow:
             sanitized = redact_base
 
-    if "ocr_unavailable" in degraded and request.source_type == SourceType.image and not findings:
-        decision = Decision.quarantine
+    # README §5.1: OCR failure → quarantine images (cannot verify hidden text).
+    # Do not let a classifier hit on the placeholder string keep decision=allow.
+    if "ocr_unavailable" in degraded and request.source_type == SourceType.image:
+        if decision == Decision.allow:
+            decision = Decision.quarantine
         degraded = list(dict.fromkeys(degraded))
+
+    # An acted decision must not display a near-zero fused risk. The number
+    # shown is at least the score of the finding that justified the action.
+    # Rounding to 4 decimals must not drop the displayed value below that score.
+    if decision != Decision.allow and findings:
+        driver = max(float(f.score) for f in findings)
+        risk = max(risk, driver)
+        shown = round(risk, 4)
+        if shown < driver:
+            shown = (int(driver * 10000) + 1) / 10000
+        risk = shown
+    else:
+        risk = round(risk, 4)
+
+    from promptshield.detect.judge import consume_judge_degraded
+
+    degraded.extend(consume_judge_degraded())
 
     attack_types = sorted({a for f in findings for a in f.attack_types}, key=lambda x: x.value)
     total_ms = (time.perf_counter() - t0) * 1000
@@ -604,7 +632,7 @@ def scan(
     return ScanResult(
         scan_id=scan_id,
         decision=decision,
-        risk=round(risk, 4),
+        risk=risk,
         attack_types=attack_types,
         findings=findings,
         segments=_segment_summaries(segments),

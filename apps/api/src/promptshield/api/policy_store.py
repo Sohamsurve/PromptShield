@@ -135,6 +135,28 @@ def list_versions() -> list[dict[str, Any]]:
     return items
 
 
+_MAX_BLOCK = 0.95
+
+
+def _clamp_blocks(body: dict[str, Any]) -> dict[str, Any]:
+    """A block threshold above 0.95 would let high-risk content through."""
+    sources = body.get("sources")
+    if isinstance(sources, dict):
+        for cfg in sources.values():
+            if isinstance(cfg, dict) and "block" in cfg:
+                try:
+                    cfg["block"] = min(float(cfg["block"]), _MAX_BLOCK)
+                except (TypeError, ValueError):
+                    cfg["block"] = _MAX_BLOCK
+    graded = body.get("clf_graded")
+    if isinstance(graded, dict) and "block" in graded:
+        try:
+            graded["block"] = min(float(graded["block"]), _MAX_BLOCK)
+        except (TypeError, ValueError):
+            graded["block"] = _MAX_BLOCK
+    return body
+
+
 def save_policy(body: dict[str, Any], *, note: str = "") -> dict[str, Any]:
     """Write active policy YAML and append a versioned snapshot. Never touches default.yml."""
     _ensure()
@@ -147,6 +169,7 @@ def save_policy(body: dict[str, Any], *, note: str = "") -> dict[str, Any]:
     body.pop("_versions", None)
     body.pop("_meta", None)
     body.pop("note", None)
+    body = _clamp_blocks(body)
     body["version"] = version
     active.write_text(yaml.safe_dump(body, sort_keys=False, allow_unicode=True), encoding="utf-8")
     snap = {

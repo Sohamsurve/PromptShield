@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import {
   Crosshair,
@@ -40,7 +41,18 @@ const MOBILE_NAV = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
-  const dark = resolvedTheme === "dark";
+  const [mounted, setMounted] = useState(false);
+  const [limited, setLimited] = useState(false);
+  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    fetch("/api/v1/healthz")
+      .then((r) => r.json())
+      .then((body) => setLimited(body?.judge_mode !== "live"))
+      .catch(() => setLimited(true));
+  }, []);
+  // resolvedTheme is only known after mount (system / saved preference).
+  // Rendering it during SSR disagrees with the client and breaks hydration.
+  const dark = mounted && resolvedTheme === "dark";
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-paper text-ink overflow-x-hidden">
@@ -82,6 +94,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main id="main" className="flex-1 min-w-0 pb-20 md:pb-0">
+        {limited ? (
+          <p className="border-b border-rule bg-surface px-4 py-2 text-xs text-sanitize" role="status">
+            Limited detection: the judge is offline. Signatures and the classifier still run.
+          </p>
+        ) : null}
         {children}
       </main>
       <CommandPalette />

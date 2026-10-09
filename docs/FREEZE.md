@@ -73,7 +73,9 @@ Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit po
 | `eval/cascade_eval_v20.py` | `fd936a88889288b4222d3884334ad038c6a7e0548bebb94fc644191fec7ee3c4` | 42 |
 | `eval/synth/build_realistic_dev_v20.py` | `54b838f7f2ffe4ef8efcfa57141be62e92f667ad9c0859f2de542562ae21f545` | 42 |
 | `apps/api/src/promptshield/detect/cascade.py` | `8e6098bd91bec535089f20726107f0bdce6f41553efb06a5afe514a93539d540` | — |
-| `eval/live_grayzone_lm_v24.py` | `475c43e718574e7489b0057618e0543bc0f10d6c542798cef1785d029e4d3b51` | 42 |
+| `eval/live_grayzone_lm_v24.py` | `1ed8d14046a40903479f28b9d2ea998148facd47f903bcf77ab7102278b69523` | rehashed 2026-10-09 before rerun (unique session_id, telemetry judge_calls) |
+| `eval/preset_policy_path_v25.py` | `a15e66b562262ccf1737d1a40a43431220f36c7aa9c9cf106b60e91fb3787be0` | hashed before first run |
+| `eval/audit_batch_a_sources_v23.py` | `86d7be0355b602ada3059e191b6d94e7fd3f30b1db72da6132c2dacde1ebbe68` | count text only; does not rewrite labels |
 | `apps/api/src/promptshield/api/upload_guard.py` | `7e8269c283b9fc309079d2a5aa4f887f719878c1b24ddc94277ba39e2d18e16e` | — |
 | `apps/api/tests/test_upload_hardening.py` | `faf7536bd9604b00d7dfe777454e0d2642a7fb4308a2592fe4b595871b7a236e` | — |
 | `apps/web/e2e/ui-requirements.spec.ts` | `e042e51eafeb53dd75f2733b7aee5f5eab2b7476cd2ec05985e9f26b06e74e9b` | — |
@@ -129,6 +131,15 @@ Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit po
 | Path | SHA-256 |
 |---|---|
 | `apps/api/src/promptshield/policies/default.yml` | `f294359aae437022208e08a5603da41cfc43d1af9ac1acbceac1323385c992d5` |
+
+## whitetext_testpack (hashed before first measured run)
+
+| Path | SHA-256 | Bytes |
+|---|---|---:|
+| `whitetext_testpack/` (name+bytes of every file, sorted) | `6b24cbfd6605fa0104ee9ceb3e6ea112e71180f44468b88544b945f991503d98` | 366914 |
+| `eval/data/dev_redteam/judge_manip_v25.jsonl` | `6ec9ed3c4da9ff05733373ababcdfdda37e3807e12da61492d680cf160a1dc48` | 11237 |
+| `scripts/rot13_false_trigger.py` | `e9a61fd8b03e97e8a8f5f68f6b16a1237334111a6111046a45a88db59509f082` | — |
+| `scripts/security_scan.py` | `2e4cbfc3447c938a203501bde4c5ba960918609b230b61e71cb0f30cb0988fa5` | — |
 
 Fit-time edit (v1.4→v2.0-rc2): clf_graded + fusion for length-matched C; added `demo_config: true` and cascade stanza (`enabled: false`) because **no** operating point on length-matched C meets FPR≤2%.
 

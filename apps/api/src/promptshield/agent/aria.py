@@ -24,7 +24,33 @@ from promptshield.domain import (
 )
 from promptshield.guard.egress import guard_output
 from promptshield.guard.tool_firewall import guard_tool_call
+from promptshield.neutralize.redact import spotlight
 from promptshield.pipeline import scan
+
+
+def _pass_raw_image() -> bool:
+    """Raw image bytes reach the agent only when policy explicitly allows it."""
+    return (os.getenv("PROMPTSHIELD_PASS_RAW_IMAGE") or "").strip().lower() in {"1", "true", "yes"}
+
+
+def _agent_view(scan_result, source_type: SourceType, fallback: str) -> tuple[str, float]:
+    """Text the agent may see, and the context risk used for taint.
+
+    Image uploads never include the raw pixels unless PROMPTSHIELD_PASS_RAW_IMAGE=1.
+    The extracted text is spotlighted and tainted so side-effecting tools confirm.
+    """
+    if scan_result.decision in {Decision.block, Decision.quarantine}:
+        return "[content quarantined by PromptShield]", max(float(scan_result.risk), 0.95)
+    body = scan_result.sanitized_text or fallback or ""
+    if source_type == SourceType.image and not _pass_raw_image():
+        wrapped, _reminder = spotlight(
+            scan_result.scan_id,
+            "image",
+            "T3",
+            body,
+        )
+        return wrapped, max(float(scan_result.risk), 0.95)
+    return body, float(scan_result.risk)
 
 Lane = Literal["off", "on"]
 _BINARY_TYPES = {SourceType.pdf, SourceType.docx, SourceType.image, SourceType.email}
@@ -56,15 +82,12 @@ def run_content(
             ),
             noop=False,
         )
-        if scan_result.decision in {Decision.block, Decision.quarantine}:
-            agent_input = "[content quarantined by PromptShield]"
-        else:
-            agent_input = scan_result.sanitized_text or content
+        agent_input, ctx_risk = _agent_view(scan_result, source_type, content)
         context_items = [
             ContextItem(
                 trust=trust,
-                risk=scan_result.risk,
-                text=content[:2000],
+                risk=ctx_risk,
+                text=(scan_result.sanitized_text or content)[:2000],
                 segment_id=scan_result.scan_id,
             )
         ]
@@ -157,15 +180,12 @@ def run_fixture(
             raw=raw,
         )
         # Blocked/quarantined content must not reach the agent (residual redaction is not enough).
-        if scan_result.decision in {Decision.block, Decision.quarantine}:
-            agent_input = "[content quarantined by PromptShield]"
-        else:
-            agent_input = scan_result.sanitized_text or content
+        agent_input, ctx_risk = _agent_view(scan_result, source_type, content)
         context_items = [
             ContextItem(
                 trust=TrustLevel.T3,
-                risk=scan_result.risk,
-                text=content[:2000],
+                risk=ctx_risk,
+                text=(scan_result.sanitized_text or "")[:2000],
                 segment_id=scan_result.scan_id,
             )
         ]

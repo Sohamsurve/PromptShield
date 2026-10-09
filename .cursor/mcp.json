@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@latest"] },
-    "shadcn": { "command": "npx", "args": ["shadcn@latest", "mcp"] },
-    "playwright": { "command": "npx", "args": ["@playwright/mcp@latest"] }
+    "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@4.2.0"] },
+    "shadcn": { "command": "npx", "args": ["shadcn@4.21.4", "mcp"] },
+    "playwright": { "command": "npx", "args": ["@playwright/mcp@0.0.83"] }
   }
 }

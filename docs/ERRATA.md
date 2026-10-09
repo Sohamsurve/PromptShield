@@ -35,5 +35,9 @@ Do not silently rewrite history. Prior tags stand; corrections are listed here.
 | 2026-10-07 | `default.yml` f6ae7761… → f294359a… | Added demo_config note + cascade block (`enabled: false`); fusion/clf_graded unchanged from fit C. No spent-set retune. | Policy honesty |
 | 2026-10-07 | UI “complete” from route presence / memory | Replaced by `docs/UI_REQUIREMENTS.md` matrix + Playwright ids; Arena has no upload by design (§9.5.2). | UI honesty |
 | 2026-10-07 | Tag `v2.0-rc3` already at `a69d9da` | Upload hardening + UI matrix ship as **`v2.0-rc4`**. | Tag |
+| 2026-10-08 | Test count “dropped 433 → 428” | The suite did not drop. **428** was the run before `test_white_text_and_corpus.py`. **433** is that run plus the white-text tests and `PI-SEC-050`. | Count honesty |
+| 2026-10-09 | Blank-band quarantine as white-text detection | Removed. A gap is not a finding. Low-contrast glyphs off the dominant background colour are OCR'd. Exact `#FFFFFF` stays unreadable. Manifest labels were not edited. | False positive |
+| 2026-10-09 | CSP `unsafe-eval` on every response | Dev-only. Production `next build` omits `unsafe-inline` and `unsafe-eval`. | Header split |
+| 2026-10-09 | `dev_redteam` source_doc backfill | Not applied. `build_redteam_batches_v15.py` emits A=130/B=121 and different text. Committed files stay A=110, B=104, C=300, grayzone=75, grayzone_v14=119, manip_v14=44, with `source_doc` empty. `judge_manip_v25.jsonl` is 40 new rows with `source_doc` set. | Do not relabel |
 
 Further measured numbers live in `docs/EVIDENCE.md` / `docs/CLAIMS.md`.

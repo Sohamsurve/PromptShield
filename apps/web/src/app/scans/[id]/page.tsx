@@ -1,3 +1,7 @@
 "use client";
 
-export { XRayClient as default } from "./xray-client";
+import { XRayClient } from "./xray-client";
+
+export default function ScanPage() {
+  return <XRayClient />;
+}

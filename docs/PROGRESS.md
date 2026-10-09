@@ -1,6 +1,33 @@
 # PromptShield — Progress
 
-Last updated: 2026-10-07 · v2.0-rc4
+Last updated: 2026-10-09 · v2.0-rc5 measurements
+
+## 2026-10-09 · v2.0-rc5 measurements
+
+- `make test`: **447 passed**, 1 skipped (147.75s). The earlier 428 → 433 change was added tests, not a drop. See `docs/ERRATA.md`.
+- `make eval-fast`: exit 0, `passed: true`, report `eval/reports/20261009T034209Z`. text_recall 1.0, fpr 0.0, asr_on 0.0, asr_off 1.0.
+- `make security`: **14 passed**, `security_scan hits=0`.
+- Production `pnpm build && pnpm start` then Playwright `e2e/headers.spec.ts`: **1 passed**. CSP had no `unsafe-inline` or `unsafe-eval`.
+- ROT13 false triggers on `eval/data/realistic_dev/benign.jsonl`: **0 / 350**.
+- Live gray-zone (`eval/live_grayzone_lm_v24.py`, rehashed before the run): n=20/20, ACTED recall **0.05**, FPR **0.0**, judge_calls **1**.
+- Presets through `policy_store` + `scan`, same slice, offline judge: Balanced ACTED **0.05** FPR **0.0**; Low false alarms ACTED **0.05** FPR **0.0**.
+- `pip-audit`: no known vulnerabilities. `pnpm audit`: 3 high (postcss, braces), recorded in `docs/SECURITY.md`.
+- dev_redteam on disk: A **110**, B **104**, C **300**, grayzone **75**, grayzone_v14 **119**, manip_v14 **44**, manip_v25 **40**. `source_doc` filled only on v25. v15 builder does not reproduce A/B/C.
+
+## 2026-10-08 · PI-014 / PI-010
+
+- `PI-014_white_text_injection.png` re-scan: **allow**, risk **0.0027**, no hidden segments, no findings (`scn_476b2488`). The file has no recoverable off-white glyphs; the earlier Sanitised 0.06 result was ROT13 of the black report lines plus an unlocalised classifier window on the title.
+- `PI-010_prompt_smuggling.md` re-scan: **block**, risk **0.925** (`scn_b3cbf27b`), HTML comments still surfaced, no false ROT13 of the comment markers.
+- `make test`: **428 passed**, 1 skipped.
+- `make eval-fast`: exit 0, `passed: true` (`eval/reports/20261008T182037Z`).
+
+## 2026-10-08 · white-on-white + corpus
+
+- Blank-gap quarantine removed. A tall empty region is not `WHITE_ON_WHITE`. Off-white glyphs (luminance 220–254) are still OCR'd. Exact `#FFFFFF` text remains unreadable (`docs/LIMITATIONS.md`).
+- Off-white (`#F2F2F2`) “IGNORE PREVIOUS INSTRUCTIONS…” is OCR’d as `img:low-contrast` and acted.
+- Corpus manifest: all 17 files match expected ALLOW / BLOCK_OR_SANITIZE. `PI-003` now **sanitize** via `PI-SEC-050` (`disclose the secret`).
+- `make test`: **433 passed**, 1 skipped.
+- `make eval-fast`: exit 0, `passed: true` (`eval/reports/20261008T184216Z`).
 
 ## v2.0-rc4 (measured this session)
 

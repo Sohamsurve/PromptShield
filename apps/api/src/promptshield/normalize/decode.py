@@ -44,6 +44,28 @@ def _looks_useful(s: str) -> bool:
     return len(words) >= 2
 
 
+def _rot13_actionable(rotated: str) -> bool:
+    """ROT13 is kept only when the decoded text looks like an instruction.
+
+    Two ordinary words are not enough: ROT13 of benign English still has
+    dictionary-shaped tokens and was being shown as hidden content.
+    """
+    low = rotated.lower()
+    keys = (
+        "ignore",
+        "instruction",
+        "system",
+        "prompt",
+        "email",
+        "forward",
+        "decode",
+        "you are",
+        "override",
+        "developer",
+    )
+    return any(k in low for k in keys)
+
+
 def _rot13(s: str) -> str:
     out = []
     for ch in s:
@@ -142,7 +164,7 @@ def decode_recursive(
         # ROT13 on short suspicious segments
         if force_rot13 or re.search(r"(?i)\brot13\b", current) or len(current) <= 80:
             rotated = _rot13(current)
-            if rotated != current and ("ignore" in rotated.lower() or _looks_useful(rotated)):
+            if rotated != current and _rot13_actionable(rotated):
                 add(DecodedChild(text=rotated, decoded_from=chain + ["rot13"]))
 
         # spaced letters: "i g n o r e"

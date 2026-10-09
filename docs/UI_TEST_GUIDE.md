@@ -1,4 +1,6 @@
-# UI manual test guide (v2.0-rc3)
+# UI manual test guide (v2.0-rc5)
+
+Production header check, 2026-10-09: `pnpm build && pnpm exec next start -H 127.0.0.1 -p 3030`, then `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3030 pnpm exec playwright test --config playwright.prod.config.ts`. **1 passed.** CSP contained `frame-ancestors 'none'` and neither `unsafe-inline` nor `unsafe-eval`.
 
 Use this script after `make dev` (API `:8000`, web `:3000`) or against a fresh clone per `docs/FRESH_CLONE.md`.
 
@@ -22,7 +24,8 @@ Record exit code and pass count in the results log below.
 |---|--------|--------|----------------|
 | 1 | `/` | Load home | H1 visible; no console errors |
 | 2 | `/arena` | Run fixture F01 on/off | Verdict badges differ; outcome banner |
-| 3 | `/scans/{id}` | Open scan from arena | Verdict + findings; UV sweep once (unless reduced motion) |
+| 3 | `/scans/{id}` | Open scan from arena | Verdict + findings; UV sweep once (unless reduced motion). If the decision is not Allowed, the header names the finding (`via` + reason code + score) and the risk is at least that score. |
+| 3b | any page | Load while the judge is offline | A “Limited detection” banner stays visible |
 | 4 | X-ray views | Switch Original → Revealed → Sanitised → Spotlighted | Document text updates; empty state if no text |
 | 5 | X-ray link | Click a finding | Finding row highlighted; span `mark` in document when span present |
 | 6 | `/redteam` | “Try an example” dropdown | Inert string fills textarea; Attack shows verdict |
