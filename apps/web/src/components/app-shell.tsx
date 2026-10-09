@@ -95,7 +95,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <main id="main" className="flex-1 min-w-0 pb-20 md:pb-0">
         {limited ? (
-          <p className="border-b border-rule bg-surface px-4 py-2 text-xs text-sanitize" role="status">
+          <p className="border-b border-rule bg-surface px-4 py-2 text-xs text-ink" role="status">
             Limited detection: the judge is offline. Signatures and the classifier still run.
           </p>
         ) : null}
