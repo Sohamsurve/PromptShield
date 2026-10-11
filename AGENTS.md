@@ -1,23 +1,22 @@
 # AGENTS.md — PromptShield
 
 PromptShield is a prompt-injection firewall for AI agents (ET AI Hackathon, Problem 2).
-**Source of truth: `README.md`.** Read it fully before changing code. This file is the short version of the
-rules; if the two ever conflict, the README wins.
+**Product page: `README.md`.** **Engineering specification: `docs/BUILD_SPEC.md`.** Read the spec before changing code. This file is the short version of the rules. If this file and the spec conflict, the spec wins. Public claims stay in `README.md` and `docs/CLAIMS.md`.
 
 ## Where things are
 - `apps/api/src/promptshield/` — FastAPI service: `adapters/`, `normalize/`, `detect/`, `fusion/`, `neutralize/`, `guard/`, `agent/` (demo agent Aria), `rules/*.yml`, `policies/default.yml`
-- `apps/web/` — Next.js dashboard (tokens in `src/styles/tokens.css`, design rules in `DESIGN.md` and README §9)
+- `apps/web/` — Next.js dashboard (tokens in `src/styles/tokens.css`, design rules in `DESIGN.md` and `docs/BUILD_SPEC.md` §9)
 - `packages/shared-types/` — TypeScript types **generated** from OpenAPI (never hand-edit)
 - `eval/` — corpora, harness, reports, thresholds · `fixtures/` — attack gallery files · `docs/` — architecture, decisions, limitations
 
-## Commands (created in Phase 0 of README §11)
+## Commands (created in Phase 0 of `docs/BUILD_SPEC.md` §11)
 `make setup` · `make dev` · `make test` · `make e2e` · `make eval` · `make eval-fast` · `make train` · `make gen-types` · `make fixtures` · `make demo`
 
 ## How to work
-1. Find the first phase in README §11 with unticked items. Work only on that phase.
+1. Find the first phase in `docs/BUILD_SPEC.md` §11 with unticked items. Work only on that phase.
 2. Write the test first. Every signature rule needs a positive case **and** a benign counter-example.
 3. Implement, then run `make test` and `make eval-fast`. Both must pass before you call a task done.
-4. Tick the finished checklist items in README §11. Record non-obvious decisions in `docs/DECISIONS.md`.
+4. Tick the finished checklist items in `docs/BUILD_SPEC.md` §11. Record non-obvious decisions in `docs/DECISIONS.md`.
 5. Keep commits small, e.g. `feat(detect): add base64 decoder with depth cap`.
 
 ## Hard rules
@@ -40,7 +39,7 @@ If a metric fails, fix the cause or record the limitation in `docs/LIMITATIONS.m
 - Demo tools are mocks. No real network calls, no real secrets. Use canary values only.
 
 ## UI rules
-- Follow `DESIGN.md` and README §9. Use the tokens; no default grey/zinc shadcn palette.
+- Follow `DESIGN.md` and `docs/BUILD_SPEC.md` §9. Use the tokens; no default grey/zinc shadcn palette.
 - Verdicts are never colour-only: icon + word + colour. Words are fixed: Allowed, Sanitised, Quarantined, Blocked, Needs review.
 - The UV sweep is the only orchestrated animation; honour `prefers-reduced-motion`.
 - Check 390 / 768 / 1280 px in light and dark before calling a screen done.

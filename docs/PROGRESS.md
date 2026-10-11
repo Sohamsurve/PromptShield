@@ -1,6 +1,17 @@
 # PromptShield — Progress
 
-Last updated: 2026-10-11 · Submission README and pitch link
+Last updated: 2026-10-11 · Product README
+
+## 2026-10-11 · Product README
+
+- `README.md` is now the reviewer page: concept, how a scan works, golden-suite performance, use cases, and advantages. The agent build plan moved to `docs/BUILD_SPEC.md`.
+- Getting started and How to use cover clone, `make setup`, the two local processes, the admin demo, the caller site, and the caller API key on scan, file, tool-call, and list.
+
+## 2026-10-11 · Recording script
+
+## 2026-10-11 · Recording script
+
+- `docs/pitch/DEMO_SCRIPT.md` and `docs/pitch/DEMO_SCRIPT.pdf` are the same 3-to-4-minute cue sheet. Spoken lines are about 465 words. The numbers stay the golden-suite figures, and F1 / D1 stays provisional.
 
 ## 2026-10-11 · Submission README and pitch link
 
