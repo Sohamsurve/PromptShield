@@ -4,6 +4,7 @@ Format: date · decision · reason.
 
 ## 2026-10-11
 
+- **Caller sign-in:** `/login` and `/signup` use the same white neo-brutal theme as the landing page, including the theme switch. Admin sign-in stays on the dark shell. Reason: those two screens are part of the public site, and a forced dark card did not match the landing.
 - **Product README:** `README.md` is the reviewer page: concept, how a scan works, measured performance, use cases, and advantages. The build specification moved to `docs/BUILD_SPEC.md` with the same section numbers. Reason: the GitHub page was opening as agent instructions, and a judge should see the product first.
 - **Submission README:** The GitHub README opens with the product, the F1/D1 provisional declaration, the golden-suite numbers, and the demo commands. The build specification stays underneath. Reason: a judge who stops in the first screen should see the measured position, and coding agents still have §0 and §11.
 - **Caller landing:** `/` explains the concept, the three ways to use it, the five verdicts, and the advantages. It does not quote recall or false-positive numbers. Reason: the first screen a caller sees should say what the firewall is for, and the measured scores stay in the eval reports.

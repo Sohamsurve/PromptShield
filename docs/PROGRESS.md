@@ -64,7 +64,7 @@ Last updated: 2026-10-11 · Product README
 
 - The public landing page explains the concept, how to use the firewall, and the advantages. It does not quote recall or false-positive targets. Ultraviolet marks the flagged span. Verdict colours appear only on the five answers.
 - The shield mark from the favicon kit is the header logo and the browser icon. The files live in `apps/web/public/assets/`.
-- The landing page can switch to the white neo-brutal theme. Login and admin sign-in stay dark.
+- The landing page, sign-in, and sign-up share the white neo-brutal theme. Admin sign-in stays dark. Sign in and Create account stay in the header on the landing page only.
 
 ## 2026-10-11 · Caller playground
 

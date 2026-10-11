@@ -123,8 +123,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const mobileNav = role === "user" ? USER_NAV : MOBILE_NAV;
   const publicPage = PUBLIC_PATHS.includes(pathname);
   const landing = pathname === "/";
-  // Other public screens stay dark. The landing can use the white neo-brutal theme.
-  const publicDark = landing ? !mounted || dark : true;
+  const callerPublic = landing || pathname === "/login" || pathname === "/signup";
+  // Admin sign-in stays on the dark shell. The landing, sign-in, and sign-up share the white neo-brutal theme.
+  const publicDark = callerPublic ? !mounted || dark : true;
 
   function signOut() {
     clearBearer();
@@ -142,7 +143,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               PromptShield
             </Link>
             <nav className="flex items-center gap-2" aria-label="Public">
-              {landing && mounted ? (
+              {callerPublic && mounted ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -163,7 +164,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <Link href="/portal">My scans</Link>
                 </Button>
               ) : null}
-              {role === "demo" ? (
+              {role === "demo" && landing ? (
                 <>
                   <Button size="sm" variant="outline" asChild>
                     <Link href="/login">Sign in</Link>
@@ -173,7 +174,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </Button>
                 </>
               ) : null}
-              {pathname === "/" ? null : (
+              {callerPublic ? null : (
                 <Button size="sm" variant="outline" asChild>
                   <Link href="/admin">Admin</Link>
                 </Button>
