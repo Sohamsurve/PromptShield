@@ -10,15 +10,30 @@ Agents read mail, PDFs, and web pages as if they were instructions. One hidden l
 
 Pitch deck: [PDF](docs/pitch/PromptShield_pitch.pdf) · [PowerPoint](docs/pitch/PromptShield_pitch.pptx) · [3–4 minute script](docs/pitch/DEMO_SCRIPT.md)
 
-**Contents:** [Getting started](#getting-started) · [How to use it](#how-to-use-it) · [Concept](#concept) · [How it works](#how-it-works) · [Performance](#performance) · [Use cases](#use-cases) · [Advantages](#advantages)
+**Contents:** [What is in this repository](#what-is-in-this-repository) · [Getting started](#getting-started) · [Dependencies](#dependencies) · [Environment](#environment) · [How to use it](#how-to-use-it) · [Architecture](#architecture) · [API](#api) · [Concept](#concept) · [Performance](#performance)
+
+A judge can clone, install, and run the prototype from this file alone. No extra document is required for the first demo.
 
 ---
+
+## What is in this repository
+
+| A judge looks for | Where it is |
+|---|---|
+| Complete source | `apps/api` (firewall) and `apps/web` (console). Shared types are generated in `packages/shared-types`. |
+| This README | Repository root. |
+| Installation | [Getting started](#getting-started). `make setup` is the one install command. |
+| Dependencies | [Dependencies](#dependencies). Python lockfile: `apps/api/uv.lock`. JavaScript lockfile: `pnpm-lock.yaml`. |
+| Architecture | [Architecture](#architecture), with the longer map in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). |
+| API documentation | [API](#api). After the API is running: http://127.0.0.1:8000/docs and http://127.0.0.1:8000/openapi.json. Narrative: [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md). |
+| Environment setup | [Environment](#environment). Template: `.env.example`. `make setup` copies it to `.env` when that file is missing. |
 
 ## Getting started
 
 ### Prerequisites
 
 - [Git](https://git-scm.com/)
+- [Node.js](https://nodejs.org/) 18.18 or newer
 - [uv](https://docs.astral.sh/uv/) (it installs Python 3.11 for you)
 - [pnpm](https://pnpm.io/installation) 9
 - Optional: [Docker](https://docs.docker.com/get-docker/) if you want Redis via `make dev` or the full Compose stack. The demo below does not need Docker.
@@ -40,7 +55,7 @@ Use two terminals, both from the `PromptShield` directory.
 
 ```bash
 # Terminal A — API on http://127.0.0.1:8000
-cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 127.0.0.1 --port 8000
+cd apps/api && PYTHONPATH=src uv run uvicorn promptshield.api.app:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ```bash
@@ -57,6 +72,37 @@ curl -s http://127.0.0.1:8000/v1/healthz
 ```
 
 A healthy API returns JSON with `"status": "ok"`. Then open http://localhost:3000.
+
+## Dependencies
+
+`make setup` installs these. You do not install them by hand.
+
+| Piece | Source | What it provides |
+|---|---|---|
+| Python 3.11 | `uv python install 3.11` | The API runtime. |
+| API packages | `apps/api/pyproject.toml` and `apps/api/uv.lock` | FastAPI, Uvicorn, Pydantic, PyMuPDF, python-docx, Pillow, pytesseract, and the test tools. |
+| Web packages | `package.json`, `apps/web/package.json`, and `pnpm-lock.yaml` | Next.js 15, React 19, and the console UI. |
+| Classifier | `make train`, run by `make setup` | Writes `models/calibration.json`. The demo does not need a separate ONNX file. |
+
+Docker and Tesseract are optional. Leave them out for the Arena demo.
+
+## Environment
+
+`make setup` copies `.env.example` to `.env` when `.env` is missing. Do not commit `.env`.
+
+For the local demo, leave the file as copied. These are the settings that matter:
+
+| Variable | Local demo value | What it does |
+|---|---|---|
+| `DEMO_MODE` | `1` | Scans work without an API key. |
+| `ARIA_MODE` | `scripted` | The Arena agent repeats the same result. |
+| `NEXT_PUBLIC_API_BASE` | `http://localhost:8000` | The site calls the API on this machine. |
+| `DATABASE_URL` | `sqlite:///./promptshield.db` | Scans are stored in a local SQLite file. |
+| `LLM_API_KEY` | empty | Leave this empty. The demo does not need a model key. Signatures and the small classifier still run. |
+
+Admin sign-in for the demo is the password `promptshield-owner`. It is a canary, printed on http://localhost:3000/admin. It is not a production secret.
+
+To require a key on every scan, set `DEMO_MODE=0` and `PROMPTSHIELD_API_KEY` to a long random string, then restart the API.
 
 ## How to use it
 
@@ -163,18 +209,46 @@ Every scan returns one answer, with the word next to the colour: **Allowed**, **
 
 This is a check for prompt injection. It is not a filter for toxicity or misinformation, and it does not replace careful tool permissions.
 
-## How it works
+## Architecture
 
-One scan, in order:
+PromptShield sits in front of the agent. One scan does six things. It reads text, HTML, PDF, Word, email, Markdown, JSON, source code, and images. Odd Unicode and simple encodings such as base64 are decoded first, with a depth cap, and the redaction is mapped back onto the original characters. The longer component map is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-1. **Read the source.** Text, HTML, PDF, Word, email, Markdown, JSON, source code, and images. Hidden text in comments, metadata, and stylesheets is pulled out and labelled with where it came from.
-2. **Normalise and decode.** Odd Unicode, invisible characters, and simple encodings (base64, hex, URL encoding, and similar) are turned back into text, with a depth cap. Every transform keeps a map back to the original characters, so the redaction lands on the right span.
-3. **Detect.** Cheap signature rules run first, then a small classifier. A language-model judge may add a finding in the gray zone. The judge never decides the verdict on its own.
-4. **Decide.** Fusion combines the signals and the policy picks one of the five answers. Retrieved content is held to a stricter bar than a signed-in user's own message.
-5. **Neutralise.** The offending sentence is removed. The rest of the document stays. A block or quarantine also returns a safe alternative that does not repeat the attack.
-6. **Guard the action.** Before a side effect such as send-email, the tool firewall checks whether the request came from untrusted content. That check still runs when text scanning is switched off.
+```
+Extract hidden text → normalise and decode → signatures, then a small classifier
+        → fusion picks one verdict → redact only the bad span
+        → tool firewall checks the side effect
+```
 
-The demo agent is scripted, so the Arena shows the same result every time. The tools are mocks. The only secret is a canary: a fake token planted so a leak would show up.
+| Step | Action | What decides | What the demo shows |
+|---|---|---|---|
+| Extract | Surface hidden text from the file. | No model. | The specimen email marks only the hidden sentence. |
+| Detect | Run signature rules, then a small local classifier. | A language-model judge may add a finding in the gray zone. It never decides alone. | X-ray shows the reason code. |
+| Decide | Fusion picks one verdict. | Allowed, Sanitised, Quarantined, Blocked, or Needs review. | A quoted attack stays Allowed. |
+| Neutralise | Remove only the bad span. | The rest of the document stays. A block also returns a safe alternative. | The protected Arena lane keeps the ordinary mail. |
+| Guard | Check the tool call. | A tainted send-email is denied even when text scanning is off. | The calendar invite cannot send mail. |
+
+The Arena agent is scripted. A live language-model agent was not the measured subject. Uploads are never executed. Demo tools are mocks.
+
+## API
+
+Base URL: `http://127.0.0.1:8000`
+
+| | |
+|---|---|
+| Interactive docs | http://127.0.0.1:8000/docs |
+| OpenAPI document | http://127.0.0.1:8000/openapi.json |
+| Same calls, written out | [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) and http://localhost:3000/integrate |
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/v1/healthz` | Liveness. Open without a key. |
+| `POST` | `/v1/scan` | Check a prompt. |
+| `POST` | `/v1/scan/file` | Check an uploaded file. |
+| `POST` | `/v1/guard/tool-call` | Allow, confirm, or deny a tool call before it runs. |
+| `POST` | `/v1/guard/output` | Check the model reply before it is shown. |
+| `GET` | `/v1/scans` | List scans for the key that called. |
+
+In demo mode the key header is optional. A scan made with the account key from sign-up is stored on that account. Copy-paste examples are in [As a user, with the API](#as-a-user-with-the-api).
 
 ## Performance
 

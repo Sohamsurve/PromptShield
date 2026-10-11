@@ -1,6 +1,22 @@
 # PromptShield — Progress
 
-Last updated: 2026-10-11 · Product README
+Last updated: 2026-10-11 · Judge-facing README
+
+## 2026-10-11 · Judge-facing README
+
+- README now names the public repository and points a judge at source, install, dependencies, environment, architecture, and the API docs, including the start command that sets `PYTHONPATH=src`.
+
+## 2026-10-11 · Submission deck and script
+
+- The pitch deck now has Architecture, AI capabilities, and Business impact, each tied to a demo the prototype is allowed to show. The script runs about 3 minutes 40 seconds and covers introduction, problem, key features, the live demo, AI capabilities, business impact, and the close.
+
+## 2026-10-11 · Pitch deck contents
+
+- The pitch PDF and PowerPoint no longer have a demo-video page. Live cases, the security line on the results slide, and the stack on the closing slide are in the deck.
+
+## 2026-10-11 · Recording script timing
+
+- `docs/pitch/DEMO_SCRIPT.md` and `docs/pitch/DEMO_SCRIPT.pdf` follow the 3:50 cue sheet: problem, features, live tests, results, then stack and close. The measured numbers stay F1 / D1 provisional.
 
 ## 2026-10-11 · Product README
 

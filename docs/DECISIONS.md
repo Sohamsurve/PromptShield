@@ -4,6 +4,7 @@ Format: date · decision · reason.
 
 ## 2026-10-11
 
+- **Submission deck:** The pitch deck maps each architecture step to a demo the prototype is allowed to show, and states the AI pieces as signatures, a small local classifier, and a gray-zone judge. Business impact stays on the path in front of the model. No market figure is added. Reason: the submission asks the architecture to support the working demo, and the measured claim is still F1 / D1 provisional.
 - **Caller sign-in:** `/login` and `/signup` use the same white neo-brutal theme as the landing page, including the theme switch. Admin sign-in stays on the dark shell. Reason: those two screens are part of the public site, and a forced dark card did not match the landing.
 - **Product README:** `README.md` is the reviewer page: concept, how a scan works, measured performance, use cases, and advantages. The build specification moved to `docs/BUILD_SPEC.md` with the same section numbers. Reason: the GitHub page was opening as agent instructions, and a judge should see the product first.
 - **Submission README:** The GitHub README opens with the product, the F1/D1 provisional declaration, the golden-suite numbers, and the demo commands. The build specification stays underneath. Reason: a judge who stops in the first screen should see the measured position, and coding agents still have §0 and §11.
