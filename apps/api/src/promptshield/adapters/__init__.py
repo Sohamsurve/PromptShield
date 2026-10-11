@@ -12,6 +12,7 @@ from promptshield.adapters import html as html_adapter
 from promptshield.adapters import image_ocr as image_adapter
 from promptshield.adapters import json_ as json_adapter
 from promptshield.adapters import markdown as markdown_adapter
+from promptshield.adapters import office_ooxml as office_adapter
 from promptshield.adapters import pdf as pdf_adapter
 from promptshield.adapters import text as text_adapter
 from promptshield.adapters.common import finalize_segments
@@ -55,6 +56,10 @@ def adapt(
         segs = pdf_adapter.extract(raw_bytes, sid, trust)
     elif source_type == SourceType.docx:
         segs = docx_adapter.extract(raw_bytes, sid, trust)
+    elif source_type == SourceType.spreadsheet:
+        segs = office_adapter.extract_xlsx(raw_bytes, sid, trust)
+    elif source_type == SourceType.presentation:
+        segs = office_adapter.extract_pptx(raw_bytes, sid, trust)
     elif source_type == SourceType.image:
         segs = image_adapter.extract(raw_bytes, sid, trust)
     else:

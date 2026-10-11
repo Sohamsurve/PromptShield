@@ -1,66 +1,48 @@
-# Claims (measured only) — v2.0-rc2
+# Claims (measured only) — prototype 2026-10-11
 
-Conformance: `docs/CONFORMANCE.md`. Accept: `docs/ACCEPT_RUN.md`. Cascade: `eval/reports/cascade_eval_v20.json`.
+Headline ruler: `eval/golden/reports/20261011T090211Z/report.json` (judge off, template policy, git `46d3c98`).
+Offline eval gate: `eval/reports/20261010T181109Z` (`passed: true`, FPR 0.0 on that subset).
+Older curves stay below as prior context. They are not the headline.
 
-## Metrics
-
-- **FLAGGED** = any finding  
-- **ACTED** = sanitize|quarantine|block|escalate — **headline**
-
-## F/D (pre-registered rule)
+## Grid
 
 | Cell | Result |
 |---|---|
-| F3 / F2 / F1 | **F1** (provisional — no independent sealed run) |
-| D1 | **D1 provisional** (no independent sealed; not claimed as met) |
+| F3 / F2 / F1 | **F1 provisional.** All 9 types have a detector. No independent sealed run has 7 types at acted recall ≥ 0.80. |
+| D3 / D2 / D1 | **D1 provisional.** Text, HTML, PDF, DOCX, email, Markdown, JSON, source, and image OCR are in the pipeline. Independent pooled acted recall ≥ 0.5 is not measured. Exact white-on-white text is still invisible. |
 
-Independent staging still unread / not arrived.
+## Problem targets against the golden ruler
 
-## Declared position
+| Target | Measured |
+|---|---|
+| Known-pattern recall ≥ 0.95 | Acted **0.6122** (CI 0.58–0.64), correct type **0.4778**, on 900 attacks |
+| Held-out / paraphrased recall ≥ 0.85 | Imported pack acted **0.1797**, correct type **0.1172**, on 256 attacks |
+| False-positive rate ≤ 2% | Golden benign **0 / 500**. The older length-matched sweep found no threshold at or under 2% |
+| Latency p95 ≤ ~150 ms without the judge | **25.86 ms** on the golden run (p50 15.36 ms) |
+| Scan-to-scan predictability | **1.0** |
 
-| Axis | Claim | Support |
+## Prior measurements (not the headline)
+
+| Item | Value | Where |
 |---|---|---|
-| Fidelity | **F1 provisional** | no independent sealed ACTED≥0.80×7 types |
-| Data | **D1 provisional** | no independent pooled ACTED≥0.5 |
-| Disruption | length-matched risk sweep: **no** FPR≤2% point | `operating_curve_v20` |
-| Shipped template | `demo_config: true` | `default.yml` FREEZE-hashed; runtime `active_policy.yml` |
-| Conformance | PASS=58 · PARTIAL=10 · FAIL=0 | measured |
-| Red-team bypass | attack ∧ ¬ACTED only | tests + route |
+| Length-matched claimed fit | ACTED 0.533, FPR 0.116 | `v2.0-rc2` operating curve |
+| Shipped-policy length-matched | ACTED 0.191, FPR 0.205 | same curve, n_atk 110 / n_neg 264 |
+| Full cascade on synth_dev | ACTED 0.862, FPR 0.362 | live judge, not an independent claim |
+| Full cascade on realistic_dev_v20 | ACTED 0.667, FPR 0.056 | live judge, not an independent claim |
+| Conformance at rc2 | PASS 58, PARTIAL 10, FAIL 0 | `docs/CONFORMANCE.md` |
 
-## Operating curve (length-matched, offline, SEED=42)
+## What the demo may say
 
-| Item | Value |
-|---|---|
-| n_atk / n_neg | 110 / 264 |
-| Shipped-policy ACTED / FPR | **0.191** / **0.205** |
-| Any risk-threshold with FPR≤2% | **false** |
+- A scan runs before the agent, and a block or quarantine returns `safe_alternative` without the attack span or a canary token.
+- The Arena shows the scripted agent harmed with the firewall off and safe with it on.
+- The tool firewall can deny a tainted `send_email` when text scanning is off.
+- Callers sign in, scan text and files, and keep those scans on their account. Admins see every account’s usage on Users.
 
-## Judge linkage (dev gray-zone n=12, live key)
+## What the demo must not say
 
-| Item | Value |
-|---|---|
-| Sol vs mini disagree | **0.167** |
-| Sol vs offline disagree | **0.167** |
-| Injection counts Sol / mini / offline | **2 / 1 / 2** |
-| Effort none→API | `reasoning_effort=none` in payload; HTTP 200 |
-| Effort low→API | `reasoning_effort=low` in payload; HTTP 200 |
-| reasoning_tokens none vs low | both **null** on this probe (setting reaches API; token delta not observed) |
+- That F3 or D3 is met.
+- That known-attack recall is 0.95 or held-out recall is 0.85.
+- That the live judge was the sole reason for a block.
+- Numbers from `v2.0-rc2` as if they were this ruler.
 
-## Cascade (live judge, SEED=42)
-
-| Set | no_judge ACTED/FPR | gray_zone ACTED/FPR | full_cascade ACTED/FPR | cascade p95 ms |
-|---|---|---|---|---|
-| synth_dev | 0.112/0.350 | 0.112/0.350 | **0.862/0.362** | 4711 |
-| length_matched | 0.100/0.350 | 0.100/0.350 | **0.817/0.362** | 23.3 |
-| realistic_dev_v20 | 0.033/0.042 | 0.033/0.042 | **0.667/0.056** | 2808 |
-| needle | 0.250/0.000 | 0.250/0.000 | 0.250/0.000 | 3178 |
-
-$/1k docs: not metered in harness (see report `cost_note`).
-
-## Prior v1.4 headline (unchanged context)
-
-Curve C ACTED **0.533** / FPR **0.116** (claimed fit; ≤2% NOT MET).
-
-## Tag
-
-**`v2.0-rc2`**
+The tag `v2.0-rc5` is commit `46d3c98`. Caller accounts, file upload, Users, and the safe-alternative cleanup were added after that tag.

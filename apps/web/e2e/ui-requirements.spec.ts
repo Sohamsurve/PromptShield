@@ -4,8 +4,14 @@ import fs from "fs";
 import { TEST_API_BASE } from "./test-api";
 
 test.describe("UI requirements matrix (README §9.5)", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem("ps_bearer", "promptshield-owner");
+    });
+  });
+
   test("ui-console-filters-pause-drawer @ui-console", async ({ page }) => {
-    await page.goto("/", { waitUntil: "networkidle" });
+    await page.goto("/console", { waitUntil: "networkidle" });
     await expect(page.getByTestId("console-page")).toBeVisible();
     await expect(page.getByTestId("console-filters")).toBeVisible();
     await expect(page.getByTestId("console-kpis")).toBeVisible();
@@ -30,7 +36,7 @@ test.describe("UI requirements matrix (README §9.5)", () => {
   });
 
   test("ui-console-keyboard @ui-console-keys", async ({ page }) => {
-    await page.goto("/", { waitUntil: "networkidle" });
+    await page.goto("/console", { waitUntil: "networkidle" });
     await page.keyboard.press("p");
     await expect(page.getByTestId("console-pause")).toHaveText(/Resume/i);
     await page.keyboard.press("p");
@@ -103,7 +109,7 @@ test.describe("UI requirements matrix (README §9.5)", () => {
   });
 
   test("ui-console-sparkline @ui-console-spark", async ({ page }) => {
-    await page.goto("/", { waitUntil: "networkidle" });
+    await page.goto("/console", { waitUntil: "networkidle" });
     await expect(page.getByTestId("console-sparkline")).toBeVisible();
   });
 

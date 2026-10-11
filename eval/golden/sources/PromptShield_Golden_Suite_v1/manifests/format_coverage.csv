@@ -1,0 +1,17 @@
+format,coverage
+TXT,"Full 1,250-case pack"
+MD,"Full 1,250-case pack"
+HTML,"Full 1,250-case pack"
+JSON,"Full 1,250-case pack"
+YAML,"Full 1,250-case pack"
+XML,"Full 1,250-case pack"
+PDF,"Full 1,250-case pack"
+DOCX,"Full 1,250-case pack"
+XLSX,"Full 1,250-case pack"
+CSV,"Full 1,250-case pack"
+EML,"Full 1,250-case pack"
+PY,"Full 1,250-case pack"
+SQL,"Full 1,250-case pack"
+SH,"Full 1,250-case pack"
+PNG,22 representative images; includes low-contrast/white-text variants
+PPTX,"Full 1,250-case pack"

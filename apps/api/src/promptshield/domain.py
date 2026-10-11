@@ -21,6 +21,8 @@ class SourceType(str, Enum):
     html = "html"
     pdf = "pdf"
     docx = "docx"
+    spreadsheet = "spreadsheet"
+    presentation = "presentation"
     email = "email"
     markdown = "markdown"
     api_response = "api_response"
@@ -115,6 +117,7 @@ class ScanResult(BaseModel):
     segments: list[SegmentSummary]
     sanitized_text: str | None = None
     spotlighted_text: str | None = None
+    safe_alternative: str | None = None
     system_reminder: str | None = None
     hidden_content_revealed: bool = False
     latency_ms: dict[str, float] = Field(default_factory=dict)

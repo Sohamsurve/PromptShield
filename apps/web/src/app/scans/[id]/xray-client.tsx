@@ -9,6 +9,7 @@ import type { Decision } from "@promptshield/shared-types";
 
 type Finding = {
   id: string;
+  segment_id?: string;
   reason_code?: string;
   score?: number;
   evidence?: string;
@@ -33,12 +34,20 @@ type Scan = {
   findings?: Finding[];
   sanitized_text?: string | null;
   spotlighted_text?: string | null;
+  safe_alternative?: string | null;
   latency_ms?: Record<string, number>;
   segments?: SegmentSummary[];
   degraded?: string[];
 };
 
 type View = "original" | "revealed" | "sanitised" | "spotlighted";
+
+const VIEW_HINT: Record<View, string> = {
+  original: "Extracted text with hidden lines left out",
+  revealed: "Hidden lines shown and tinted",
+  sanitised: "Offending spans replaced with a removal marker",
+  spotlighted: "Text the agent receives, wrapped as untrusted data",
+};
 
 function renderWithInvisibleChips(text: string) {
   const parts: ReactNode[] = [];
@@ -142,7 +151,7 @@ export function XRayClient({ scanId: scanIdProp }: { scanId?: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>("revealed");
-  const [activeFinding, setActiveFinding] = useState<string | null>(null);
+  const [activeFinding, setActiveFinding] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -169,34 +178,49 @@ export function XRayClient({ scanId: scanIdProp }: { scanId?: string }) {
     };
   }, [scanId]);
 
-  const activeSpan = useMemo((): [number, number] | null => {
-    if (!scan || !activeFinding) return null;
-    const f = scan.findings?.find((x) => x.id === activeFinding);
-    return f?.span && f.span[0] < f.span[1] ? f.span : null;
-  }, [scan, activeFinding]);
+  const shownSegments = useMemo(() => {
+    const segs = scan?.segments ?? [];
+    if (view === "original") return segs.filter((s) => !s.hidden);
+    if (view === "revealed") return segs;
+    return [];
+  }, [scan, view]);
 
   const docText = useMemo(() => {
     if (!scan) return "";
     if (view === "sanitised") return scan.sanitized_text || "";
-    if (view === "spotlighted") return scan.spotlighted_text || scan.sanitized_text || "";
-    const joined = (scan.segments ?? []).map((s) => s.text_preview || "").join("\n");
-    return joined || scan.sanitized_text || "";
-  }, [scan, view]);
+    if (view === "spotlighted") return scan.spotlighted_text || "";
+    return shownSegments.map((s) => s.text_preview || "").filter(Boolean).join("\n");
+  }, [scan, view, shownSegments]);
+
+  const activeSpan = useMemo((): [number, number] | null => {
+    if (!scan || activeFinding == null || (view !== "original" && view !== "revealed")) return null;
+    const f = scan.findings?.[activeFinding];
+    if (!f?.span || f.span[0] >= f.span[1]) return null;
+    let off = 0;
+    for (const seg of shownSegments) {
+      const t = seg.text_preview || "";
+      if (seg.id && seg.id === f.segment_id) {
+        const lo = Math.max(0, Math.min(f.span[0], t.length));
+        const hi = Math.max(lo, Math.min(f.span[1], t.length));
+        return hi > lo ? [off + lo, off + hi] : null;
+      }
+      if (t) off += t.length + 1;
+    }
+    return null;
+  }, [scan, activeFinding, view, shownSegments]);
 
   const hiddenRanges = useMemo((): Array<[number, number]> => {
-    if (!scan?.segments?.length || !docText) return [];
+    if (view !== "revealed" || !shownSegments.length) return [];
     const ranges: Array<[number, number]> = [];
     let off = 0;
-    for (const seg of scan.segments) {
+    for (const seg of shownSegments) {
       const t = seg.text_preview || "";
-      const len = t.length + 1;
-      if (seg.hidden && t) {
-        ranges.push([off, off + t.length]);
-      }
-      off += len;
+      if (!t) continue;
+      if (seg.hidden) ranges.push([off, off + t.length]);
+      off += t.length + 1;
     }
     return ranges;
-  }, [scan, docText]);
+  }, [view, shownSegments]);
 
   if (loading) {
     return (
@@ -238,6 +262,10 @@ export function XRayClient({ scanId: scanIdProp }: { scanId?: string }) {
   ] as const;
 
   const emptyDoc = !docText.trim();
+  const driver = (scan.findings ?? []).reduce<Finding | null>((best, f) => {
+    if (!best || (f.score ?? 0) > (best.score ?? 0)) return f;
+    return best;
+  }, null);
 
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -247,15 +275,21 @@ export function XRayClient({ scanId: scanIdProp }: { scanId?: string }) {
             <h1 className="text-xl font-bold font-mono tracking-tight">{scan.scan_id}</h1>
             <VerdictBadge decision={scan.decision} />
             <span className="text-sm text-slate font-mono">risk {scan.risk.toFixed(2)}</span>
-            {scan.decision !== "allow" && scan.findings?.[0] ? (
+            {scan.decision !== "allow" && driver ? (
               <span className="text-xs text-slate font-mono">
-                via {scan.findings[0].reason_code ?? "finding"} {(scan.findings[0].score ?? 0).toFixed(2)}
+                via {driver.reason_code ?? "finding"} {(driver.score ?? 0).toFixed(2)}
               </span>
             ) : null}
             <span className="text-xs text-slate">policy v{scan.policy_version ?? "—"}</span>
           </div>
           {(scan.degraded ?? []).length ? (
             <p className="text-xs text-sanitize mt-1">Degraded: {scan.degraded?.join(", ")}</p>
+          ) : null}
+          {scan.safe_alternative ? (
+            <p className="mt-2 max-w-prose text-sm">
+              <span className="font-medium">Safe alternative. </span>
+              {scan.safe_alternative}
+            </p>
           ) : null}
         </div>
         <div className="flex flex-wrap gap-1" role="tablist" aria-label="Document view">
@@ -265,6 +299,7 @@ export function XRayClient({ scanId: scanIdProp }: { scanId?: string }) {
               type="button"
               role="tab"
               aria-selected={view === v}
+              title={VIEW_HINT[v]}
               onClick={() => setView(v)}
               className={`rounded-panel px-2.5 py-1 text-xs capitalize border ${
                 view === v ? "border-uv text-uv bg-surface" : "border-rule text-slate bg-surface"
@@ -292,13 +327,13 @@ export function XRayClient({ scanId: scanIdProp }: { scanId?: string }) {
         <section className="rounded-panel border border-rule bg-surface p-4">
           <h2 className="text-sm font-medium mb-2">Findings ({scan.findings?.length ?? 0})</h2>
           <ul className="space-y-2">
-            {(scan.findings ?? []).map((f) => (
-              <li key={f.id}>
+            {(scan.findings ?? []).map((f, index) => (
+              <li key={`${f.id}-${index}`}>
                 <button
                   type="button"
-                  onClick={() => setActiveFinding(f.id === activeFinding ? null : f.id)}
+                  onClick={() => setActiveFinding(activeFinding === index ? null : index)}
                   className={`w-full text-left rounded-panel border px-2 py-2 ${
-                    activeFinding === f.id ? "border-uv ring-1 ring-uv/40" : "border-rule"
+                    activeFinding === index ? "border-uv" : "border-rule"
                   }`}
                 >
                   <div className="flex justify-between gap-2 text-sm">

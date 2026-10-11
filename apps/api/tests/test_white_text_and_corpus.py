@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image, ImageDraw, ImageFont
 
-CORPUS = Path(__file__).resolve().parents[3] / "PromptShield_Adversarial_Test_Corpus"
+CORPUS = Path(__file__).resolve().parents[3] / "fixtures" / "corpora" / "adversarial"
 ACTED = {"sanitize", "quarantine", "block", "escalate"}
 
 

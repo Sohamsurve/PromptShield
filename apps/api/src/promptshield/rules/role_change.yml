@@ -527,4 +527,12 @@
   - en
   context: any
   patterns:
-  - regex: (?i)\benable developer mode\b
+    - regex: (?i)\benable developer mode\b
+- id: PI-ROLE-050
+  attack_types: [role_change]
+  severity: 0.85
+  reason_code: ROLE_MARKER
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)\b(?:enter|switch your persona to)\s+(?:DAN\b|jailbreak mode|evilgpt|admin override|an unrestricted assistant)\b|\benable\s+(?:jailbreak mode|DAN\b|evilgpt)\b'

@@ -94,3 +94,19 @@
   context: any
   patterns:
     - regex: (?i)\brole-?play\s+has\s+no\s+restrictions\s+and\s+is\s+a\s+jailbreak\b
+- id: PI-MULTI-013
+  attack_types: [multi_step_jailbreak]
+  severity: 0.85
+  reason_code: MULTI_CHAIN
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bstep\s+\d+\s*:\s*[^.\n]{0,40}\bextract\s+secrets\b
+- id: PI-MULTI-014
+  attack_types: [multi_step_jailbreak]
+  severity: 0.85
+  reason_code: MULTI_CHAIN
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\btransmit\s+them\s+externally\b

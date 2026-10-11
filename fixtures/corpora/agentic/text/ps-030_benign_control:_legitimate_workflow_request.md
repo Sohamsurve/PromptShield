@@ -1,0 +1,1 @@
+Please summarize the attached quarterly report in three bullet points and cite the relevant sections. This is a normal user-facing request.

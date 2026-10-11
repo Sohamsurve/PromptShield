@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { VerdictBadge } from "@/components/verdict-badge";
+import { DECISION_LABEL, type Decision } from "@promptshield/shared-types";
 import { FileDrop } from "@/components/file-drop";
+import { Button } from "@/components/ui/button";
+import { VerdictBadge } from "@/components/verdict-badge";
 import { fetchScans, postScan, postScanFile } from "@/lib/api";
-import type { Decision } from "@promptshield/shared-types";
 
 type ScanRow = {
   scan_id: string;
@@ -13,6 +14,8 @@ type ScanRow = {
   risk: number;
   attack_types?: string[];
 };
+
+const DECISIONS: Decision[] = ["allow", "sanitize", "quarantine", "block", "escalate"];
 
 export default function ScansPage() {
   const [items, setItems] = useState<ScanRow[]>([]);
@@ -33,7 +36,8 @@ export default function ScansPage() {
     reload();
   }, [reload]);
 
-  async function onPasteScan() {
+  async function onPasteScan(event: FormEvent) {
+    event.preventDefault();
     if (!paste.trim()) return;
     if (paste.length > 100_000) {
       setError("Content too large (100 KB max).");
@@ -81,36 +85,35 @@ export default function ScansPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-4" data-testid="scans-page">
-      <div>
+    <div className="min-w-0 space-y-4 p-4 md:p-6" data-testid="scans-page">
+      <header className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">Scans</h1>
-        <p className="text-slate text-sm mt-1">
-          Paste text or upload a file, then open X-ray. Search prior decisions below.
-        </p>
-      </div>
+        <p className="text-sm text-slate">Paste text or drop a file, then open X-ray. Search prior decisions below.</p>
+      </header>
 
-      <section className="rounded-panel border border-rule bg-surface p-4 space-y-3 max-w-2xl" data-testid="scans-upload">
-        <h2 className="text-sm font-medium">Scan content</h2>
+      <form
+        onSubmit={onPasteScan}
+        className="space-y-3 rounded-panel border border-rule bg-surface p-4"
+        data-testid="scans-upload"
+      >
+        <label htmlFor="scans-paste" className="text-sm font-medium">
+          Check a prompt
+        </label>
         <textarea
+          id="scans-paste"
           data-testid="scans-paste"
           value={paste}
           onChange={(e) => setPaste(e.target.value)}
-          rows={6}
+          rows={4}
           placeholder="Paste a prompt, email body, or other text specimen…"
-          className="w-full rounded-panel border border-rule bg-paper px-3 py-2 text-sm font-mono"
+          className="w-full rounded-panel border border-rule bg-background px-3 py-2 text-sm"
           disabled={busy}
         />
-        <FileDrop disabled={busy} onFile={onFile} />
-        <div className="flex flex-wrap gap-2 items-center">
-          <button
-            type="button"
-            data-testid="scans-submit"
-            disabled={busy || !paste.trim()}
-            onClick={onPasteScan}
-            className="rounded-panel bg-ink text-paper px-3 py-1.5 text-sm disabled:opacity-50"
-          >
-            Scan text
-          </button>
+        <FileDrop disabled={busy} onFile={onFile} label="Drop a file here, or click to choose" />
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" data-testid="scans-submit" disabled={busy || !paste.trim()}>
+            {busy ? "Checking" : "Check"}
+          </Button>
           {lastId ? (
             <Link href={`/scans/${lastId}`} className="text-sm text-uv hover:underline">
               Open X-ray for {lastId}
@@ -118,7 +121,7 @@ export default function ScansPage() {
           ) : null}
         </div>
         {error ? <p className="text-sm text-block">{error}</p> : null}
-      </section>
+      </form>
 
       <div className="flex flex-wrap gap-2" data-testid="scans-filters">
         <select
@@ -128,9 +131,9 @@ export default function ScansPage() {
           className="rounded-panel border border-rule bg-surface px-2 py-2 text-sm"
         >
           <option value="">All decisions</option>
-          {["allow", "sanitize", "quarantine", "block", "escalate"].map((d) => (
+          {DECISIONS.map((d) => (
             <option key={d} value={d}>
-              {d}
+              {DECISION_LABEL[d]}
             </option>
           ))}
         </select>
@@ -141,30 +144,46 @@ export default function ScansPage() {
           className="w-full max-w-md rounded-panel border border-rule bg-surface px-3 py-2 text-sm"
         />
       </div>
-      <ul className="space-y-2">
-        {filtered.map((s) => (
-          <li key={s.scan_id}>
-            <Link
-              href={`/scans/${s.scan_id}`}
-              className="flex flex-wrap items-center gap-3 rounded-panel border border-rule bg-surface px-3 py-2 hover:border-uv"
-            >
-              <VerdictBadge decision={s.decision} />
-              <span className="font-mono text-xs">{s.scan_id}</span>
-              <span className="font-mono text-xs text-slate">{s.risk.toFixed(2)}</span>
-              <span className="text-xs text-slate">{(s.attack_types ?? []).join(", ")}</span>
-            </Link>
-          </li>
-        ))}
-        {!filtered.length ? (
-          <li className="text-sm text-slate">
-            No matching scans. Paste content above, drop a file, or run a fixture in the{" "}
-            <Link href="/arena" className="text-uv underline">
-              Arena
-            </Link>
-            .
-          </li>
-        ) : null}
-      </ul>
+
+      <div className="overflow-auto rounded-panel border border-rule bg-surface">
+        <table className="w-full text-sm">
+          <thead className="border-b border-rule text-left text-xs text-slate">
+            <tr>
+              <th className="px-3 py-2 font-medium">Verdict</th>
+              <th className="px-3 py-2 font-medium">Risk</th>
+              <th className="px-3 py-2 font-medium">Types</th>
+              <th className="px-3 py-2 font-medium">Scan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((s) => (
+              <tr key={s.scan_id} className="border-b border-rule last:border-0">
+                <td className="px-3 py-2">
+                  <VerdictBadge decision={s.decision} />
+                </td>
+                <td className="px-3 py-2 font-mono text-xs">{s.risk.toFixed(2)}</td>
+                <td className="px-3 py-2 text-xs text-slate">{(s.attack_types ?? []).slice(0, 3).join(", ") || "—"}</td>
+                <td className="px-3 py-2">
+                  <Link href={`/scans/${s.scan_id}`} className="font-mono text-xs text-uv hover:underline">
+                    {s.scan_id}
+                  </Link>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-3 py-8 text-sm text-slate">
+                  No matching scans. Paste content above, drop a file, or run a fixture in the{" "}
+                  <Link href="/arena" className="text-uv underline">
+                    Arena
+                  </Link>
+                  .
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

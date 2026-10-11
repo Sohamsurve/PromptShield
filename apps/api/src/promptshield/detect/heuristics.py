@@ -46,6 +46,34 @@ _POISON = re.compile(
 _ROLE = re.compile(
     r"(?i)(?:^\s*system\s*:|###\s*assistant|<\|im_start\|>|you are now|act as|developer mode|jailbreak)"
 )
+# Hidden commands that do not use the word "canary" or the short override list.
+_HIDDEN_COMMAND = re.compile(
+    r"(?i)(?:"
+    r"\b(?:do not|don't|never)\b[^.\n]{0,48}\b(?:tell|mention|show|reveal|share|disclose|warn|log|report)\b"
+    r"|"
+    r"\byou (?:must|should|will|are to|need to)\b"
+    r"|"
+    r"\b(?:new|updated|priority|hidden)\s+(?:instruction|directive|order|command|policy)\b"
+    r"|"
+    r"\b(?:follow|obey|carry out)\b[^.\n]{0,40}\b(?:instruction|directive|order|command|policy|above|below)\b"
+    r"|"
+    r"\b(?:answer|reply|respond)\b[^.\n]{0,40}\b(?:as if|instead|only with|without)\b"
+    r"|"
+    r"\b(?:provide|give|list|dump|paste|output)\b[^.\n]{0,40}\b(?:secret|password|prompt|instruction|key|credential|token)s?\b"
+    r")"
+)
+
+
+def looks_like_hidden_command(text: str) -> bool:
+    """A hidden line is a command when it tells the model what to do.
+
+    The word "canary" is not required. A revenue sentence is not a command.
+    """
+    if _IMPERATIVE.search(text) or _TOOLISH.search(text) or _CREDS.search(text):
+        return True
+    if _EXFIL.search(text) or _POISON.search(text) or _ROLE.search(text):
+        return True
+    return _HIDDEN_COMMAND.search(text) is not None
 _DATA_CTX = re.compile(r"(?i)\b(invoice|order|recipe|changelog|meeting|agenda|quarterly)\b")
 
 
@@ -153,10 +181,14 @@ def heuristic_findings(segments: list[Segment], *, tools: list[str] | None = Non
         trigger = False
         types: list[AttackType] = []
 
-        if hidden or risky_json or special_kind:
-            if _IMPERATIVE.search(text) or _TOOLISH.search(text) or _CREDS.search(text):
-                trigger = True
-                types.append(AttackType.instruction_override)
+        if hidden and looks_like_hidden_command(text):
+            trigger = True
+            types.append(AttackType.instruction_override)
+        elif (risky_json or special_kind) and (
+            _IMPERATIVE.search(text) or _TOOLISH.search(text) or _CREDS.search(text)
+        ):
+            trigger = True
+            types.append(AttackType.instruction_override)
 
         if untrusted and (feats["tool_mentions"] > 0 or feats["exfil_shape"] > 0):
             trigger = True

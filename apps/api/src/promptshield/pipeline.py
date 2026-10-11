@@ -31,7 +31,7 @@ from promptshield.domain import (
     TrustLevel,
 )
 from promptshield.fusion.score import decide, fuse_risk
-from promptshield.neutralize.redact import redact_spans, spotlight
+from promptshield.neutralize.redact import document_redact_findings, redact_spans, safe_alternative, spotlight
 from promptshield.normalize.decode import decode_recursive
 from promptshield.normalize.unicode import canonicalize
 
@@ -343,6 +343,35 @@ def scan(
 
     long_doc = sum(len(s.text or "") for s in segments) >= 1500
     in_gray_band = judge_lo <= pre_risk <= judge_hi
+    # Second look: an image still in doubt, with faint ink Tesseract did not read.
+    if (
+        request.source_type == SourceType.image
+        and isinstance(raw, (bytes, bytearray))
+        and in_gray_band
+    ):
+        from promptshield.adapters.vision_ocr import instruction_recovered, supplement_unresolved
+
+        if segments and not instruction_recovered(segments):
+            extra = supplement_unresolved(
+                bytes(raw),
+                segments,
+                source_id=segments[0].source_id,
+                trust=request.trust,
+            )
+            if extra:
+                segments.extend(extra)
+                for seg in extra:
+                    hay = seg.canonical or seg.text
+                    for h in engine.scan(hay, segment_id=seg.id):
+                        if (
+                            seg.trust.value >= TrustLevel.T2
+                            and AttackType.indirect_injection not in h.attack_types
+                        ):
+                            h.attack_types = list(h.attack_types) + [AttackType.indirect_injection]
+                        findings.append(h)
+                findings.extend(heuristic_findings(extra, tools=tools))
+                max_sev = max((f.score for f in findings if f.detector == "signature"), default=0.0)
+                hidden = 1.0 if any(s.location.hidden_reason for s in segments) else 0.0
     consult_judge = in_gray_band or (
         request.trust.value <= TrustLevel.T1 and max_sev >= 0.75 and hidden == 0.0
     ) or (structural_quote and max_sev >= 0.5)
@@ -453,7 +482,14 @@ def scan(
                         pre_risk = max(pre_risk, 0.7)
                 else:
                     judge_conf = jr.confidence
-                    if bool(jr.is_quotation_or_discussion) and not agent_directed:
+                    # A discussion flag cannot erase a signature the structural
+                    # quotation check did not already dampen. The judge never
+                    # overrides a real instruction on its own.
+                    if (
+                        bool(jr.is_quotation_or_discussion)
+                        and not agent_directed
+                        and structural_quote
+                    ):
                         judge_quote = True
                     judge_inj = bool(jr.is_injection) and not (
                         bool(jr.is_quotation_or_discussion) and not agent_directed
@@ -550,7 +586,16 @@ def scan(
         judge_action=judge_action,
     )
     if provisional in {Decision.sanitize, Decision.quarantine, Decision.block} and findings:
-        primary_findings = [f for f in findings if f.span and f.span[0] < len(redact_base)]
+        if content:
+            primary_findings = [
+                f
+                for f in findings
+                if f.span
+                and f.span[0] < len(redact_base)
+                and f.reason_code != "CLF_INJECTION_UNLOCALISED"
+            ]
+        else:
+            primary_findings = document_redact_findings(segments, findings, redact_base)
         sanitized = redact_spans(redact_base, primary_findings) if primary_findings else joined
         residual_hits = engine.scan(sanitized)
         residual_h = heuristic_findings(
@@ -608,9 +653,11 @@ def scan(
     else:
         risk = round(risk, 4)
 
+    from promptshield.adapters.vision_ocr import consume_vision_degraded
     from promptshield.detect.judge import consume_judge_degraded
 
     degraded.extend(consume_judge_degraded())
+    degraded.extend(consume_vision_degraded())
 
     attack_types = sorted({a for f in findings for a in f.attack_types}, key=lambda x: x.value)
     total_ms = (time.perf_counter() - t0) * 1000
@@ -629,6 +676,7 @@ def scan(
         long_doc=long_doc,
         in_gray_band=in_gray_band,
     )
+    _dedupe_finding_ids(findings)
     return ScanResult(
         scan_id=scan_id,
         decision=decision,
@@ -638,6 +686,7 @@ def scan(
         segments=_segment_summaries(segments),
         sanitized_text=sanitized,
         spotlighted_text=spotlighted,
+        safe_alternative=safe_alternative(decision.value, sanitized, residual_risk=residual_risk),
         system_reminder=reminder,
         hidden_content_revealed=any(s.location.hidden_reason for s in segments),
         latency_ms={
@@ -650,6 +699,20 @@ def scan(
         policy_version=str(policy.get("version", "1")),
         degraded=list(dict.fromkeys(degraded)),
     )
+
+
+def _dedupe_finding_ids(findings: list[Finding]) -> None:
+    """Signature scans restart their counter per segment, so stored rows can repeat f1."""
+    seen: set[str] = set()
+    for index, finding in enumerate(findings):
+        base = finding.id or f"f{index}"
+        candidate = base
+        n = 2
+        while candidate in seen:
+            candidate = f"{base}-{n}"
+            n += 1
+        finding.id = candidate
+        seen.add(candidate)
 
 
 def scan_text(text: str, source_type: SourceType = SourceType.text) -> ScanResult:

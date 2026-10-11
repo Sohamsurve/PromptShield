@@ -158,3 +158,43 @@
   context: any
   patterns:
     - regex: '(?i)\b(?:store\s+forever|pin\s+instruction|sticky\s+rule|durable\s+state)\b.{0,40}\b(?:bypass|ignore|always|PWNED|admin)\b'
+- id: PI-CTX-021
+  attack_types: [context_poisoning]
+  severity: 0.85
+  reason_code: CTX_REVOKED
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\ball\s+earlier\s+policies\s+are\s+revoked\b
+- id: PI-CTX-022
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_CITATION
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bomit\s+contradictory\s+evidence\b
+- id: PI-CTX-023
+  attack_types: [context_poisoning]
+  severity: 0.8
+  reason_code: CTX_CITATION
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bcite\s+this\s+unverified\b
+- id: PI-CTX-024
+  attack_types: [context_poisoning]
+  severity: 0.85
+  reason_code: CTX_STORE_FOREVER
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)\b(?:from now on|remember that|persist this rule|store this permanently|long-term memory|add this to your memory|whenever you reply)\b.{0,180}\b(?:safety checks are optional|does not apply|trusted contact|skip the usual safety|optional for this user)\b'
+- id: PI-CTX-025
+  attack_types: [context_poisoning]
+  severity: 0.85
+  reason_code: CTX_STORE_FOREVER
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)\b(?:later turns|next session|standing exception|durable note|saved user preference|future questions)\b.{0,200}\b(?:safety check|written policy|trusted contact|exfil@)'

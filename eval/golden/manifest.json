@@ -1,0 +1,111 @@
+{
+  "suite": "golden-v2",
+  "purpose": "Frozen predictability and progress set. Not training data.",
+  "per_attack_type": 100,
+  "per_attack_type_safe": 50,
+  "general_benign": 50,
+  "benign": 500,
+  "attack_types": [
+    "instruction_override",
+    "role_change",
+    "secret_extraction",
+    "tool_abuse",
+    "credential_theft",
+    "context_poisoning",
+    "multi_step_jailbreak",
+    "encoded_instruction",
+    "indirect_injection"
+  ],
+  "files": {
+    "cases/instruction_override.jsonl": {
+      "count": 100,
+      "sha256": "21e6fe108c9bf704a369a6135bbfe9f19657c8485ff073b192dc83b184b944bf"
+    },
+    "cases/role_change.jsonl": {
+      "count": 100,
+      "sha256": "c60cf29ac7b85d57d9260823e66e7f76b0cc98369512ca468f87dc70169fd25e"
+    },
+    "cases/secret_extraction.jsonl": {
+      "count": 100,
+      "sha256": "02ca04faebd8de7cb60fd4988bce08575dfcd55d20ebdc217e0fb3b352809cc2"
+    },
+    "cases/tool_abuse.jsonl": {
+      "count": 100,
+      "sha256": "d48ef3618520579c581c89e6c5b147973ce79243a6ec82e313b9e0cbf921b314"
+    },
+    "cases/credential_theft.jsonl": {
+      "count": 100,
+      "sha256": "cb9839ced10cc5c24ca45d595cac59f207a7dce799eee7b28aaf4e929afa6e44"
+    },
+    "cases/context_poisoning.jsonl": {
+      "count": 100,
+      "sha256": "a2b3e0bb57bbd9b8ebb825670b64cd8dc49c069d082c733e5c57c546c6ea1c00"
+    },
+    "cases/multi_step_jailbreak.jsonl": {
+      "count": 100,
+      "sha256": "944bb66f6fe6c16aa4b2b0e59b7f5246c7668c69e8bcdd5671466f332712e739"
+    },
+    "cases/encoded_instruction.jsonl": {
+      "count": 100,
+      "sha256": "0f188cd878c1e0f3551ccf954c48bceb3e1f56f06c81e30495feab665bbafa0c"
+    },
+    "cases/indirect_injection.jsonl": {
+      "count": 100,
+      "sha256": "f1ba512bd68b8cae9fb576753b2adf95a9b6140ede1bfb9714c7648ce268af9e"
+    },
+    "cases/safe_instruction_override.jsonl": {
+      "count": 50,
+      "sha256": "ffa401d2ed79751135e76da82a1709d350826f3305b6d4699ff7b1ccdf5998d7"
+    },
+    "cases/safe_role_change.jsonl": {
+      "count": 50,
+      "sha256": "c302b45ede7b4f9c9c162dc81b5ffd001622a0a07a7de1178f7e747fdf73d2ec"
+    },
+    "cases/safe_secret_extraction.jsonl": {
+      "count": 50,
+      "sha256": "bfd1c9d54d8d7fd89c2fd580dad05bb2be48252b09f6ba87188bb6f64c7d08d5"
+    },
+    "cases/safe_tool_abuse.jsonl": {
+      "count": 50,
+      "sha256": "cf71e62a5b908df520e3a73ed57eae4d1d7ac0917a4be6aeeadff16fe220d359"
+    },
+    "cases/safe_credential_theft.jsonl": {
+      "count": 50,
+      "sha256": "14fbb058b6fe7959d6ed192b368364b8f0cbfb94d09cb61eda3bdfc07d47b643"
+    },
+    "cases/safe_context_poisoning.jsonl": {
+      "count": 50,
+      "sha256": "bf09f173015f8e53c03f3a8a31e53ef79c0c49e2a4957a0f321ca760c29d81bb"
+    },
+    "cases/safe_multi_step_jailbreak.jsonl": {
+      "count": 50,
+      "sha256": "b3a796349b2b6c2f9ded06df57e76d2fa5b32d2d416836c4362428276353cce7"
+    },
+    "cases/safe_encoded_instruction.jsonl": {
+      "count": 50,
+      "sha256": "31b382cd168857f8052117117e2fb4e2d425fe6f802c1d7a0583ae75ccfa939e"
+    },
+    "cases/safe_indirect_injection.jsonl": {
+      "count": 50,
+      "sha256": "0c172bec41482e7bf1636b86efbaaa70646716af2297020a34fbe519d9317227"
+    },
+    "cases/benign.jsonl": {
+      "count": 50,
+      "sha256": "56ab3e6865ff5ab2c660273053b60bec45e3fa7460eb4a7998e5d5e6e4409db7"
+    },
+    "cases/all.jsonl": {
+      "count": 1400,
+      "sha256": "355087132bfb1a2abfa0da56beee84a8f7dcf2385253e0afd2cf5763f7d88b5f"
+    },
+    "cases/imported_ps_v1.jsonl": {
+      "count": 288,
+      "sha256": "5125e4c361c439532d9b79070358bb0d8b7e89dde4125fe1c96e43e1ea3e46bd"
+    }
+  },
+  "imported_ps_v1": {
+    "rows": 288,
+    "attacks": 256,
+    "safe": 32,
+    "note": "Distinct sentences, 22 PNGs, and four Office/PDF packs from PromptShield_Golden_Suite_v1. Duplicate format copies are not scored."
+  }
+}

@@ -4,13 +4,26 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const ITEMS = [
-  { href: "/", label: "Console" },
+  { href: "/console", label: "Console" },
+  { href: "/", label: "Home" },
+  { href: "/admin", label: "Admin control" },
   { href: "/arena", label: "Arena" },
   { href: "/scans", label: "Scans" },
   { href: "/coverage", label: "Coverage" },
   { href: "/policy", label: "Policy" },
   { href: "/redteam", label: "Red team" },
   { href: "/eval", label: "Eval" },
+  { href: "/integrate", label: "Integrate" },
+  { href: "/keys", label: "Keys" },
+  { href: "/users", label: "Users" },
+  { href: "/portal", label: "Dashboard" },
+  { href: "/portal/scans", label: "Your scans" },
+  { href: "/portal/arena", label: "Your arena" },
+  { href: "/portal/coverage", label: "Your coverage" },
+  { href: "/portal/redteam", label: "Your red team" },
+  { href: "/portal/keys", label: "API keys" },
+  { href: "/login", label: "Sign in" },
+  { href: "/signup", label: "Create account" },
   { href: "/settings", label: "Settings" },
 ];
 

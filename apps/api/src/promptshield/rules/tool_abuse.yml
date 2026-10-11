@@ -94,3 +94,51 @@
   context: any
   patterns:
     - regex: (?i)\bnote_to_ai\s*:\s*.{0,40}\b(?:forward|send_email)\b
+- id: PI-TOOL-013
+  attack_types: [tool_abuse]
+  severity: 0.85
+  reason_code: TOOL_UNASKED
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bcall\s+every\s+available\s+tool\b
+- id: PI-TOOL-014
+  attack_types: [tool_abuse]
+  severity: 0.8
+  reason_code: TOOL_UNASKED
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\b(?:modify|delete)\b[^.\n]{0,48}\bwithout\s+asking\b
+- id: PI-TOOL-015
+  attack_types: [tool_abuse]
+  severity: 0.8
+  reason_code: TOOL_DELEGATE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bignore\s+its\s+constraints\b
+- id: PI-TOOL-016
+  attack_types: [tool_abuse]
+  severity: 0.8
+  reason_code: TOOL_DELEGATE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bupload\s+local\s+files\b
+- id: PI-TOOL-017
+  attack_types: [tool_abuse]
+  severity: 0.85
+  reason_code: TOOL_EXPORT
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bexport\s+all\s+rows\b
+- id: PI-TOOL-018
+  attack_types: [tool_abuse]
+  severity: 0.86
+  reason_code: TOOL_EXFIL_EMAIL
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)\b(?:use|call|invoke)\s+(?:send_email|fetch_url|read_file|save_memory|curl)\b.{0,200}evil\.test'

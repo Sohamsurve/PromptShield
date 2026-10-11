@@ -24,9 +24,10 @@ def _style_hidden_reason(style: str | None) -> str | None:
     for pat, reason in _HIDDEN_STYLE_RES:
         if pat.search(style):
             return reason
-    # white-on-white / colour == background (simple inline)
-    if re.search(r"color\s*:\s*#fff(?:fff)?\b", style, re.I) and re.search(
-        r"background(?:-color)?\s*:\s*#fff(?:fff)?\b", style, re.I
+    # white-on-white / colour == background (hex or the named colour)
+    white = r"(?:#fff(?:fff)?|white)"
+    if re.search(rf"color\s*:\s*{white}\b", style, re.I) and re.search(
+        rf"background(?:-color)?\s*:\s*{white}\b", style, re.I
     ):
         return "css:white-on-white"
     if re.search(r"color\s*:\s*#fff(?:fff)?\b", style, re.I) and re.search(

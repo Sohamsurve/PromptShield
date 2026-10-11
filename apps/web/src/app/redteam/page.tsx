@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { VerdictBadge } from "@/components/verdict-badge";
 import { OutcomeBanner } from "@/components/outcome-banner";
 import { FileDrop } from "@/components/file-drop";
 import { addRegressionCase, apiBase, policyTest, postScanFile, runDemo } from "@/lib/api";
+import { sitePaths } from "@/lib/site-paths";
 import type { Decision } from "@promptshield/shared-types";
 
 type Bypass = { id: string; content: string; decision: Decision; harmed: boolean | null };
@@ -32,6 +34,7 @@ const EXAMPLE_ATTACKS: Array<{ label: string; text: string }> = [
 ];
 
 export default function RedTeamPage() {
+  const paths = sitePaths(usePathname() || "/redteam");
   const [content, setContent] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -154,7 +157,7 @@ export default function RedTeamPage() {
         <p className="text-slate text-sm mt-1 max-w-prose">
           Paste attack text or drop a file. All input is hostile data — never executed. For side-by-side
           gallery demos use the{" "}
-          <Link href="/arena" className="text-uv underline">
+          <Link href={paths.arena} className="text-uv underline">
             Arena
           </Link>
           .
@@ -239,7 +242,7 @@ export default function RedTeamPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <VerdictBadge decision={scan.decision} />
                 <span className="font-mono text-xs">risk {scan.risk.toFixed(2)}</span>
-                <Link href={`/scans/${scan.scan_id}`} className="text-sm text-uv hover:underline">
+                <Link href={paths.xray(scan.scan_id)} className="text-sm text-uv hover:underline">
                   Open X-ray
                 </Link>
               </div>
@@ -256,7 +259,7 @@ export default function RedTeamPage() {
                   detail={agentHarmed ? "protected agent harmed" : "protected agent safe"}
                 />
               ) : null}
-              {scan.decision === "allow" ? (
+              {scan.decision === "allow" && !paths.caller ? (
                 <div className="space-y-2">
                   <p className="text-sm text-sanitize">Possible bypass — logged below.</p>
                   <button

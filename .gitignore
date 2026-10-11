@@ -38,6 +38,7 @@ apps/web/.env*.local
 
 # Eval / models / local artifacts
 eval/reports/
+eval/golden/reports/
 models/**
 !models/.gitkeep
 !models/calibration.json

@@ -7,6 +7,7 @@ import re
 import shutil
 import struct
 import zlib
+from difflib import SequenceMatcher
 
 from promptshield.adapters.common import make_segment
 from promptshield.domain import Segment, TrustLevel
@@ -21,6 +22,56 @@ _TESSERACT_CANDIDATES = (
 
 def _ocr_engine() -> str:
     return (os.getenv("OCR_ENGINE") or "tesseract").strip().lower()
+
+
+# Real faint glyphs in fixtures/corpora/whitetext score about 93. Mask noise is far lower.
+_MIN_HIDDEN_CONF = 60.0
+_GARBAGE_TOKEN = re.compile(r"[A-Za-z][:;|`~\\][A-Za-z]")
+
+
+def _ocr_garbage(line: str) -> bool:
+    """A token like 'seare:s' is a misread, not a second sentence."""
+    if _GARBAGE_TOKEN.search(line):
+        return True
+    letters = sum(ch.isalpha() for ch in line)
+    return letters < 3 or letters / len(line) < 0.5
+
+
+def _near_duplicate(a: str, b: str) -> bool:
+    return SequenceMatcher(None, a.casefold(), b.casefold()).ratio() >= 0.72
+
+
+def _read_lines(im, config: str) -> list[tuple[str, float | None]]:
+    """OCR lines plus mean word confidence. Confidence is None if Tesseract data is unavailable."""
+    import pytesseract
+
+    try:
+        data = pytesseract.image_to_data(
+            im, config=config, output_type=pytesseract.Output.DICT
+        )
+    except Exception:
+        text = pytesseract.image_to_string(im, config=config) or ""
+        return [(ln.strip(), None) for ln in text.splitlines() if ln.strip()]
+    rows: dict[tuple, list[tuple[str, float]]] = {}
+    texts = data.get("text") or []
+    for i, raw in enumerate(texts):
+        word = (raw or "").strip()
+        if not word:
+            continue
+        key = (data["block_num"][i], data["par_num"][i], data["line_num"][i])
+        try:
+            conf = float(data["conf"][i])
+        except (TypeError, ValueError, IndexError):
+            conf = -1.0
+        rows.setdefault(key, []).append((word, conf))
+    lines: list[tuple[str, float | None]] = []
+    for words in rows.values():
+        text = " ".join(word for word, _ in words).strip()
+        confs = [conf for _, conf in words if conf >= 0]
+        mean = sum(confs) / len(confs) if confs else None
+        if text:
+            lines.append((text, mean))
+    return lines
 
 
 def resolve_tesseract_cmd() -> str | None:
@@ -83,28 +134,31 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
             pass
 
         seen: set[str] = set()
-        for name, im in variants:
+
+        def _absorb(name: str, im, *, mask: bool) -> None:
+            nonlocal degraded_ocr
+            config = "--psm 6" if mask else ""
             try:
-                text = pytesseract.image_to_string(im) or ""
+                lines = _read_lines(im, config)
             except Exception:
                 degraded_ocr = True
-                continue
-            for line in text.splitlines():
-                line = line.strip()
+                return
+            for line, conf in lines:
                 if len(line) < 3 or line in seen:
                     continue
                 hidden_reason = None
-                if name in {"nearwhite", "localcontrast"}:
+                if mask or name in {"nearwhite", "localcontrast", "nearwhite2x"}:
                     hidden_reason = "img:low-contrast"
                 elif name != "original":
-                    # Other variants recover low-contrast attacks. OCR noise on
-                    # already-visible lines is not a second hidden segment.
-                    if not re.search(
-                        r"(?i)\b(?:ignore|instruction|reveal|secret|override|confidential)\b",
-                        line,
-                    ):
-                        continue
+                    # A contrast pass can recover a line the first pass missed.
+                    # Keep it whenever it is new text. A canary token is not required;
+                    # signatures and heuristics decide whether it is a command.
                     hidden_reason = "img:low-contrast"
+                if hidden_reason:
+                    if conf is not None and conf < _MIN_HIDDEN_CONF:
+                        continue
+                    if _ocr_garbage(line) or any(_near_duplicate(line, prev) for prev in seen):
+                        continue
                 seen.add(line)
                 segs.append(
                     make_segment(
@@ -116,6 +170,26 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
                         path=f"ocr:{name}",
                     )
                 )
+
+        for name, im in variants:
+            _absorb(name, im, mask=name in {"nearwhite", "localcontrast"})
+
+        # Stronger contrast pass only when the first masks missed an instruction.
+        from promptshield.adapters.vision_ocr import instruction_recovered, supplement_unresolved
+
+        if not instruction_recovered(segs):
+            try:
+                from PIL import Image as _Image
+
+                mask = _near_white_mask(img.convert("L"))
+                bigger = mask.resize((mask.width * 2, mask.height * 2), _Image.Resampling.NEAREST)
+                _absorb("nearwhite2x", bigger, mask=True)
+            except Exception:
+                degraded_ocr = True
+        if not instruction_recovered(segs):
+            segs.extend(
+                supplement_unresolved(raw, segs, source_id=source_id, trust=trust)
+            )
     except Exception:
         degraded_ocr = True
 

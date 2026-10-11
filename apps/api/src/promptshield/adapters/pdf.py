@@ -80,6 +80,9 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
 
         blocks = page.get_text("dict")
         for block in blocks.get("blocks", []):
+            visible_parts: list[str] = []
+            hidden_parts: list[str] = []
+            hidden_reason = None
             for line in block.get("lines", []):
                 for span in line.get("spans", []):
                     text = (span.get("text") or "").strip()
@@ -88,26 +91,41 @@ def extract(raw: bytes, source_id: str, trust: TrustLevel) -> list[Segment]:
                     size = float(span.get("size") or 12)
                     color = span.get("color", 0)
                     reason = None
-                    kind = "visible"
                     if size < 2.0:
                         reason = "pdf:font<2pt"
-                        kind = "hidden"
                     # color 16777215 = white. Size does not matter: 12 pt white
                     # text is still invisible on a white page.
                     if color in (16777215, 0xFFFFFF) or (color == 1 and size <= 8):
                         reason = reason or "pdf:white-on-white"
-                        kind = "hidden"
-                    segs.append(
-                        make_segment(
-                            source_id=source_id,
-                            text=text,
-                            trust=trust,
-                            kind=kind,  # type: ignore[arg-type]
-                            page=page_index + 1,
-                            hidden_reason=reason,
-                            path=f"p{page_index + 1}",
-                        )
+                    if reason:
+                        hidden_parts.append(text)
+                        hidden_reason = hidden_reason or reason
+                    else:
+                        visible_parts.append(text)
+            # Join wrapped spans so a sentence split across lines stays one segment.
+            if visible_parts:
+                segs.append(
+                    make_segment(
+                        source_id=source_id,
+                        text=" ".join(visible_parts),
+                        trust=trust,
+                        kind="visible",
+                        page=page_index + 1,
+                        path=f"p{page_index + 1}",
                     )
+                )
+            if hidden_parts:
+                segs.append(
+                    make_segment(
+                        source_id=source_id,
+                        text=" ".join(hidden_parts),
+                        trust=trust,
+                        kind="hidden",
+                        page=page_index + 1,
+                        hidden_reason=hidden_reason,
+                        path=f"p{page_index + 1}",
+                    )
+                )
 
     doc.close()
     return segs or [

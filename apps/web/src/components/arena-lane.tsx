@@ -1,5 +1,8 @@
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { VerdictBadge } from "@/components/verdict-badge";
 import { OutcomeBanner } from "@/components/outcome-banner";
+import { sitePaths } from "@/lib/site-paths";
 import type { Decision } from "@promptshield/shared-types";
 
 type Step = Record<string, unknown>;
@@ -32,6 +35,7 @@ export function ArenaLane({
   title: string;
   result?: ArenaResult | null;
 }) {
+  const paths = sitePaths(usePathname() || "/arena");
   const harmed = Boolean(result?.outcome.harmed);
   const decision = result?.scan?.decision;
   const deniedTools = (result?.tool_logs ?? []).filter((t) => t.denied);
@@ -66,12 +70,12 @@ export function ArenaLane({
       </ol>
       {result ? <OutcomeBanner harmed={harmed} detail={detail} /> : null}
       {result?.scan?.scan_id ? (
-        <a
-          href={`/scans/${result.scan.scan_id}`}
+        <Link
+          href={paths.xray(result.scan.scan_id)}
           className="mt-3 text-sm text-uv underline-offset-2 hover:underline self-start"
         >
           Open X-ray
-        </a>
+        </Link>
       ) : null}
     </section>
   );

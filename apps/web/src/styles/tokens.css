@@ -24,6 +24,51 @@
   --quarantine: #4fb6de;
   --block: #ff6b7a;
   --escalate: #e064b4;
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: color-mix(in srgb, var(--rule) 55%, var(--surface));
+  --muted-foreground: var(--slate);
+  --accent: color-mix(in srgb, var(--uv) 18%, var(--surface));
+  --accent-foreground: var(--ink);
+  --destructive: var(--block);
+  --destructive-foreground: #0e1726;
+  --border: var(--rule);
+  --input: var(--rule);
+  --ring: var(--uv);
+}
+
+:root {
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--paper);
+  --secondary-foreground: var(--ink);
+  --muted: color-mix(in srgb, var(--rule) 55%, var(--surface));
+  --muted-foreground: var(--slate);
+  --accent: color-mix(in srgb, var(--uv) 16%, var(--surface));
+  --accent-foreground: var(--ink);
+  --destructive: var(--block);
+  --destructive-foreground: #ffffff;
+  --border: var(--rule);
+  --input: var(--rule);
+  --ring: var(--uv);
+}
+
+.dark {
+  --destructive-foreground: #0e1726;
 }
 
 html,

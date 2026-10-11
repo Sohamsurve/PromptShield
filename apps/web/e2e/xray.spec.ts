@@ -1,6 +1,12 @@
 import { test, expect } from "@playwright/test";
 import { TEST_API_BASE } from "./test-api";
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("ps_bearer", "promptshield-owner");
+  });
+});
+
 test("x-ray: loading then content, UV sweep, views, finding link", async ({ page, request }) => {
   const scanRes = await request.post(`${TEST_API_BASE}/v1/scan`, {
     data: {

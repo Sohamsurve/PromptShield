@@ -132,11 +132,11 @@ Part B ACTED **0.417** (50/120) / FPR **0.0938** (30/320) was measured on fit po
 |---|---|
 | `apps/api/src/promptshield/policies/default.yml` | `f294359aae437022208e08a5603da41cfc43d1af9ac1acbceac1323385c992d5` |
 
-## whitetext_testpack (hashed before first measured run)
+## fixtures/corpora/whitetext (hashed before first measured run)
 
 | Path | SHA-256 | Bytes |
 |---|---|---:|
-| `whitetext_testpack/` (name+bytes of every file, sorted) | `6b24cbfd6605fa0104ee9ceb3e6ea112e71180f44468b88544b945f991503d98` | 366914 |
+| `fixtures/corpora/whitetext/` (name+bytes of every file, sorted) | `6b24cbfd6605fa0104ee9ceb3e6ea112e71180f44468b88544b945f991503d98` | 366914 |
 | `eval/data/dev_redteam/judge_manip_v25.jsonl` | `6ec9ed3c4da9ff05733373ababcdfdda37e3807e12da61492d680cf160a1dc48` | 11237 |
 | `scripts/rot13_false_trigger.py` | `e9a61fd8b03e97e8a8f5f68f6b16a1237334111a6111046a45a88db59509f082` | — |
 | `scripts/security_scan.py` | `2e4cbfc3447c938a203501bde4c5ba960918609b230b61e71cb0f30cb0988fa5` | — |

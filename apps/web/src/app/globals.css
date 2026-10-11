@@ -12,6 +12,61 @@ body {
   margin: 0;
   font-family: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
   line-height: 1.5;
+  background: var(--paper);
+}
+
+main :where(div, section, li, p, article, aside, pre).rounded-panel.border:not(.border-dashed),
+main :where(div, section, li, p, article, aside, pre).rounded-panel.border-rule,
+main :where(button, input, select, textarea).rounded-panel {
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 0 var(--ink);
+}
+
+main :where(button).rounded-panel.border-uv,
+main :where(button).rounded-panel[aria-selected="true"] {
+  border-color: var(--uv);
+}
+
+:where(input, select).rounded-panel {
+  height: 2.5rem;
+  padding: 0 0.85rem;
+  line-height: 2.5rem;
+  text-align: left;
+}
+
+:where(input, textarea, select).rounded-panel:focus {
+  outline: none;
+  border-color: var(--uv);
+}
+
+select.rounded-panel {
+  appearance: none;
+  padding-right: 2.25rem;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1.2 6 6.2 11 1.2' fill='none' stroke='%230E1726' stroke-width='1.6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 0.7rem;
+}
+
+.dark select.rounded-panel {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1.2 6 6.2 11 1.2' fill='none' stroke='%23E8ECF5' stroke-width='1.6'/></svg>");
+}
+
+button.rounded-panel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding-block: 0;
+  line-height: 1;
+  text-align: center;
+}
+
+.site-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--rule) 42%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--rule) 42%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
 }
 
 :focus-visible {

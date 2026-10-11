@@ -1,0 +1,40 @@
+{
+  "version": "1.0",
+  "total": 1250,
+  "attacks": 1200,
+  "safe": 50,
+  "categories": {
+    "direct_prompt_injection": 100,
+    "indirect_prompt_injection": 100,
+    "system_role_override": 100,
+    "tool_misuse": 100,
+    "data_exfiltration": 100,
+    "multi_step_chaining": 100,
+    "memory_context_poisoning": 100,
+    "rag_retrieval_poisoning": 100,
+    "encoding_obfuscation": 100,
+    "multimodal_ocr": 100,
+    "cross_agent_manipulation": 100,
+    "policy_evasion": 100
+  },
+  "formats": [
+    "TXT",
+    "MD",
+    "HTML",
+    "JSON",
+    "YAML",
+    "XML",
+    "PDF",
+    "DOCX",
+    "XLSX",
+    "CSV",
+    "EML",
+    "PY",
+    "SQL",
+    "SH",
+    "PNG",
+    "PPTX"
+  ],
+  "image_fixtures": "22 representative PNG images; contrast variants",
+  "pptx": "Generated 1,250-slide presentation with one case per slide."
+}

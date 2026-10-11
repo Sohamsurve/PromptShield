@@ -57,6 +57,60 @@ def test_unlocalised_classifier_does_not_sanitise_short_span() -> None:
     assert d == Decision.allow
 
 
+def test_classifier_span_too_large_to_redact_quarantines_at_grade() -> None:
+    """A hit at the quarantine grade must not become allow when redaction would eat the document."""
+    findings = [
+        Finding(
+            id="c",
+            segment_id="s",
+            span=(0, 120),
+            attack_types=[AttackType.instruction_override],
+            detector="classifier",
+            rule_id=None,
+            score=0.95,
+            reason_code="CLF_INJECTION",
+            evidence="x",
+        )
+    ]
+    policy = {
+        "clf_graded": {"sanitize": 0.85, "quarantine": 0.92, "block": 0.98},
+        "max_removal_ratio": 0.4,
+        "sources": {"text": {"block": 0.92, "quarantine": 0.70, "sanitize_span": 0.75}},
+    }
+    quarantined = decide(
+        risk=0.05,
+        findings=findings,
+        trust=TrustLevel.T1,
+        source_type="text",
+        text_len=200,
+        policy=policy,
+        max_signature_severity=0.0,
+    )
+    assert quarantined == Decision.quarantine
+    still_allow = decide(
+        risk=0.05,
+        findings=[
+            Finding(
+                id="c2",
+                segment_id="s",
+                span=(0, 120),
+                attack_types=[AttackType.instruction_override],
+                detector="classifier",
+                rule_id=None,
+                score=0.90,
+                reason_code="CLF_INJECTION",
+                evidence="x",
+            )
+        ],
+        trust=TrustLevel.T1,
+        source_type="text",
+        text_len=200,
+        policy=policy,
+        max_signature_severity=0.0,
+    )
+    assert still_allow == Decision.allow
+
+
 def test_judge_with_span_sanitises_not_blocks() -> None:
     findings = [_f(detector="judge", span=(10, 40), score=0.95)]
     d = decide(

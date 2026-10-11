@@ -19,13 +19,21 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "PromptShield",
   description: "Prompt-injection firewall console",
+  icons: {
+    icon: [
+      { url: "/assets/favicon.ico", sizes: "any" },
+      { url: "/assets/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/assets/favicon-16.png", type: "image/png", sizes: "16x16" },
+    ],
+    apple: { url: "/assets/favicon-192.png", sizes: "192x192" },
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${hanken.variable} ${jetbrains.variable} font-sans antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <body className={`${hanken.variable} ${jetbrains.variable} font-sans antialiased`} suppressHydrationWarning>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <AppShell>{children}</AppShell>
         </ThemeProvider>
       </body>

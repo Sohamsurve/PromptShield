@@ -9,12 +9,13 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, PlainTextResponse
 
 from promptshield.agent.aria import run_fixture
 from promptshield.agent.fixtures import list_fixtures, load_fixture_text
 from promptshield.api import persist, policy_store, upload_guard
+from promptshield.api.security import demo_mode, key_configured, owner_sign_in_mode, rate_ok
 from promptshield.domain import (
     Decision,
     OutputGuardRequest,
@@ -40,8 +41,39 @@ _EVAL_LATEST = _REPO_ROOT / "eval" / "reports" / "latest"
 _EVAL_REPORTS = _REPO_ROOT / "eval" / "reports"
 
 
-def _store_scan(result: ScanResult) -> ScanResult:
-    persist.save_scan(result)
+def _store_scan(result: ScanResult, owner_key_id: str | None = None) -> ScanResult:
+    persist.save_scan(result, owner_key_id=owner_key_id)
+    return result
+
+
+def _principal(request: Request) -> dict[str, Any]:
+    return getattr(request.state, "principal", {"role": "demo", "key_id": None, "name": "Demo", "prefix": ""})
+
+
+def _owner_key_id(request: Request) -> str | None:
+    principal = _principal(request)
+    if principal.get("role") == "user":
+        return str(principal.get("key_id") or "")
+    return None
+
+
+def _require_admin(request: Request) -> dict[str, Any]:
+    principal = _principal(request)
+    if principal.get("role") == "user":
+        raise HTTPException(403, "admin only")
+    if principal.get("role") not in {"admin", "demo"}:
+        raise HTTPException(401, "unauthorized")
+    return principal
+
+
+def _visible_scan(scan_id: str, request: Request) -> ScanResult:
+    found = persist.get_scan_owner(scan_id)
+    if found is None:
+        raise HTTPException(404, "scan not found; the server may have restarted")
+    result, owner = found
+    caller = _owner_key_id(request)
+    if caller is not None and owner != caller:
+        raise HTTPException(404, "scan not found; the server may have restarted")
     return result
 
 
@@ -56,9 +88,136 @@ def healthz() -> dict[str, Any]:
         "judge_model": cfg["judge_model"] or "",
         "llm_provider": cfg["llm_provider"] or "",
         "api_key_configured": cfg["api_key_configured"],
+        "firewall_auth": "demo" if demo_mode() else "api_key",
+        "firewall_key_configured": key_configured(),
+        "owner_sign_in": owner_sign_in_mode(),
         "judge_timeout_ms": cfg["timeout_ms"],
         "judge_reasoning_effort": cfg["reasoning_effort"] or "",
     }
+
+
+@router.get("/me")
+def whoami(request: Request) -> dict[str, Any]:
+    principal = _principal(request)
+    if principal.get("role") not in {"admin", "user", "demo"}:
+        raise HTTPException(401, "unauthorized")
+    key_id = principal.get("key_id")
+    if principal.get("role") == "user" and key_id:
+        scan_count = persist.scans_count_for(str(key_id))
+    else:
+        scan_count = persist.scans_count()
+    return {
+        "role": principal.get("role"),
+        "name": principal.get("name") or "",
+        "prefix": principal.get("prefix") or "",
+        "key_id": key_id,
+        "scan_count": scan_count,
+    }
+
+
+def _auth_fields(body: dict[str, Any]) -> tuple[str, str, str]:
+    name = str(body.get("name") or "")
+    email = str(body.get("email") or "")
+    password = body.get("password")
+    if not isinstance(password, str):
+        password = ""
+    return name, email, password
+
+
+@router.post("/auth/signup")
+def signup(body: dict[str, Any], request: Request) -> dict[str, Any]:
+    if not rate_ok(request.client.host if request.client else ""):
+        raise HTTPException(429, "rate limit")
+    name, email, password = _auth_fields(body)
+    try:
+        return persist.create_account(name, email, password)
+    except ValueError as exc:
+        if str(exc) == "exists":
+            raise HTTPException(409, "an account with that email already exists") from None
+        raise HTTPException(400, "name, email, and a password of at least 8 characters are required") from None
+
+
+@router.post("/auth/login")
+def login(body: dict[str, Any], request: Request) -> dict[str, Any]:
+    if not rate_ok(request.client.host if request.client else ""):
+        raise HTTPException(429, "rate limit")
+    _, email, password = _auth_fields(body)
+    found = persist.login_account(email, password)
+    if found is None:
+        raise HTTPException(401, "email or password is wrong")
+    return found
+
+
+def _caller_email(request: Request) -> str:
+    principal = _principal(request)
+    if principal.get("role") != "user" or not principal.get("key_id"):
+        raise HTTPException(403, "caller account only")
+    email = persist.account_email_for_key(str(principal["key_id"]))
+    if not email:
+        raise HTTPException(403, "caller account only")
+    return email
+
+
+@router.get("/me/keys")
+def my_keys(request: Request) -> dict[str, Any]:
+    email = _caller_email(request)
+    return {"items": persist.list_api_keys(owner_email=email)}
+
+
+@router.post("/me/keys")
+def my_create_key(body: dict[str, Any], request: Request) -> dict[str, Any]:
+    if not rate_ok(request.client.host if request.client else ""):
+        raise HTTPException(429, "rate limit")
+    email = _caller_email(request)
+    name = str(body.get("name") or "").strip()
+    if not name or len(name) > 80 or any(ord(ch) < 32 for ch in name):
+        raise HTTPException(400, "name is required")
+    return persist.create_api_key(name, role="user", owner_email=email)
+
+
+@router.post("/me/keys/{key_id}/revoke")
+def my_revoke_key(key_id: str, request: Request) -> dict[str, Any]:
+    email = _caller_email(request)
+    outcome = persist.revoke_account_key(key_id, email)
+    if outcome == "primary":
+        raise HTTPException(400, "the account key stays. Revoke an extra key instead.")
+    if outcome != "ok":
+        raise HTTPException(404, "key not found")
+    return {"key_id": key_id, "revoked": True}
+
+
+@router.post("/keys")
+def create_key(body: dict[str, Any], request: Request) -> dict[str, Any]:
+    _require_admin(request)
+    name = str(body.get("name") or "").strip()
+    if not name or len(name) > 80 or any(ord(ch) < 32 for ch in name):
+        raise HTTPException(400, "name is required")
+    role = str(body.get("role") or "user").strip()
+    if role not in {"user", "admin"}:
+        raise HTTPException(400, "role must be user or admin")
+    return persist.create_api_key(name, role=role)
+
+
+@router.get("/keys")
+def get_keys(request: Request) -> dict[str, Any]:
+    _require_admin(request)
+    return {"items": persist.list_api_keys()}
+
+
+@router.get("/accounts")
+def list_accounts(request: Request) -> dict[str, Any]:
+    _require_admin(request)
+    return {"items": persist.list_account_usage()}
+
+
+@router.post("/keys/{key_id}/revoke")
+def revoke_key(key_id: str, request: Request) -> dict[str, Any]:
+    _require_admin(request)
+    if key_id == "owner":
+        raise HTTPException(400, "the owner key is not stored here")
+    if not persist.revoke_api_key(key_id):
+        raise HTTPException(404, "key not found")
+    return {"key_id": key_id, "revoked": True}
 
 
 @router.get("/metrics")
@@ -93,8 +252,8 @@ def metrics_json() -> dict[str, Any]:
 
 
 @router.post("/scan", response_model=ScanResult)
-def post_scan(req: ScanRequest) -> ScanResult:
-    return _store_scan(scan(req, noop=False))
+def post_scan(req: ScanRequest, request: Request) -> ScanResult:
+    return _store_scan(scan(req, noop=False), owner_key_id=_owner_key_id(request))
 
 
 def _infer_source_type(filename: str | None, declared: str | None) -> SourceType:
@@ -107,13 +266,17 @@ def _infer_source_type(filename: str | None, declared: str | None) -> SourceType
         return SourceType.pdf
     if name.endswith(".docx"):
         return SourceType.docx
+    if name.endswith((".xlsx", ".xlsm")):
+        return SourceType.spreadsheet
+    if name.endswith((".pptx", ".pptm")):
+        return SourceType.presentation
     if name.endswith((".eml", ".mime", ".ics")):
         return SourceType.email
     if name.endswith((".md", ".markdown")):
         return SourceType.markdown
     if name.endswith(".json"):
         return SourceType.api_response
-    if name.endswith((".py", ".js", ".ts", ".java", ".go", ".rs")):
+    if name.endswith((".py", ".js", ".ts", ".java", ".go", ".rs", ".sql", ".sh")):
         return SourceType.source_code
     if name.endswith((".png", ".jpg", ".jpeg", ".webp", ".gif")):
         return SourceType.image
@@ -122,6 +285,7 @@ def _infer_source_type(filename: str | None, declared: str | None) -> SourceType
 
 @router.post("/scan/file", response_model=ScanResult)
 async def post_scan_file(
+    request: Request,
     file: UploadFile = File(...),
     source_type: str | None = Form(default=None),
     trust: int = Form(default=3),
@@ -162,11 +326,12 @@ async def post_scan_file(
             degraded=["upload_parse_error"],
             system_reminder="Upload parse failed safely; quarantined (no script execution).",
         )
-    return _store_scan(result)
+    return _store_scan(result, owner_key_id=_owner_key_id(request))
 
 
 @router.get("/scans")
 def list_scans(
+    request: Request,
     limit: int = Query(default=50, ge=1, le=500),
     cursor: str | None = None,
     decision: str | None = None,
@@ -174,7 +339,7 @@ def list_scans(
     attack_type: str | None = None,
     q: str | None = None,
 ) -> dict[str, Any]:
-    items = persist.list_scans(limit=500)
+    items = persist.list_scans(limit=500, owner_key_id=_owner_key_id(request))
     if decision:
         items = [s for s in items if s.decision.value == decision]
     if source_type:
@@ -207,19 +372,14 @@ def list_scans(
 
 
 @router.get("/scans/{scan_id}")
-def get_scan(scan_id: str) -> ScanResult:
-    s = persist.get_scan(scan_id)
-    if s is None:
-        raise HTTPException(404, "scan not found; the server may have restarted")
-    return s
+def get_scan(scan_id: str, request: Request) -> ScanResult:
+    return _visible_scan(scan_id, request)
 
 
 @router.get("/scans/{scan_id}/xray")
-def get_xray(scan_id: str) -> dict[str, Any]:
+def get_xray(scan_id: str, request: Request) -> dict[str, Any]:
     """X-ray model (README §6.2) — derived from ScanResult segments/findings."""
-    s = persist.get_scan(scan_id)
-    if s is None:
-        raise HTTPException(404, "scan not found; the server may have restarted")
+    s = _visible_scan(scan_id, request)
     layers = []
     for f in s.findings:
         layers.append(
@@ -438,7 +598,7 @@ def policy_diff(a: int = Query(...), b: int = Query(...)) -> dict[str, Any]:
 
 
 @router.post("/policy/test")
-def policy_test(body: dict[str, Any]) -> ScanResult:
+def policy_test(body: dict[str, Any], request: Request) -> ScanResult:
     content = body.get("content") or ""
     if not content.strip():
         raise HTTPException(400, "content required")
@@ -450,7 +610,7 @@ def policy_test(body: dict[str, Any]) -> ScanResult:
         ScanRequest(source_type=st, content=content, trust=trust, session_id=body.get("session_id")),
         noop=False,
     )
-    return _store_scan(result)
+    return _store_scan(result, owner_key_id=_owner_key_id(request))
 
 
 @router.post("/policy/replay")
@@ -486,7 +646,7 @@ def demo_fixtures() -> list[dict[str, Any]]:
 
 
 @router.post("/demo/run")
-def demo_run(body: dict[str, Any]) -> dict[str, Any]:
+def demo_run(body: dict[str, Any], request: Request) -> dict[str, Any]:
     fixture_id = body.get("fixture_id")
     if not fixture_id:
         raise HTTPException(400, "fixture_id required")
@@ -507,6 +667,11 @@ def demo_run(body: dict[str, Any]) -> dict[str, Any]:
             )
     else:
         results.append(run_fixture(fixture_id, firewall=firewall, text_scanning=text_scanning))
+    owner = _owner_key_id(request)
+    for item in results:
+        raw_scan = item.get("scan")
+        if raw_scan:
+            persist.save_scan(ScanResult.model_validate(raw_scan), owner_key_id=owner)
     payload = {"run_id": run_id, "results": results}
     persist.save_run(run_id, payload)
     return payload

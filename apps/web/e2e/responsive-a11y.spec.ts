@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-const routes = ["/", "/arena", "/coverage", "/policy", "/eval", "/redteam", "/scans", "/settings"];
+const routes = ["/", "/admin", "/login", "/signup", "/console", "/arena", "/coverage", "/policy", "/eval", "/redteam", "/scans", "/integrate", "/keys", "/portal", "/settings"];
 const viewports = [
   { name: "390", width: 390, height: 844 },
   { name: "768", width: 768, height: 1024 },
@@ -22,6 +22,7 @@ for (const vp of viewports) {
         test(`render ${path}`, async ({ page }) => {
           await page.addInitScript((t) => {
             localStorage.setItem("theme", t);
+            sessionStorage.setItem("ps_bearer", "promptshield-owner");
             document.documentElement.classList.toggle("dark", t === "dark");
           }, theme);
           await page.goto(path, { waitUntil: "domcontentloaded" });
@@ -37,9 +38,10 @@ for (const vp of viewports) {
       test("axe serious+critical console+arena", async ({ page }) => {
         await page.addInitScript((t) => {
           localStorage.setItem("theme", t);
+          sessionStorage.setItem("ps_bearer", "promptshield-owner");
           document.documentElement.classList.toggle("dark", t === "dark");
         }, theme);
-        for (const path of ["/", "/arena"]) {
+        for (const path of ["/console", "/arena"]) {
           await page.goto(path, { waitUntil: "domcontentloaded" });
           await expect(page.locator("h1")).toBeVisible();
           const results = await new AxeBuilder({ page }).analyze();

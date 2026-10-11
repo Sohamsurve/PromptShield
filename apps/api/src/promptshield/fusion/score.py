@@ -159,6 +159,10 @@ def decide(
             if trust.value >= TrustLevel.T2 and residual_risk is None and risk >= quarantine:
                 return Decision.quarantine
             return Decision.sanitize
+        # The span is real but too large to redact. At the quarantine grade,
+        # fail closed instead of allowing a hit the redactor refused.
+        if max_clf >= clf_quarantine:
+            return Decision.quarantine
 
     # Quarantine / spotlight when classifier fires but span is not localised
     if unlocal_clf and max_clf >= clf_quarantine:

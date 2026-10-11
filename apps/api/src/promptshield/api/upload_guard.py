@@ -37,6 +37,16 @@ _ALLOWED_EXT = {
     ".htm",
     ".pdf",
     ".docx",
+    ".xlsx",
+    ".xlsm",
+    ".pptx",
+    ".pptm",
+    ".csv",
+    ".yaml",
+    ".yml",
+    ".xml",
+    ".sql",
+    ".sh",
     ".eml",
     ".mime",
     ".ics",
@@ -123,6 +133,10 @@ def _is_docx(data: bytes) -> bool:
     return _looks_like_zip(data) and _DOCX_MARKER in data[: 512 * 1024]
 
 
+def _is_ooxml(data: bytes, marker: bytes) -> bool:
+    return _looks_like_zip(data) and marker in data[: 512 * 1024]
+
+
 def _is_pdf(data: bytes) -> bool:
     return data.lstrip()[:4] == _PDF_MAGIC or data[:4] == _PDF_MAGIC
 
@@ -166,10 +180,19 @@ def validate_upload(*, filename: str | None, data: bytes) -> UploadOk | UploadRe
 
     ext = _ext(safe)
 
-    # Explicit archive rejection before type allow-list (except real DOCX)
-    if _looks_like_archive(data) and not (ext == ".docx" and _is_docx(data)):
+    # Explicit archive rejection. DOCX, XLSX, and PPTX are Office packages, not generic archives.
+    office_ok = (
+        (ext == ".docx" and _is_docx(data))
+        or (ext in {".xlsx", ".xlsm"} and _is_ooxml(data, b"xl/workbook.xml"))
+        or (ext in {".pptx", ".pptm"} and _is_ooxml(data, b"ppt/presentation.xml"))
+    )
+    if _looks_like_archive(data) and not office_ok:
         if ext == ".docx":
             return UploadReject(415, "Fake or invalid DOCX (zip without Office markers).", "FAKE_DOCX")
+        if ext in {".xlsx", ".xlsm"}:
+            return UploadReject(415, "Fake or invalid spreadsheet (zip without a workbook).", "FAKE_XLSX")
+        if ext in {".pptx", ".pptm"}:
+            return UploadReject(415, "Fake or invalid presentation (zip without slides).", "FAKE_PPTX")
         return UploadReject(415, "Archive uploads are not expanded or accepted.", "ARCHIVE_DENIED")
 
     if not ext:
@@ -195,7 +218,29 @@ def validate_upload(*, filename: str | None, data: bytes) -> UploadOk | UploadRe
         return UploadReject(415, "Fake or invalid WEBP.", "FAKE_IMAGE")
 
     # Binary garbage as "text-like" extensions → clear reject (not 500)
-    textish = {".txt", ".md", ".markdown", ".html", ".htm", ".eml", ".mime", ".ics", ".json", ".py", ".js", ".ts", ".java", ".go", ".rs"}
+    textish = {
+        ".txt",
+        ".md",
+        ".markdown",
+        ".html",
+        ".htm",
+        ".eml",
+        ".mime",
+        ".ics",
+        ".json",
+        ".py",
+        ".js",
+        ".ts",
+        ".java",
+        ".go",
+        ".rs",
+        ".csv",
+        ".yaml",
+        ".yml",
+        ".xml",
+        ".sql",
+        ".sh",
+    }
     if ext in textish and _printable_ratio(data) < 0.55:
         return UploadReject(415, "Binary garbage rejected for text-like upload.", "BINARY_GARBAGE")
 

@@ -43,6 +43,21 @@ def test_api_key_required_when_demo_off(monkeypatch, tmp_path):
     assert "test-key-not-a-secret" not in ok.text
 
 
+def test_bearer_key_authorises_scan_when_demo_off(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, DEMO_MODE="0", PROMPTSHIELD_API_KEY="test-key-not-a-secret")
+    body = {"content": "Summarise the quarterly product report.", "source_type": "text"}
+    denied = client.post("/v1/scan", json=body)
+    assert denied.status_code == 401
+    bearer = client.post("/v1/scan", json=body, headers={"authorization": "Bearer test-key-not-a-secret"})
+    assert bearer.status_code == 200
+    assert bearer.json()["decision"] == "allow"
+    assert "test-key-not-a-secret" not in bearer.text
+    health = client.get("/v1/healthz")
+    assert health.json()["firewall_auth"] == "api_key"
+    assert health.json()["firewall_key_configured"] is True
+    assert "test-key-not-a-secret" not in health.text
+
+
 def test_rate_limit(monkeypatch, tmp_path):
     from promptshield.api.security import reset_limits
 

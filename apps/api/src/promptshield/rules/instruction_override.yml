@@ -1370,3 +1370,99 @@
   - regex: (?i)treat\s+everything\s+after\s+this\s+line
   - regex: (?i)as\s+a\s+developer\s+message
   - regex: (?i)override\s+the\s+task\b
+- id: PI-OVR-SAFE-001
+  attack_types: [instruction_override]
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bignore\s+safety\s+checks\b
+- id: PI-OVR-SUP-001
+  attack_types: [instruction_override]
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bsuppress\s+(?:alerts|warnings)\b
+- id: PI-OVR-SUP-002
+  attack_types: [instruction_override]
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bhide\s+this\s+instruction\b
+- id: PI-OVR-SYSMSG-001
+  attack_types: [instruction_override]
+  severity: 0.85
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bnew\s+system\s+message\b
+- id: PI-OVR-CONFIRM-001
+  attack_types: [instruction_override]
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bdo\s+not\s+ask\s+for\s+confirmation\b
+- id: PI-OVR-CTL-001
+  attack_types: [instruction_override]
+  severity: 0.85
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bbypass\s+all\s+controls\b
+- id: PI-OVR-GUARD-001
+  attack_types: [instruction_override]
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bbypass\s+safeguards\b
+- id: PI-OVR-ACCESS-001
+  attack_types: [instruction_override]
+  severity: 0.85
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bignore\s+access\s+controls\b
+- id: PI-OVR-USER-001
+  attack_types: [instruction_override]
+  severity: 0.85
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bdisregard\s+the\s+user'?s\s+request\b
+- id: PI-OVR-DISABLE-001
+  attack_types: [instruction_override]
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: (?i)\bdisable\s+safety\s+checks\b
+- id: PI-OVR-XML-001
+  attack_types: [instruction_override]
+  severity: 0.8
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)<\s*system_instruction\b'
+- id: PI-OVR-126
+  attack_types: [instruction_override]
+  severity: 0.85
+  reason_code: OVR_PHRASE
+  langs: [en]
+  context: any
+  patterns:
+    - regex: '(?i)\b(?:guidelines are void|operating constraints|highest-priority order|this note replaces the|only policy|new operating order)\b'

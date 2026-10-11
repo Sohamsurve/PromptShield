@@ -1,4 +1,4 @@
-"""Compare scans of whitetext_testpack/ to its manifest. JPEG copies are reported."""
+"""Compare scans of fixtures/corpora/whitetext to its manifest. JPEG copies are reported."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from PIL import Image
 from promptshield.domain import SourceType, TrustLevel
 from promptshield.pipeline import scan_file_bytes
 
-ROOT = Path(__file__).resolve().parents[3] / "whitetext_testpack"
+ROOT = Path(__file__).resolve().parents[3] / "fixtures" / "corpora" / "whitetext"
 ACTED = {"sanitize", "quarantine", "block", "escalate"}
 
 

@@ -62,7 +62,7 @@ class SignatureEngine:
                     evidence = m.group(0)[:200]
                     findings.append(
                         Finding(
-                            id=f"f{fid}",
+                            id=f"{segment_id}:f{fid}",
                             segment_id=segment_id,
                             span=(m.start(), m.end()),
                             attack_types=list(rule.attack_types),

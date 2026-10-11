@@ -1,4 +1,4 @@
-.PHONY: setup dev test e2e eval eval-fast train gen-types fixtures scan-mcp-output demo demo-docker _demo-api lint accept conformance security
+.PHONY: setup dev test e2e eval eval-fast train gen-types fixtures scan-mcp-output demo demo-docker _demo-api lint accept conformance security golden
 
 ROOT := $(abspath .)
 API_DIR := $(ROOT)/apps/api
@@ -37,6 +37,10 @@ eval:
 
 eval-fast:
 	cd $(ROOT) && $(UV) --directory $(API_DIR) run python $(ROOT)/eval/run_eval.py --fast
+
+# Frozen predictability set (eval/golden). Judge off. Does not gate on recall.
+golden:
+	cd $(ROOT) && $(UV) --directory $(API_DIR) run python $(ROOT)/eval/golden/run_golden.py
 
 train:
 	cd $(ROOT) && $(UV) --directory $(API_DIR) run python $(ROOT)/eval/train_classifier.py

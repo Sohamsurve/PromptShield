@@ -525,6 +525,8 @@ POST /v1/scan
   "policy_version": "1", "degraded": [] }
 ```
 
+On `block` or `quarantine` the same body also includes `safe_alternative`: the benign remainder after the attack span is removed, or the fixed line `Please rephrase this as an ordinary request.` when nothing safe is left. That line does not repeat the attack. `allow` and `sanitize` leave it null.
+
 ### 6.2 X-ray model (`GET /scans/{id}/xray`)
 ```json
 { "scan_id": "scn_8f2c", "source_type": "pdf",
@@ -926,11 +928,10 @@ and report INP and long tasks; fix virtualisation or batching until INP < 200 ms
 ### 13.1 Declared position and evidence
 | Claim | Demo timestamp | Architecture component | Metric / test |
 |---|---|---|---|
-| F3 — detects all 9 attack types | 01:30–04:30 | Layers 1–5 | Recall table per type, with CIs |
-| D2 — reliable on text/structured input | 05:15 | Eval harness | Held-out recall, FPR, repeatability |
-| D3 *(only if supported)* — multimodal heterogeneous input | 01:30, 05:15 | Adapters + OCR | Heatmap with n and CI per format |
-| Minimal disruption | 03:00 | Sanitise + spotlight | Utility retention; benign/hard-negative FPR |
-| Defence in depth | 04:30 | Tool firewall + taint | Test: text scanning disabled, tool call denied |
+| Nine attack types are detected in the pipeline. **F3 is not claimed.** | 01:30–04:30 | Layers 1–5 | Golden acted recall 0.61, type recall 0.48 (`docs/CLAIMS.md`) |
+| **D1 provisional.** Text and structured files are scanned. **D3 is not claimed.** | 05:15 | Adapters + OCR | Independent sealed not evaluated; white-on-white stays a limit |
+| Minimal disruption on the golden benign set | 03:00 | Sanitise + spotlight | 0 false positives / 500. Length-matched ≤2% point was not found |
+| Defence in depth | 04:30 | Tool firewall + taint | Text scanning disabled, tainted tool call denied |
 
 ### 13.2 Demo script (≈ 6 minutes)
 | Time | Scene | What happens |
