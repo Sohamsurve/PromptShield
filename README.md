@@ -1,7 +1,34 @@
 # PromptShield — Prompt-Injection Firewall for AI Agents
 
-> **Build spec for the ET AI Hackathon (Agentic Edition) — Problem 2.**
-> This README is written to be read by humans **and** by AI coding agents / IDEs (Claude Code, Cursor, VS Code + Copilot, Codex, Windsurf, etc.). It is the single source of truth for *what to build*, *how it fits together*, *how to verify it*, and *how the UI should look and behave*.
+Agents read mail, PDFs, and web pages as if they were instructions. One hidden line can override the task or call a tool. PromptShield checks that content first, removes the instruction, and leaves the ordinary text.
+
+**Repository:** https://github.com/Sohamsurve/PromptShield.git
+
+**Submitted by:** Soham Y. Surve
+
+**ET AI Hackathon (Agentic Edition) — Problem 2.** Working prototype. Declared position: **F1 / D1, provisional.**
+
+| Measured on the frozen golden suite (judge off, 11 Oct 2026) | Result |
+|---|---|
+| Acted recall, 900 attacks | 0.61 |
+| Correct-type recall, 900 attacks | 0.48 |
+| False positives, 500 ordinary documents | 0 |
+| Latency p95, without the judge | 26 ms |
+
+F3, D3, known-pattern recall of 0.95, and held-out recall of 0.85 are recorded as unmet. The full table is in [docs/CLAIMS.md](docs/CLAIMS.md). Submission notes: [docs/SUBMISSION.md](docs/SUBMISSION.md). Pitch deck: [PDF](docs/pitch/PromptShield_pitch.pdf) · [PowerPoint](docs/pitch/PromptShield_pitch.pptx).
+
+### Run the demo
+
+```bash
+# Terminal A — API
+cd apps/api && uv run uvicorn promptshield.api.app:app --reload --host 127.0.0.1 --port 8000
+# Terminal B — web
+cd apps/web && pnpm dev
+```
+
+Open http://localhost:3000/arena. Prerequisites: **uv** and **pnpm**. `make setup` installs dependencies. Demo tools are mocks and use canary secrets only.
+
+Everything below this line is the build specification: the source of truth for how the system is put together, how to verify it, and how the UI should behave. Coding agents should start at §0 and follow §11 in order.
 
 ---
 
@@ -53,7 +80,7 @@ Design a Prompt Injection Firewall that **intercepts all incoming content before
 **Attack types (all nine are in scope):**
 1. Instruction override · 2. Role change · 3. Secret extraction · 4. Tool abuse · 5. Credential theft · 6. Context poisoning · 7. Multi-step jailbreaks · 8. Encoded instructions · 9. Indirect prompt injection
 
-**Grid targets (declare only what you can prove):** Features **F3** (≥ 7 attack types; we target all 9). Depth **D2** (reliable on structured/textual input) with **D3** (heterogeneous multimodal input + high reliability) claimed only if the heatmap shows reliable results per format.
+**Grid:** the problem offers F1–F3 and D1–D3. This prototype declares **F1 / D1, provisional** (§13, [docs/CLAIMS.md](docs/CLAIMS.md)). Nine attack types and the listed formats are in the product. An independent sealed run has not been scored, so F3 and D3 stay unclaimed.
 
 ### 1.2 Non-goals
 - Not a general content-moderation system (toxicity, NSFW, misinformation).

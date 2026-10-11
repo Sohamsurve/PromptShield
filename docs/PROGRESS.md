@@ -1,10 +1,14 @@
 # PromptShield — Progress
 
-Last updated: 2026-10-11 · Pitch deck
+Last updated: 2026-10-11 · Submission README and pitch link
+
+## 2026-10-11 · Submission README and pitch link
+
+- README now opens with the product, the F1/D1 declaration, the golden-suite numbers, and how to run the demo. The build spec stays below that. Slides 1 and 8 of the pitch deck use `https://github.com/Sohamsurve/PromptShield.git` and name the submitter, Soham Y. Surve.
 
 ## 2026-10-11 · Pitch deck
 
-- Eight-slide deck for the hackathon pack: `docs/pitch/PromptShield_pitch.pptx` and `docs/pitch/PromptShield_pitch.pdf`. The 3-minute recording script is `docs/pitch/DEMO_SCRIPT.md`. The title slide still has a GitHub placeholder.
+- Eight-slide deck for the hackathon pack: `docs/pitch/PromptShield_pitch.pptx` and `docs/pitch/PromptShield_pitch.pdf`. The 3-minute recording script is `docs/pitch/DEMO_SCRIPT.md`.
 
 ## 2026-10-11 · Folder layout
 

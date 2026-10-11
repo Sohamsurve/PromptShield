@@ -176,7 +176,8 @@ def build():
     )
     d.rect(0.55, 4.7, 7.6, 0.85, SURFACE, shadow=True)
     d.text("GitHub", 0.75, 4.82, 1.3, 0.3, 12, SLATE, True)
-    d.text("https://github.com/Sohamsurve/PromptShield", 0.75, 5.1, 7.1, 0.35, 16, INK, True)
+    d.text("https://github.com/Sohamsurve/PromptShield.git", 0.75, 5.1, 7.1, 0.35, 16, INK, True)
+    d.text("Submitted by: Soham Y. Surve", 0.55, 5.75, 10, 0.4, 18, INK, True)
     d.finish()
 
     d.new()
@@ -315,7 +316,8 @@ def build():
     d.text("Check the content. Remove the attack. Keep the document.", 0.55, 3.2, 11, 0.5, 22, INK)
     d.rect(0.55, 4.15, 7.6, 0.85, SURFACE, shadow=True)
     d.text("GitHub", 0.75, 4.27, 1.3, 0.28, 12, SLATE, True)
-    d.text("https://github.com/Sohamsurve/PromptShield", 0.75, 4.55, 7.1, 0.35, 16, INK, True)
+    d.text("https://github.com/Sohamsurve/PromptShield.git", 0.75, 4.55, 7.1, 0.35, 16, INK, True)
+    d.text("Submitted by: Soham Y. Surve", 0.55, 5.2, 10, 0.4, 18, INK, True)
     d.footer(8)
     d.finish()
 

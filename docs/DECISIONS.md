@@ -4,6 +4,7 @@ Format: date · decision · reason.
 
 ## 2026-10-11
 
+- **Submission README:** The GitHub README opens with the product, the F1/D1 provisional declaration, the golden-suite numbers, and the demo commands. The build specification stays underneath. Reason: a judge who stops in the first screen should see the measured position, and coding agents still have §0 and §11.
 - **Caller landing:** `/` explains the concept, the three ways to use it, the five verdicts, and the advantages. It does not quote recall or false-positive numbers. Reason: the first screen a caller sees should say what the firewall is for, and the measured scores stay in the eval reports.
 - **Caller playground:** Signed-in callers open Arena, Coverage, and Red team at `/portal/arena`, `/portal/coverage`, and `/portal/redteam`. `POST /v1/demo/run` and `POST /v1/policy/test` are allowed for a caller, and those scans are stored on the account. Policy writes, `POST /v1/eval/run`, and the regression queue stay admin-only. Reason: callers should try the same gallery and playground as the admin site, without changing the firewall.
 - **Caller keys:** A signed-in caller creates and revokes keys at `/portal/keys` (`/v1/me/keys`). The role is always `user`. Scans made with an extra key are stored on the account key, so the dashboard lists them together. The key created at sign-up is marked `primary` and cannot be revoked. Reason: callers need their own keys the way other API apps do, without access to the admin key list.
