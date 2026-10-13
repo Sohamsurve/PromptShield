@@ -7,6 +7,7 @@ COPY apps/api/pyproject.toml /app/apps/api/pyproject.toml
 COPY apps/api/src /app/apps/api/src
 COPY fixtures /app/fixtures
 COPY eval /app/eval
+COPY models /app/models
 
 RUN pip install --no-cache-dir /app/apps/api
 
