@@ -1,6 +1,10 @@
 # PromptShield — Progress
 
-Last updated: 2026-10-11 · Judge-facing README
+Last updated: 2026-10-13 · Public console API host
+
+## 2026-10-13 · Public console API host
+
+- The console content-security policy allows the API host from `NEXT_PUBLIC_API_BASE` or `INTERNAL_API_URL` at build time, so the live event socket can reach the deployed API.
 
 ## 2026-10-11 · Judge-facing README
 

@@ -2,6 +2,10 @@
 
 Format: date · decision · reason.
 
+## 2026-10-13
+
+- **Public console:** The content-security policy allows the API host taken from `NEXT_PUBLIC_API_BASE` or `INTERNAL_API_URL` at build time, including the matching `wss` origin for the live event socket. Localhost stays allowed. Reason: the socket connects straight to the API, and the Render hostname is only known when the console is deployed.
+
 ## 2026-10-11
 
 - **Submission deck:** The pitch deck maps each architecture step to a demo the prototype is allowed to show, and states the AI pieces as signatures, a small local classifier, and a gray-zone judge. Business impact stays on the path in front of the model. No market figure is added. Reason: the submission asks the architecture to support the working demo, and the measured claim is still F1 / D1 provisional.
