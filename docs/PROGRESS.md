@@ -1,6 +1,10 @@
 # PromptShield — Progress
 
-Last updated: 2026-10-13 · Public console API host
+Last updated: 2026-10-13 · Console build typecheck
+
+## 2026-10-13 · Console build typecheck
+
+- The signed-in sidebar no longer compares the role to `demo`. That branch is unreachable after the public shell returns, and `next build` rejected it.
 
 ## 2026-10-13 · Public console API host
 

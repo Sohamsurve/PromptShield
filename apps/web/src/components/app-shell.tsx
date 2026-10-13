@@ -235,15 +235,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {dark ? <Sun aria-hidden /> : <Moon aria-hidden />}
             </Button>
           </div>
-          {role === "demo" ? (
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
-          ) : (
-            <Button type="button" variant="ghost" size="sm" onClick={signOut}>
-              Sign out
-            </Button>
-          )}
+          <Button type="button" variant="ghost" size="sm" onClick={signOut}>
+            Sign out
+          </Button>
         </div>
       </aside>
 
