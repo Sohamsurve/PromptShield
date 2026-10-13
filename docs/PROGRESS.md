@@ -1,6 +1,10 @@
 # PromptShield — Progress
 
-Last updated: 2026-10-13 · Console build typecheck
+Last updated: 2026-10-13 · Production script policy
+
+## 2026-10-13 · Production script policy
+
+- Production pages send a per-request script nonce so Next.js inline scripts can run. `/favicon.ico` rewrites to the icon already in `public/assets`.
 
 ## 2026-10-13 · Console build typecheck
 

@@ -4,7 +4,7 @@ Format: date · decision · reason.
 
 ## 2026-10-13
 
-- **Public console:** The content-security policy allows the API host taken from `NEXT_PUBLIC_API_BASE` or `INTERNAL_API_URL` at build time, including the matching `wss` origin for the live event socket. Localhost stays allowed. Reason: the socket connects straight to the API, and the Render hostname is only known when the console is deployed.
+- **Public console:** The content-security policy allows the API host taken from `NEXT_PUBLIC_API_BASE` or `INTERNAL_API_URL`, including the matching `wss` origin. Production scripts use a per-request nonce instead of `script-src 'self'` alone. Localhost stays allowed. Reason: the live socket connects straight to the API, and Next.js starts the page with inline scripts that a self-only script policy blocks.
 
 ## 2026-10-11
 
